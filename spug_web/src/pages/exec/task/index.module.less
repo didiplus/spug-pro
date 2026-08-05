@@ -1,0 +1,173 @@
+.index {
+  display: flex;
+  height: calc(100vh - 218px);
+  min-height: 420px;
+  background-color: #fff;
+  overflow: hidden;
+
+  .left {
+    padding: 24px;
+    width: 60%;
+    border-right: 1px solid #dfdfdf;
+
+    .tips {
+      position: absolute;
+      top: 10px;
+      left: 180px;
+      color: #999;
+    }
+
+    .tips:hover {
+      color: #777;
+    }
+
+    .editor {
+      height: calc(100vh - 482px) !important;
+      min-height: 152px;
+    }
+  }
+
+  .right {
+    width: 40%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    background-color: #fafafa;
+    padding: 24px 24px 0 24px;
+
+    .title {
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .inner {
+      flex: 1;
+      overflow: auto;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      border-radius: 2px;
+      padding: 8px 12px;
+      cursor: pointer;
+      margin-bottom: 12px;
+
+      .sh {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        color: #fff;
+        font-weight: 500;
+        border-radius: 2px;
+        background-color: #1890ff;
+      }
+
+      .python {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+        width: 20px;
+        height: 20px;
+        font-weight: 500;
+        border-radius: 2px;
+        background-color: #dca900;
+      }
+
+      .number {
+        width: 24px;
+        text-align: center;
+        margin-left: 12px;
+        border-radius: 2px;
+        font-weight: 500;
+        background-color: #dfdfdf;
+      }
+
+      .command {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 0 12px;
+      }
+
+      .tpl {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 0 12px;
+        background-color: #d2e7fd;
+        padding: 0 8px;
+        border-radius: 2px;
+      }
+
+      .desc {
+        color: #999;
+      }
+    }
+
+    .item:hover {
+      border-color: #1890ff;
+      background-color: #e6f7ff;
+    }
+  }
+}
+
+.output {
+  display: flex;
+  background-color: #fff;
+  height: 100%;
+  overflow: hidden;
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
+    border-right: 1px solid #f0f0f0;
+    background-color: #fafafa;
+
+    .list {
+      flex: 1;
+      overflow: auto;
+      padding: 8px 0;
+
+      .hostItem {
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &.hostActive {
+          background: #e6f4ff;
+          border-right: 3px solid #1677ff;
+        }
+      }
+
+      .hostItem:hover {
+        background: #f0f5ff;
+      }
+    }
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - 280px);
+    padding: 16px 20px;
+
+    .termContainer {
+      background-color: #1e1e1e;
+      padding: 8px 0 4px 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      flex: 1;
+
+      .term {
+        width: 100%;
+        height: calc(100% - 40px);
+      }
+    }
+  }
+}

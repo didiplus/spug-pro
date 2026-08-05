@@ -1,0 +1,125 @@
+/* login.module.css - 重新设计，Ant Design 风格 */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5;
+  background-image: url("./bg.svg");
+  background-repeat: no-repeat;
+  background-position: center 110px;
+  background-size: 100%;
+  /* 如果背景图影响卡片清晰度，可降低透明度，但此处保留原样 */
+}
+
+/* 卡片容器 */
+.card {
+  width: 400px;
+  padding: 48px 40px 40px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s;
+}
+
+/* 头部 logo 和标题 */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo {
+  height: 40px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+  line-height: 1.4;
+}
+
+.desc {
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+}
+
+/* Tabs 切换 */
+.tabs {
+  margin-bottom: 24px;
+}
+
+.tabs :global(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+.tabs :global(.ant-tabs-tab) {
+  font-size: 16px;
+  padding: 8px 0;
+}
+
+/* 表单表单项 */
+.formItem {
+  margin-bottom: 24px;
+}
+
+/* 输入框前缀图标 */
+.icon {
+  color: rgba(0, 0, 0, 0.25);
+  font-size: 16px;
+}
+
+/* 登录按钮 */
+.button {
+  margin-top: 8px;
+  height: 44px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+/* 验证码区域 */
+.captchaWrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.captchaWrapper > :first-child {
+  flex: 1;
+}
+
+.captchaBtn {
+  height: 40px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+/* 页脚 */
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+}
+
+.footerLinks {
+  margin-bottom: 8px;
+}
+
+.footerLinks a {
+  margin: 0 16px;
+  color: rgba(0, 0, 0, 0.45);
+  transition: color 0.3s;
+}
+
+.footerLinks a:hover {
+  color: #1890ff;
+}
+
+/* 安全警告弹窗定位（保持原逻辑） */
+.tips {
+  top: 230px;
+}
