@@ -21,7 +21,8 @@ export default observer(function () {
   
   return (
     <Modal
-      open
+      open={store.formVisible}
+      forceRender
       width={800}
       maskClosable={false}
       title={store.record.id ? '编辑任务' : '新建任务'}

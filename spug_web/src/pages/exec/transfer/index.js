@@ -190,7 +190,7 @@ function TransferIndex() {
     <Drawer
       title="执行详情"
       placement="right"
-      width="90%"
+      width="75%"
       open={!!token}
       onClose={handleCloseOutput}
       styles={{ body: { padding: 0, height: 'calc(100vh - 55px)', overflow: 'hidden' } }}

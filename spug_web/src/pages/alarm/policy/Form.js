@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Modal, Form, Input, Select, Switch, Transfer, Spin } from 'antd';
+import { Modal, Form, Input, Select, Switch, Transfer } from 'antd';
 import http from 'libs/http';
 import store from './store';
 import groupStore from '../group/store';

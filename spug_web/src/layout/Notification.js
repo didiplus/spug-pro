@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { List, Dropdown, Badge, Button } from 'antd';
-import { notification } from 'libs/message';import {
+import { notification } from 'libs/message';
+import {
   NotificationOutlined,
   MonitorOutlined,
   FlagOutlined,
@@ -11,22 +12,21 @@ import { http, X_TOKEN } from 'libs';
 import moment from 'moment';
 import styles from './layout.module.less';
 
-let ws = {readyState: 3};
+let ws = { readyState: 3 };
 let timer;
-
 
 function Icon(props) {
   switch (props.type) {
     case 'monitor':
-      return <MonitorOutlined style={{fontSize: 24, color: '#1890ff'}}/>
+      return <MonitorOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
     case 'schedule':
-      return <ScheduleOutlined style={{fontSize: 24, color: '#1890ff'}}/>
+      return <ScheduleOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
     case 'flag':
-      return <FlagOutlined style={{fontSize: 24, color: '#1890ff'}}/>
+      return <FlagOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
     case 'alert':
-      return <AlertOutlined style={{fontSize: 24, color: '#ff4d4f'}}/>
+      return <AlertOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />;
     default:
-      return null
+      return null;
   }
 }
 
@@ -40,26 +40,26 @@ export default function () {
     listen();
     timer = setInterval(() => {
       if (ws.readyState === 1) {
-        ws.send('ping')
+        ws.send('ping');
       } else if (ws.readyState === 3) {
-        listen()
+        listen();
       }
-    }, 10000)
+    }, 10000);
     return () => {
       if (timer) clearInterval(timer);
-      if (ws.close) ws.close()
-    }
+      if (ws.close) ws.close();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   function fetch() {
     setLoading(true);
     http.get('/api/notify/')
       .then(res => {
-        setReads(res.filter(x => !x.unread).map(x => x.id))
+        setReads(res.filter(x => !x.unread).map(x => x.id));
         setNotifies(res);
       })
-      .finally(() => setLoading(false))
+      .finally(() => setLoading(false));
   }
 
   function listen() {
@@ -71,21 +71,32 @@ export default function () {
       if (e.data !== 'pong') {
         fetch();
         try {
-          const {title, content} = JSON.parse(e.data);
+          const { title, content } = JSON.parse(e.data);
           const key = `open${Date.now()}`;
-          const description = <div style={{whiteSpace: 'pre-wrap'}}>{content}</div>;
-          const btn = <Button type="primary" size="small" onClick={() => notification.close(key)}>知道了</Button>;
-          notification.warning({message: title, description, btn, key, top: 64, duration: null})
+          const description = <div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>;
+          const actionButton = (
+            <Button key="close-btn" type="primary" size="small" onClick={() => notification.close(key)}>
+              知道了
+            </Button>
+          );
+          notification.warning({
+            message: title,
+            description,
+            actions: [actionButton],
+            key,
+            top: 64,
+            duration: null
+          });
         } catch (e) {
-
+          // ignore parse errors
         }
       }
-    }
+    };
   }
 
   function handleVisible(visible) {
     if (visible) {
-      fetch()
+      fetch();
     }
   }
 
@@ -93,39 +104,41 @@ export default function () {
     e.stopPropagation();
     if (reads.indexOf(item.id) === -1) {
       reads.push(item.id);
-      setReads([...reads])
-      http.patch('/api/notify/', {ids: [item.id]})
+      setReads([...reads]);
+      http.patch('/api/notify/', { ids: [item.id] });
     }
   }
 
   function handleReadAll() {
     const ids = notifies.map(x => x.id);
     setReads(ids);
-    http.patch('/api/notify/', {ids})
+    http.patch('/api/notify/', { ids });
   }
 
   const count = notifies.length - reads.length;
   return (
     <div className={styles.notification}>
       <Dropdown trigger={['click']} onOpenChange={handleVisible} popupRender={() => (
-        <div className={styles.notify} style={{background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.15)'}}>
+        <div className={styles.notify} style={{ background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           <List
             loading={loading}
-            style={{maxHeight: 500, overflow: 'scroll'}}
+            style={{ maxHeight: 500, overflow: 'scroll' }}
             itemLayout="horizontal"
             dataSource={notifies}
             renderItem={item => (
               <List.Item className={styles.item} onClick={e => handleRead(e, item)}>
                 <List.Item.Meta
-                  style={{opacity: reads.includes(item.id) ? 0.4 : 1}}
-                  avatar={<Icon type={item.source}/>}
-                  title={<span style={{fontWeight: 400, color: '#404040'}}>{item.title}</span>}
+                  style={{ opacity: reads.includes(item.id) ? 0.4 : 1 }}
+                  avatar={<Icon type={item.source} />}
+                  title={<span style={{ fontWeight: 400, color: '#404040' }}>{item.title}</span>}
                   description={[
-                    <div key="1" style={{fontSize: 12, overflowWrap: 'anywhere'}}>{item.content}</div>,
-                    <div key="2" style={{fontSize: 12}}>{moment(item['created_at']).fromNow()}</div>
-                  ]}/>
+                    <div key="1" style={{ fontSize: 12, overflowWrap: 'anywhere' }}>{item.content}</div>,
+                    <div key="2" style={{ fontSize: 12 }}>{moment(item['created_at']).fromNow()}</div>
+                  ]}
+                />
               </List.Item>
-            )}/>
+            )}
+          />
           {notifies.length !== 0 && (
             <div className={styles.btn} onClick={handleReadAll}>全部 已读</div>
           )}
@@ -133,10 +146,10 @@ export default function () {
       )}>
         <div className={styles.trigger}>
           <Badge count={count > 0 ? count : 0}>
-            <NotificationOutlined style={{fontSize: 16}}/>
+            <NotificationOutlined style={{ fontSize: 16 }} />
           </Badge>
         </div>
       </Dropdown>
     </div>
-  )
+  );
 }

@@ -94,4 +94,4 @@ dmypy.json
 .merkle-snapshot.json
 sync.sh
 spug_web/node_modules/
-spug_web/node_modules/
+spug_api/design
