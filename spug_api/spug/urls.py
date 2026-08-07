@@ -35,4 +35,6 @@ urlpatterns = [
     path('file/', include('apps.file.urls')),
     path('apis/', include('apps.apis.urls')),
     path('db/', include('apps.database.urls')),
+    path('playbook/', include('apps.playbook.urls')),
+    path('ansible/', include('apps.ansible.urls')),
 ]

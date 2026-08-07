@@ -46,6 +46,7 @@ class Task(models.Model, ModelMixin):
     desc = models.CharField(max_length=255, null=True)
     latest = models.ForeignKey(History, on_delete=models.PROTECT, null=True)
     rst_notify = models.CharField(max_length=255, null=True)
+    playbook_id = models.IntegerField(null=True)
 
     created_at = models.CharField(max_length=20, default=human_datetime)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")

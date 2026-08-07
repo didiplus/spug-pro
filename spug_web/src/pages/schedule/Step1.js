@@ -16,6 +16,7 @@ export default observer(function () {
   const [dbBackupConfig, setDbBackupConfig] = useState({});
   const [dbList, setDbList] = useState([]);
   const [dbListLoading, setDbListLoading] = useState(false);
+  const [playbooks, setPlaybooks] = useState([]);
   const { modal } = App.useApp();
 
   const mountedRef = useRef(true);
@@ -24,6 +25,7 @@ export default observer(function () {
 
   const interpreter = Form.useWatch('interpreter', form) || store.record.interpreter;
   const isDbBackup = interpreter === 'db_backup';
+  const isPlaybook = interpreter === 'playbook';
 
   useEffect(() => {
     mountedRef.current = true;
@@ -56,6 +58,10 @@ export default observer(function () {
         setDbBackupConfig({});
       }
     }
+
+    http.get('/api/playbook/').then(res => {
+      if (mountedRef.current) setPlaybooks(res);
+    }).catch(() => {});
 
     return () => {
       mountedRef.current = false;
@@ -100,6 +106,9 @@ export default observer(function () {
     if (isDbBackup) {
       return !(formData.type && formData.name && dbBackupConfig.instance_id);
     }
+    if (isPlaybook) {
+      return !(formData.type && formData.name && store.record.playbook_id);
+    }
     return !(formData.type && formData.name && command);
   }
 
@@ -112,6 +121,8 @@ export default observer(function () {
         interpreter: 'db_backup',
         command: JSON.stringify(dbBackupConfig),
       });
+    } else if (isPlaybook) {
+      Object.assign(store.record, formData, { command: '' });
     } else {
       Object.assign(store.record, formData, { command: cleanCommand(command) });
     }
@@ -162,15 +173,26 @@ export default observer(function () {
       <Form.Item required name="name" label="任务名称">
         <Input placeholder="请输入任务名称" />
       </Form.Item>
-      <Form.Item required label="任务内容" extra={!isDbBackup && <LinkButton onClick={() => setShowTmp(true)}>从模板添加</LinkButton>}>
+      <Form.Item required label="任务内容" extra={!isDbBackup && !isPlaybook && <LinkButton onClick={() => setShowTmp(true)}>从模板添加</LinkButton>}>
         <Form.Item noStyle name="interpreter">
           <Radio.Group buttonStyle="solid" style={{ marginBottom: 12 }}>
             <Radio.Button value="sh" style={{ width: 80, textAlign: 'center' }}>Shell</Radio.Button>
             <Radio.Button value="python" style={{ width: 80, textAlign: 'center' }}>Python</Radio.Button>
+            <Radio.Button value="playbook" style={{ textAlign: 'center' }}>Playbook</Radio.Button>
             <Radio.Button value="db_backup" style={{ textAlign: 'center' }}><DatabaseOutlined style={{ marginRight: 4 }} />数据库备份</Radio.Button>
           </Radio.Group>
         </Form.Item>
-        {isDbBackup ? (
+        {isPlaybook ? (
+          <Select
+            style={{ width: '100%' }}
+            placeholder="请选择 Playbook"
+            value={store.record.playbook_id}
+            onChange={v => store.record.playbook_id = v}>
+            {playbooks.map(item => (
+              <Select.Option value={item.id} key={item.id}>{item.name}</Select.Option>
+            ))}
+          </Select>
+        ) : isDbBackup ? (
           <Space direction="vertical" style={{ width: '100%' }} size={12}>
             <div>
               <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 13 }}>数据库实例</div>

@@ -112,17 +112,83 @@ def dispatch_job(host_id, interpreter, command, created_by_id=None):
     return code, duration, out
 
 
+def playbook_executor(playbook_id, host_id, extra_vars_str, created_by_id=None):
+    """通过定时任务触发 Playbook 执行"""
+    now = time.time()
+    try:
+        from apps.playbook.models import Playbook, PlaybookRun
+        from apps.playbook.runner import build_dynamic_inventory
+        from libs.execution.ansible_executor import AnsibleExecutor
+        from apps.setting.utils import AppSetting
+
+        playbook = Playbook.objects.filter(pk=playbook_id, is_active=True).first()
+        if not playbook:
+            return 1, round(time.time() - now, 3), f'Playbook {playbook_id} 不存在或已停用'
+
+        host_ids = []
+        if host_id != 'local':
+            host = Host.objects.filter(pk=host_id).first()
+            if host:
+                host_ids = [host.id]
+            else:
+                return 1, round(time.time() - now, 3), f'未知主机: {host_id}'
+        else:
+            try:
+                host_ids = json.loads(extra_vars_str) if extra_vars_str else []
+            except (json.JSONDecodeError, TypeError):
+                host_ids = []
+
+        if not host_ids:
+            return 1, round(time.time() - now, 3), '未指定目标主机'
+
+        try:
+            extra_vars = json.loads(extra_vars_str) if extra_vars_str else {}
+        except (json.JSONDecodeError, TypeError):
+            extra_vars = {}
+
+        inventory = build_dynamic_inventory(host_ids, playbook.group_id)
+        hosts = list(Host.objects.filter(id__in=host_ids))
+
+        executor = AnsibleExecutor(hosts[0].hostname, hosts[0].port or 22, hosts[0].username)
+        output_parts = []
+        final_code = -1
+
+        with executor:
+            from apps.playbook.runner import _write_pkey_files
+            _write_pkey_files(inventory, hosts, executor._tmpdir)
+            executor.set_inventory(inventory)
+            forks = playbook.forks or AppSetting.get_default('ansible_forks', 20)
+            for code, output in executor.exec_playbook(playbook.content, extra_vars=extra_vars, forks=forks):
+                if output:
+                    output_parts.append(output)
+                if code != -1:
+                    final_code = code
+
+        if final_code == -1:
+            final_code = 1
+
+        return final_code, round(time.time() - now, 3), ''.join(output_parts)
+
+    except Exception as e:
+        return 1, round(time.time() - now, 3), f'Playbook 执行异常: {e}'
+
+
 def schedule_worker_handler(job):
     history_id, host_id, interpreter, command = json.loads(job)
     close_old_connections()
     created_by_id = None
+    playbook_id = None
     history_obj = History.objects.filter(pk=history_id).first()
     if history_obj:
         task_obj = Task.objects.filter(pk=history_obj.task_id).first()
         if task_obj:
             created_by_id = task_obj.created_by_id
+            playbook_id = task_obj.playbook_id
 
-    code, duration, out = dispatch_job(host_id, interpreter, command, created_by_id=created_by_id)
+    if playbook_id:
+        code, duration, out = playbook_executor(playbook_id, host_id, command, created_by_id)
+    else:
+        code, duration, out = dispatch_job(host_id, interpreter, command, created_by_id=created_by_id)
 
     close_old_connections()
     with transaction.atomic():

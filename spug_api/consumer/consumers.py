@@ -141,6 +141,12 @@ class PubSubConsumer(BaseConsumer):
         self.p.subscribe(self.token)
         super().connect()
 
+    def init(self):
+        log_key = f'spug:pb:log:{self.token}'
+        messages = self.rds.lrange(log_key, 0, -1)
+        for msg in messages:
+            self.send(text_data=msg.decode())
+
     def disconnect(self, code):
         self.p.close()
         self.rds.close()

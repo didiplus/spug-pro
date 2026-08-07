@@ -30,7 +30,8 @@ class TemplateView(View):
             Argument('interpreter', default='sh'),
             Argument('host_ids', type=list, handler=json.dumps, default=[]),
             Argument('parameters', type=list, handler=json.dumps, default=[]),
-            Argument('desc', required=False)
+            Argument('desc', required=False),
+            Argument('playbook_id', type=int, required=False),
         ).parse(request.body)
         if error is None:
             if form.id:

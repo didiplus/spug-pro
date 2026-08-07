@@ -181,6 +181,64 @@ def prometheus_check(url, config):
         return False, f'异常信息：{e}'
 
 
+def playbook_check(host_id, config):
+    """通过 Playbook 执行复杂检测"""
+    try:
+        cfg = json.loads(config) if isinstance(config, str) else (config or {})
+        playbook_id = cfg.get('playbook_id')
+        expected_exit_code = cfg.get('expected_exit_code', 0)
+        keyword = cfg.get('keyword', '')
+        extra_vars = cfg.get('extra_vars', {})
+
+        if not playbook_id:
+            return False, '未指定 Playbook'
+
+        from apps.playbook.models import Playbook
+        from apps.playbook.runner import build_dynamic_inventory
+        from libs.execution.ansible_executor import AnsibleExecutor
+        from apps.setting.utils import AppSetting
+
+        playbook = Playbook.objects.filter(pk=playbook_id, is_active=True).first()
+        if not playbook:
+            return False, f'Playbook {playbook_id} 不存在或已停用'
+
+        host = Host.objects.filter(pk=host_id).first()
+        if not host:
+            return False, f'未知主机: {host_id}'
+
+        inventory = build_dynamic_inventory([host.id], playbook.group_id)
+        executor = AnsibleExecutor(host.hostname, host.port or 22, host.username)
+        output_parts = []
+        final_code = -1
+
+        with executor:
+            from apps.playbook.runner import _write_pkey_files
+            _write_pkey_files(inventory, [host], executor._tmpdir)
+            executor.set_inventory(inventory)
+            forks = playbook.forks or AppSetting.get_default('ansible_forks', 20)
+            for code, output in executor.exec_playbook(playbook.content, extra_vars=extra_vars, forks=forks):
+                if output:
+                    output_parts.append(output)
+                if code != -1:
+                    final_code = code
+
+        if final_code == -1:
+            final_code = 1
+
+        output_text = ''.join(output_parts)
+
+        if final_code != expected_exit_code:
+            return False, f'Playbook 退出码 {final_code} 不等于期望值 {expected_exit_code}'
+
+        if keyword and keyword not in output_text:
+            return False, f'输出中未包含关键词 "{keyword}"'
+
+        return True, f'Playbook 检测正常，退出码 {final_code}'
+
+    except Exception as e:
+        return False, f'Playbook 检测异常: {e}'
+
+
 def monitor_worker_handler(job):
     task_id, tp, addr, extra, threshold, quiet = json.loads(job)
     target = addr
@@ -201,6 +259,11 @@ def monitor_worker_handler(job):
             target = f'{host.name}({host.hostname})'
     elif tp == '9':
         is_ok, message = prometheus_check(addr, extra)
+    elif tp == '10':
+        is_ok, message = playbook_check(addr, extra)
+        host = Host.objects.filter(pk=addr).first()
+        if host:
+            target = f'{host.name}({host.hostname})'
     elif tp not in ('3', '4'):
         is_ok, message = False, f'invalid monitor type for {tp!r}'
     else:
@@ -244,6 +307,8 @@ def dispatch(tp, addr, extra):
         return log_keyword_check(addr, extra)
     elif tp == '9':
         return prometheus_check(addr, extra)
+    elif tp == '10':
+        return playbook_check(addr, extra)
     elif tp == '3':
         command = f'ps -ef|grep -v grep|grep {extra!r}'
     elif tp == '4':

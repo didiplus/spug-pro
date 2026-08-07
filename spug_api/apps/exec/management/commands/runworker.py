@@ -9,6 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 from apps.schedule.executors import schedule_worker_handler
 from apps.monitor.executors import monitor_worker_handler
 from apps.exec.executors import exec_worker_handler
+from apps.playbook.runner import playbook_worker_handler
+from apps.ansible.facts import facts_worker_handler
 from apps.notify.models import Notify
 from threading import Thread
 import logging
@@ -18,6 +20,8 @@ import os
 EXEC_WORKER_KEY = settings.EXEC_WORKER_KEY
 MONITOR_WORKER_KEY = settings.MONITOR_WORKER_KEY
 SCHEDULE_WORKER_KEY = settings.SCHEDULE_WORKER_KEY
+PLAYBOOK_WORKER_KEY = settings.PLAYBOOK_WORKER_KEY
+FACTS_WORKER_KEY = settings.FACTS_WORKER_KEY
 
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(message)s")
 
@@ -54,13 +58,15 @@ class Worker:
     def run(self):
         logging.warning("Running worker")
         Thread(target=self.queue_monitor, daemon=True).start()
-        self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY)
+        self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY,
+                        PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
         while True:
             try:
                 # 设置 timeout=0 表示无限等待，但会受到 socket_timeout 限制
                 # 如果超时，会抛出 TimeoutError，我们在外层捕获并重连
                 key, job = self.rds.blpop(
-                    [EXEC_WORKER_KEY, SCHEDULE_WORKER_KEY, MONITOR_WORKER_KEY],
+                    [EXEC_WORKER_KEY, SCHEDULE_WORKER_KEY, MONITOR_WORKER_KEY,
+                     PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY],
                     timeout=0
                 )
             except Exception as e:
@@ -70,7 +76,8 @@ class Worker:
                     from django_redis import get_redis_connection
                     self.rds = get_redis_connection()
                     # 删除可能残留的键，确保状态一致
-                    self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY)
+                    self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY,
+                                    PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
                 except Exception as reconnect_error:
                     logging.error(f"Reconnect failed: {reconnect_error}")
                     time.sleep(5)  # 重连失败后等待 5 秒再试
@@ -83,6 +90,10 @@ class Worker:
                 future = self._executor.submit(monitor_worker_handler, job)
             elif key == EXEC_WORKER_KEY:
                 future = self._executor.submit(exec_worker_handler, job)
+            elif key == PLAYBOOK_WORKER_KEY:
+                future = self._executor.submit(playbook_worker_handler, job)
+            elif key == FACTS_WORKER_KEY:
+                future = self._executor.submit(facts_worker_handler, job)
             else:
                 continue
             future.add_done_callback(self.job_done)

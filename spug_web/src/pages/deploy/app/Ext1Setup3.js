@@ -3,10 +3,10 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import {Form, Button, Input, Row, Col} from 'antd';
+import {Form, Button, Input, Row, Col, Select} from 'antd';
 import { ACEditor } from 'components';
 import { http, cleanCommand } from 'libs';
 import Tips from './Tips';
@@ -14,6 +14,11 @@ import store from './store';
 
 export default observer(function () {
   const [loading, setLoading] = useState(false);
+  const [playbooks, setPlaybooks] = useState([]);
+
+  useEffect(() => {
+    http.get('/api/playbook/').then(res => setPlaybooks(res)).catch(() => {});
+  }, []);
 
   function handleSubmit() {
     const {dst_dir, dst_repo} = store.deploy;
@@ -68,6 +73,21 @@ export default observer(function () {
           style={{border: '1px solid #e8e8e8'}}/>
       </Form.Item>
       <Form.Item
+        label="发布前 Playbook"
+        extra="在发布前执行指定的 Playbook，退出码非 0 则中断发布">
+        <Select
+          allowClear
+          disabled={store.isReadOnly}
+          style={{width: '100%'}}
+          placeholder="可选，选择发布前执行的 Playbook"
+          value={info['hook_pre_playbook']}
+          onChange={v => info['hook_pre_playbook'] = v}>
+          {playbooks.map(item => (
+            <Select.Option value={item.id} key={item.id}>{item.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item
         label="应用发布后执行"
         style={{marginTop: 12, marginBottom: 24}}
         tooltip="在发布的目标主机上运行，当前目录为已发布的应用目录，可执行任意自定义命令。"
@@ -82,6 +102,22 @@ export default observer(function () {
           value={info['hook_post_host']}
           onChange={v => info['hook_post_host'] = cleanCommand(v)}
           style={{border: '1px solid #e8e8e8'}}/>
+      </Form.Item>
+      <Form.Item
+        label="发布后 Playbook"
+        style={{marginBottom: 24}}
+        extra="在发布后执行指定的 Playbook，用于重启服务等操作">
+        <Select
+          allowClear
+          disabled={store.isReadOnly}
+          style={{width: '100%'}}
+          placeholder="可选，选择发布后执行的 Playbook"
+          value={info['hook_post_playbook']}
+          onChange={v => info['hook_post_playbook'] = v}>
+          {playbooks.map(item => (
+            <Select.Option value={item.id} key={item.id}>{item.name}</Select.Option>
+          ))}
+        </Select>
       </Form.Item>
       <Form.Item wrapperCol={{span: 14, offset: 6}}>
         <Button disabled={store.isReadOnly} loading={loading} type="primary" onClick={handleSubmit}>提交</Button>

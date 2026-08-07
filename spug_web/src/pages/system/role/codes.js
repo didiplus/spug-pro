@@ -183,4 +183,50 @@ export default [{
       {key: 'del', label: '删除联系组'},
     ]
   }]
+}, {
+  key: 'playbook',
+  label: 'Playbook 管理',
+  pages: [{
+    key: 'playbook',
+    label: 'Playbook',
+    perms: [
+      {key: 'view', label: '查看 Playbook'},
+      {key: 'add', label: '新建 Playbook'},
+      {key: 'edit', label: '编辑 Playbook'},
+      {key: 'del', label: '删除 Playbook'},
+      {key: 'run', label: '执行 Playbook'},
+    ]
+  }]
+}, {
+  key: 'ansible',
+  label: 'Ansible 管理',
+  pages: [{
+    key: 'inventory',
+    label: 'Inventory 管理',
+    perms: [
+      {key: 'view', label: '查看 Inventory'},
+      {key: 'edit', label: '编辑 Inventory'},
+    ]
+  }, {
+    key: 'vault',
+    label: 'Vault 管理',
+    perms: [
+      {key: 'view', label: '查看 Vault'},
+      {key: 'edit', label: '编辑 Vault'},
+    ]
+  }, {
+    key: 'facts',
+    label: 'Facts 浏览',
+    perms: [
+      {key: 'view', label: '查看 Facts'},
+      {key: 'collect', label: '采集 Facts'},
+    ]
+  }, {
+    key: 'role',
+    label: 'Role 管理',
+    perms: [
+      {key: 'view', label: '查看 Role'},
+      {key: 'edit', label: '管理 Role'},
+    ]
+  }]
 }]

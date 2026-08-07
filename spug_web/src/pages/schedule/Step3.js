@@ -21,7 +21,7 @@ export default observer(function () {
       return message.error('任务执行时间不能早于当前时间')
     }
     setLoading(true)
-    const formData = lds.pick(store.record, ['id', 'name', 'type', 'interpreter', 'command', 'desc', 'rst_notify']);
+    const formData = lds.pick(store.record, ['id', 'name', 'type', 'interpreter', 'command', 'desc', 'rst_notify', 'playbook_id']);
     formData['targets'] = store.targets.filter(x => x);
     formData['trigger'] = trigger;
     formData['trigger_args'] = _parse_args();

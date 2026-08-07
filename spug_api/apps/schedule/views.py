@@ -28,14 +28,19 @@ class Schedule(View):
             Argument('type', help='请输入任务类型'),
             Argument('name', help='请输入任务名称'),
             Argument('interpreter', help='请选择执行解释器'),
-            Argument('command', help='请输入任务内容'),
+            Argument('command', required=False, default=''),
             Argument('rst_notify', type=dict, help='请选择执行失败通知方式'),
             Argument('targets', type=list, filter=lambda x: len(x), help='请选择执行对象'),
             Argument('trigger', filter=lambda x: x in dict(Task.TRIGGERS), help='请选择触发器类型'),
             Argument('trigger_args', help='请输入触发器参数'),
             Argument('desc', required=False),
+            Argument('playbook_id', type=int, required=False),
         ).parse(request.body)
         if error is None:
+            if form.interpreter != 'playbook' and not form.command:
+                return json_response(error='请输入任务内容')
+            if form.interpreter == 'playbook' and not form.playbook_id:
+                return json_response(error='请选择 Playbook')
             form.targets = json.dumps(form.targets)
             form.rst_notify = json.dumps(form.rst_notify)
             if form.trigger == 'cron':

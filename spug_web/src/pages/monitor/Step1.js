@@ -3,7 +3,7 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
@@ -21,7 +21,8 @@ const helpMap = {
   '6': '高级HTTP检测，支持自定义方法/请求头/请求体/期望状态码/响应时间阈值。',
   '7': '数据库连接检测，支持MySQL/PostgreSQL，执行SQL并校验返回结果。',
   '8': '日志关键词检测，在指定主机的日志文件中搜索关键词，匹配到则异常。',
-  '9': 'Prometheus指标检测，执行PromQL查询并与阈值比较，超出则异常。'
+  '9': 'Prometheus指标检测，执行PromQL查询并与阈值比较，超出则异常。',
+  '10': '通过执行 Playbook 进行复杂检测，根据退出码和输出关键词判断正常/异常。',
 }
 
 function getExtraField(field, defaultVal) {
@@ -45,7 +46,12 @@ function setExtraField(field, value) {
 export default observer(function () {
   const [loading, setLoading] = useState(false);
   const [showTmp, setShowTmp] = useState(false);
+  const [playbooks, setPlaybooks] = useState([]);
   const { modal } = App.useApp();
+
+  useEffect(() => {
+    http.get('/api/playbook/').then(res => setPlaybooks(res)).catch(() => {});
+  }, []);
   function handleTest() {
     setLoading(true)
     const formData = lds.pick(store.record, ['type', 'targets', 'extra'])
@@ -63,7 +69,7 @@ export default observer(function () {
   function handleChangeType(v) {
     store.record.type = v;
     store.record.targets = [];
-    store.record.extra = ['6', '7', '8', '9'].includes(v) ? '{}' : undefined;
+    store.record.extra = ['6', '7', '8', '9', '10'].includes(v) ? '{}' : undefined;
   }
 
   function handleAddGroup() {
@@ -89,7 +95,7 @@ export default observer(function () {
   function canNext() {
     const {type, targets, extra, group} = store.record;
     const is_verify = name && group && targets.length;
-    if (['2', '3', '4', '6', '7', '8', '9'].includes(type)) {
+    if (['2', '3', '4', '6', '7', '8', '9', '10'].includes(type)) {
       return is_verify && extra
     } else {
       return is_verify
@@ -102,7 +108,7 @@ export default observer(function () {
       if (type === '1' && extra) return message.error('请输入正确的响应时间')
       if (type === '2') return message.error('请输入正确的端口号')
     }
-    if (['6', '7', '8', '9'].includes(type)) {
+    if (['6', '7', '8', '9', '10'].includes(type)) {
       try { JSON.parse(extra) } catch (e) { return message.error('检测配置格式错误，请检查') }
     }
     store.page += 1;
@@ -138,6 +144,7 @@ export default observer(function () {
           <Select.Option value="7">数据库检测</Select.Option>
           <Select.Option value="8">日志关键词检测</Select.Option>
           <Select.Option value="9">Prometheus检测</Select.Option>
+          <Select.Option value="10">Playbook检测</Select.Option>
         </Select>
       </Form.Item>
       <Form.Item required label="监控名称">
@@ -337,6 +344,33 @@ export default observer(function () {
           value={getExtraField('value', '')}
           placeholder="阈值数值"
           onChange={e => setExtraField('value', e.target.value)}/>
+      </Form.Item>
+
+      {/* Type 10: Playbook检测 */}
+      <Form.Item required label="监控主机" style={getStyle(['10'])}>
+        <HostSelector value={targets} onChange={ids => store.record.targets = ids}/>
+      </Form.Item>
+      <Form.Item required label="Playbook" style={getStyle(['10'])}>
+        <Select
+          value={getExtraField('playbook_id', undefined)}
+          placeholder="请选择 Playbook"
+          onChange={v => setExtraField('playbook_id', v)}>
+          {playbooks.map(item => (
+            <Select.Option value={item.id} key={item.id}>{item.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item label="期望退出码" style={getStyle(['10'])} extra="Playbook 执行退出码等于此值则判定正常，默认 0">
+        <Input
+          value={getExtraField('expected_exit_code', 0)}
+          placeholder="0"
+          onChange={e => setExtraField('expected_exit_code', e.target.value)}/>
+      </Form.Item>
+      <Form.Item label="成功关键词" style={getStyle(['10'])} extra="输出中包含此关键词则判定正常（可选）">
+        <Input
+          value={getExtraField('keyword', '')}
+          placeholder="可选"
+          onChange={e => setExtraField('keyword', e.target.value)}/>
       </Form.Item>
 
       <Form.Item label="备注信息">

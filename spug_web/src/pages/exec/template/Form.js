@@ -21,9 +21,11 @@ export default observer(function () {
   const [body, setBody] = useState(S.record.body);
   const [parameter, setParameter] = useState();
   const [parameters, setParameters] = useState([]);
+  const [playbooks, setPlaybooks] = useState([]);
 
   useEffect(() => {
     setParameters(S.record.parameters)
+    http.get('/api/playbook/').then(res => setPlaybooks(res))
   }, [])
 
   function handleSubmit() {
@@ -137,6 +139,13 @@ export default observer(function () {
         </Form.Item>
         <Form.Item label="目标主机">
           <HostSelector nullable value={info.host_ids} onChange={ids => info.host_ids = ids}/>
+        </Form.Item>
+        <Form.Item name="playbook_id" label="关联 Playbook" extra="关联后执行模板时将走 Playbook 执行流程">
+          <Select allowClear placeholder="可选，选择关联的 Playbook">
+            {playbooks.map(item => (
+              <Select.Option value={item.id} key={item.id}>{item.name}</Select.Option>
+            ))}
+          </Select>
         </Form.Item>
         <Form.Item name="desc" label="备注信息">
           <Input.TextArea placeholder="请输入模板备注信息"/>

@@ -221,6 +221,41 @@ def _ext2_deploy(req, helper, env):
         helper.send_step('local', 100, f'\r\n{human_time()} ** 发布成功 **')
 
 
+def _run_playbook_hook(helper, h_id, playbook_id):
+    """在发布流程中执行 Playbook 钩子"""
+    try:
+        from apps.playbook.models import Playbook
+        from apps.playbook.runner import build_dynamic_inventory, _write_pkey_files
+        from libs.execution.ansible_executor import AnsibleExecutor
+        from apps.setting.utils import AppSetting
+
+        playbook = Playbook.objects.filter(pk=playbook_id, is_active=True).first()
+        if not playbook:
+            helper.send_error(h_id, f'Playbook {playbook_id} 不存在或已停用')
+            return
+
+        host = Host.objects.filter(pk=h_id).first()
+        if not host:
+            helper.send_error(h_id, '主机不存在')
+            return
+
+        inventory = build_dynamic_inventory([host.id], playbook.group_id)
+        executor = AnsibleExecutor(host.hostname, host.port or 22, host.username)
+
+        with executor:
+            _write_pkey_files(inventory, [host], executor._tmpdir)
+            executor.set_inventory(inventory)
+            forks = playbook.forks or AppSetting.get_default('ansible_forks', 20)
+            for code, output in executor.exec_playbook(playbook.content, forks=forks):
+                if output:
+                    helper.send_info(h_id, output)
+                if code != -1 and code != 0:
+                    helper.send_error(h_id, f'Playbook 执行失败，退出码: {code}')
+                    return
+    except Exception as e:
+        helper.send_error(h_id, f'Playbook 钩子异常: {e}')
+
+
 def _deploy_ext1_host(req, helper, h_id, env):
     helper.send_step(h_id, 1, f'\033[32m就绪√\033[0m\r\n{human_time()} 数据准备...        ')
     host = Host.objects.filter(pk=h_id).first()
@@ -261,6 +296,9 @@ def _deploy_ext1_host(req, helper, h_id, env):
 
         # pre host
         repo_dir = os.path.join(extend.dst_repo, req.spug_version)
+        if extend.hook_pre_playbook:
+            helper.send_step(h_id, 2, f'{human_time()} 发布前 Playbook...       \r\n')
+            _run_playbook_hook(helper, h_id, extend.hook_pre_playbook)
         if extend.hook_pre_host:
             helper.send_step(h_id, 2, f'{human_time()} 发布前任务...       \r\n')
             command = f'cd {repo_dir} && {extend.hook_pre_host}'
@@ -272,6 +310,9 @@ def _deploy_ext1_host(req, helper, h_id, env):
         helper.send_step(h_id, 3, '\033[32m完成√\033[0m\r\n')
 
         # post host
+        if extend.hook_post_playbook:
+            helper.send_step(h_id, 4, f'{human_time()} 发布后 Playbook...       \r\n')
+            _run_playbook_hook(helper, h_id, extend.hook_post_playbook)
         if extend.hook_post_host:
             helper.send_step(h_id, 4, f'{human_time()} 发布后任务...       \r\n')
             command = f'cd {extend.dst_dir} && {extend.hook_post_host}'

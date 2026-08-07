@@ -19,6 +19,14 @@ KEYS_DEFAULT = {
     "public_key": None,
     "spug_push_key": None,
     "exec_engine": "paramiko",
+    "ansible_forks": 20,
+    "ansible_strategy": "linear",
+    "ansible_gather_facts": False,
+    "ansible_fact_caching": True,
+    "ansible_vault_password": None,
+    "ansible_role_dir": "/data/roles",
+    "ansible_module_timeout": 300,
+    "ansible_callback_whitelist": "",
 }
 
 SENSITIVE_KEYS = {
@@ -26,6 +34,7 @@ SENSITIVE_KEYS = {
     "spug_push_key",
     "api_key",
     "spug_key",
+    "ansible_vault_password",
 }
 
 

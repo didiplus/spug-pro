@@ -102,6 +102,8 @@ class DeployExtend1(models.Model, ModelMixin):
     hook_post_server = models.TextField(null=True)
     hook_pre_host = models.TextField(null=True)
     hook_post_host = models.TextField(null=True)
+    hook_pre_playbook = models.IntegerField(null=True)
+    hook_post_playbook = models.IntegerField(null=True)
 
     def to_dict(self, *args, **kwargs):
         tmp = super().to_dict(*args, **kwargs)

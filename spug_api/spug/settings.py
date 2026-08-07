@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "apps.repository",
     "apps.home",
     "apps.database",
+    "apps.playbook",
+    "apps.ansible",
     "channels",
 ]
 
@@ -147,6 +149,8 @@ SCHEDULE_WORKER_KEY = "spug:schedule:worker"
 MONITOR_KEY = "spug:monitor"
 MONITOR_WORKER_KEY = "spug:monitor:worker"
 EXEC_WORKER_KEY = "spug:exec:worker"
+PLAYBOOK_WORKER_KEY = "spug:playbook:worker"
+FACTS_WORKER_KEY = "spug:facts:worker"
 REQUEST_KEY = "spug:request"
 BUILD_KEY = "spug:build"
 REPOS_DIR = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "repos")

@@ -9,7 +9,7 @@ import { AuthDiv, Breadcrumb } from 'components';
 import ComTable from './Table';
 import ComForm from './Form';
 import MonitorCard from './MonitorCard';
-import store from './store';
+
 
 export default observer(function () {
   return (

@@ -14,7 +14,9 @@ import {
   DeploymentUnitOutlined,
   MonitorOutlined,
   AlertOutlined,
-  SettingOutlined
+  SettingOutlined,
+  PlayCircleOutlined,
+  ClusterOutlined,
 } from '@ant-design/icons';
 
 import HomeIndex from './pages/home';
@@ -37,6 +39,11 @@ import AlarmIndex from './pages/alarm/alarm';
 import AlarmGroup from './pages/alarm/group';
 import AlarmContact from './pages/alarm/contact';
 import AlarmPolicy from './pages/alarm/policy';
+import PlaybookIndex from './pages/playbook';
+import AnsibleInventory from './pages/ansible/inventory';
+import AnsibleVault from './pages/ansible/vault';
+import AnsibleFacts from './pages/ansible/facts';
+import AnsibleModules from './pages/ansible/modules';
 import SystemAccount from './pages/system/account';
 import SystemRole from './pages/system/role';
 import SystemSetting from './pages/system/setting';
@@ -88,6 +95,19 @@ export default [
     ]
   },
   {icon: <MonitorOutlined/>, title: '监控中心', auth: 'monitor.monitor.view', path: '/monitor', component: MonitorIndex},
+  {
+    icon: <PlayCircleOutlined/>, title: 'Playbook', auth: 'playbook.view|playbook.run', child: [
+      {title: 'Playbook 管理', auth: 'playbook.view', path: '/playbook', component: PlaybookIndex},
+    ]
+  },
+  {
+    icon: <ClusterOutlined/>, title: 'Ansible', auth: 'ansible.inventory.view|ansible.vault.view|ansible.facts.view', child: [
+      {title: 'Inventory', auth: 'ansible.inventory.view', path: '/ansible/inventory', component: AnsibleInventory},
+      {title: 'Vault', auth: 'ansible.vault.view', path: '/ansible/vault', component: AnsibleVault},
+      {title: 'Facts', auth: 'ansible.facts.view', path: '/ansible/facts', component: AnsibleFacts},
+      {title: 'Module 浏览器', auth: 'ansible.inventory.view', path: '/ansible/modules', component: AnsibleModules},
+    ]
+  },
   {
     icon: <AlertOutlined/>, title: '报警中心', auth: 'alarm.alarm.view|alarm.contact.view|alarm.group.view', child: [
       {title: '报警历史', auth: 'alarm.alarm.view', path: '/alarm/alarm', component: AlarmIndex},

@@ -18,6 +18,7 @@ class Detection(models.Model, ModelMixin):
         ("7", "数据库检测"),
         ("8", "日志关键词检测"),
         ("9", "Prometheus指标"),
+        ("10", "Playbook检测"),
     )
     STATUS = (
         (0, "正常"),
