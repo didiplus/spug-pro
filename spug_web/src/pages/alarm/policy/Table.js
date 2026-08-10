@@ -93,7 +93,7 @@ class ComTable extends React.Component {
         onReload={store.fetchRecords}
         actions={[
           <AuthButton
-            auth="alarm.alarm.view"
+            auth="alarm.policy.view"
             type="primary"
             icon={<PlusOutlined/>}
             onClick={() => store.showForm()}>新建</AuthButton>
@@ -106,7 +106,7 @@ class ComTable extends React.Component {
         }}>
         {[
           ...this.columns.map((col, i) => <Table.Column key={i} {...col}/>),
-          hasPermission('alarm.alarm.view') ? (
+          hasPermission('alarm.policy.view') ? (
             <Table.Column key="action" title="操作" render={info => (
               <Action>
                 <Action.Button onClick={() => store.showForm(info)}>编辑</Action.Button>

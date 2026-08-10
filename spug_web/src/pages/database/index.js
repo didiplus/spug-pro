@@ -42,7 +42,7 @@ export default observer(function DatabaseDashboard() {
 
     return (
         <>
-            <AuthDiv auth="">
+            <AuthDiv auth="database.instance.view">
                 <Breadcrumb items={['首页', '数据库管理']} />
                 <Row gutter={[16, 16]} style={{marginBottom: '20px'}}>
                     <Col xs={24} sm={12} lg={6}>

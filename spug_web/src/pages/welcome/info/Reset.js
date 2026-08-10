@@ -9,6 +9,7 @@ import {Button, Form, Input} from 'antd';
 import styles from './index.module.css';
 import { http } from 'libs';
 import history from 'libs/history';
+import { clearMenuCache } from 'libs/menu';
 
 
 export default function Reset(props) {
@@ -29,6 +30,7 @@ export default function Reset(props) {
     http.patch('/api/account/self/', {old_password, new_password})
       .then(() => {
         message.success('密码修改成功');
+        clearMenuCache();
         history.push('/');
         http.get('/api/account/logout/')
       })

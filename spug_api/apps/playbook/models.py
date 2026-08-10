@@ -13,7 +13,7 @@ class Playbook(models.Model, ModelMixin):
     desc = models.CharField(max_length=255, null=True)
     content = models.TextField()
     extra_vars = models.TextField(default="{}")
-    host_pattern = models.CharField(max_length=200, default="all")
+
     group_id = models.IntegerField(null=True)
     tags = models.CharField(max_length=255, null=True)
     forks = models.IntegerField(default=0)

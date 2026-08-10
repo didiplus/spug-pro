@@ -53,7 +53,7 @@ function ModulesIndex() {
     : modules;
 
   return (
-    <AuthDiv auth="ansible.inventory.view">
+    <AuthDiv auth="ansible.modules.view">
       <Breadcrumb items={['首页', 'Ansible', 'Module 浏览器']}/>
       <Flex gap={16} style={{height: 'calc(100vh - 120px)'}}>
         <div style={{width: 250, background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'auto'}}>

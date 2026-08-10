@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select } from 'antd';
 import { ACEditor } from 'components';
 import { http } from 'libs';
 import S from './store';
@@ -13,6 +13,11 @@ export default observer(function () {
   const [extraVars, setExtraVars] = useState(
     S.record.extra_vars ? JSON.stringify(S.record.extra_vars, null, 2) : '{}'
   );
+  const [groups, setGroups] = useState([]);
+
+  useEffect(() => {
+    http.get('/api/ansible/inventory/').then(setGroups);
+  }, []);
 
   function handleSubmit() {
     setLoading(true);
@@ -59,9 +64,14 @@ export default observer(function () {
         <Form.Item name="desc" label="描述">
           <Input placeholder="请输入描述信息"/>
         </Form.Item>
-        <Form.Item name="host_pattern" label="主机匹配" extra="Ansible 主机匹配模式，如 all、webservers、*:!dbservers">
-          <Input placeholder="all"/>
+        <Form.Item name="group_id" label="关联分组" extra="关联 Inventory 分组，加载组变量和分组结构">
+          <Select
+            allowClear
+            placeholder="不关联"
+            options={groups.map(g => ({value: g.id, label: g.name}))}
+          />
         </Form.Item>
+
         <Form.Item name="tags" label="标签" extra="逗号分隔，如 install,config">
           <Input placeholder="可选"/>
         </Form.Item>

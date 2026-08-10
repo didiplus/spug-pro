@@ -4,6 +4,7 @@
 from django.urls import re_path
 from apps.setting.views import *
 from apps.setting.user import UserSettingView
+from apps.setting.views import MenuView, MenuManageView
 
 urlpatterns = [
     re_path(r"^$", SettingView.as_view()),
@@ -14,4 +15,6 @@ urlpatterns = [
     re_path(r"^about/$", get_about),
     re_path(r"^push/bind/$", handle_push_bind),
     re_path(r"^push/balance/$", handle_push_balance),
+    re_path(r"^menus/$", MenuView.as_view()),
+    re_path(r"^menus/manage/$", MenuManageView.as_view()),
 ]

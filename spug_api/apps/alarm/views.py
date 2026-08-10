@@ -61,12 +61,12 @@ class AlarmView(View):
 
 
 class AlarmPolicyView(View):
-    @auth('alarm.alarm.view')
+    @auth('alarm.policy.view')
     def get(self, request):
         policies = AlarmPolicy.objects.all()
         return json_response(policies)
 
-    @auth('alarm.alarm.view')
+    @auth('alarm.policy.view')
     def post(self, request):
         form, error = JsonParser(
             Argument('id', type=int, required=False),
@@ -86,7 +86,7 @@ class AlarmPolicyView(View):
                 AlarmPolicy.objects.create(**form)
         return json_response(error=error)
 
-    @auth('alarm.alarm.view')
+    @auth('alarm.policy.view')
     def delete(self, request):
         form, error = JsonParser(
             Argument('id', type=int, help='请指定操作对象')

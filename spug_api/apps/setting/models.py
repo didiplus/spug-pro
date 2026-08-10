@@ -3,7 +3,7 @@
 # Released under the AGPL-3.0 License.
 from django.db import models
 from apps.account.models import User
-from libs import ModelMixin
+from libs import ModelMixin, human_datetime
 from libs.crypto import encrypt, decrypt, is_encrypted
 import json
 
@@ -75,3 +75,33 @@ class UserSetting(models.Model, ModelMixin):
         constraints = [
             models.UniqueConstraint(fields=["user", "key"], name="unique_user_key"),
         ]
+
+
+class Menu(models.Model, ModelMixin):
+    MENU_TYPES = [('M', '目录'), ('C', '菜单'), ('F', '按钮')]
+
+    parent_id = models.BigIntegerField(default=0)
+    menu_name = models.CharField(max_length=50)
+    menu_type = models.CharField(max_length=1, choices=MENU_TYPES, default='C')
+    order_num = models.IntegerField(default=0)
+    path = models.CharField(max_length=200, null=True)
+    component = models.CharField(max_length=255, null=True)
+    query = models.CharField(max_length=255, null=True)
+    is_frame = models.IntegerField(default=1)
+    is_cache = models.IntegerField(default=0)
+    visible = models.CharField(max_length=1, default='0')
+    status = models.CharField(max_length=1, default='0')
+    perms = models.CharField(max_length=200, null=True)
+    icon = models.CharField(max_length=100, null=True)
+    remark = models.CharField(max_length=500, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="+")
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="+")
+    created_at = models.CharField(max_length=20, default=human_datetime)
+    updated_at = models.CharField(max_length=20, null=True)
+
+    def to_view(self):
+        return self.to_dict()
+
+    class Meta:
+        db_table = "system_menu"
+        ordering = ("order_num",)

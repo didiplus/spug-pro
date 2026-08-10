@@ -9,6 +9,7 @@ import {
   ApiOutlined, ClockCircleOutlined, CodeOutlined,
   DesktopOutlined,
 } from '@ant-design/icons';
+import { hasPermission } from 'libs';
 import store from '../store';
 import SlowQuery from './SlowQuery';
 import BackupManager from './BackupManager';
@@ -256,7 +257,9 @@ export default observer(function DatabaseDetail() {
       }
       extra={
         <Space>
-          <Button icon={<CodeOutlined />} size="middle" onClick={handleOpenSql}>SQL终端</Button>
+          {hasPermission('database.instance.execute') && (
+            <Button icon={<CodeOutlined />} size="middle" onClick={handleOpenSql}>SQL终端</Button>
+          )}
           <Button icon={<ReloadOutlined />} size="middle" onClick={handleRefresh}>刷新</Button>
         </Space>
       }

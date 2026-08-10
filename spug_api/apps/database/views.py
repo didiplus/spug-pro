@@ -49,6 +49,8 @@ class DatabaseInstanceView(View):
 
     # ---------- GET：列表 / 详情 ----------
     def get(self, request, *args, **kwargs):
+        if not request.user.has_perms(['database.instance.view']):
+            return json_response(error='权限拒绝')
         instance_id = kwargs.get('id')
         if instance_id is not None:
             instance, error = self._get_instance_or_404(instance_id)
@@ -77,6 +79,8 @@ class DatabaseInstanceView(View):
 
     # ---------- POST：创建 ----------
     def post(self, request, *args, **kwargs):
+        if not request.user.has_perms(['database.instance.add']):
+            return json_response(error='权限拒绝')
         data, error = self._parse_json(request)
         if error:
             return error
@@ -125,6 +129,8 @@ class DatabaseInstanceView(View):
 
     # ---------- PUT：全量更新 ----------
     def put(self, request, *args, **kwargs):
+        if not request.user.has_perms(['database.instance.edit']):
+            return json_response(error='权限拒绝')
         instance_id = kwargs.get('id')
         instance, error = self._get_instance_or_404(instance_id)
         if error:
@@ -157,6 +163,8 @@ class DatabaseInstanceView(View):
 
     # ---------- DELETE：删除 ----------
     def delete(self, request, *args, **kwargs):
+        if not request.user.has_perms(['database.instance.del']):
+            return json_response(error='权限拒绝')
         instance_id = kwargs.get('id')
         instance, error = self._get_instance_or_404(instance_id)
         if error:
@@ -169,7 +177,7 @@ class DatabaseInstanceView(View):
 
 
 @csrf_exempt
-@auth('database.view')
+@auth('database.instance.add|database.instance.edit')
 @require_POST
 def test_connection_databases(request):
     try:
@@ -208,7 +216,7 @@ def test_connection_databases(request):
 
 
 @csrf_exempt
-@auth('database.view')
+@auth('database.instance.execute')
 @require_POST
 def execute_sql(request):
     try:
@@ -232,23 +240,26 @@ def execute_sql(request):
     if not executor:
         return json_response(error=f'SQL execution not supported for type: {instance.type}')
 
-    # 增强的危险关键字检测（支持多种绕过方式）
-    DANGEROUS_KEYWORDS = ['drop', 'truncate', 'shutdown', 'kill', 'delete from', 'alter', 'grant', 'revoke', 'load_file', 'into outfile', 'into dumpfile']
-    sql_lower = sql.lower()
-    # 移除注释和空白字符后检测
     import re
-    sql_clean = re.sub(r'--.*?\n|/\*.*?\*/|#.*?\n', '', sql_lower, flags=re.DOTALL)
+    sql_lower = sql.lower()
+    sql_clean = re.sub(r'--.*?$|/\*.*?\*/|#.*?$', '', sql_lower, flags=re.MULTILINE | re.DOTALL)
     sql_clean = re.sub(r'\s+', ' ', sql_clean).strip()
-    
-    for kw in DANGEROUS_KEYWORDS:
-        if kw in sql_clean:
-            return json_response(error='包含危险关键字，禁止执行')
-    
-    # 只允许 SELECT, SHOW, DESCRIBE, EXPLAIN, SET 等安全查询
-    ALLOWED_COMMANDS = ['select', 'show', 'describe', 'desc', 'explain', 'set', 'use']
-    first_word = sql_clean.split()[0] if sql_clean.split() else ''
+    tokens = re.findall(r"[a-zA-Z_]+", sql_clean)
+
+    DANGEROUS_KEYWORDS = {
+        'drop', 'truncate', 'shutdown', 'kill', 'alter', 'grant', 'revoke',
+        'load_file', 'outfile', 'dumpfile', 'create', 'rename', 'replace',
+        'insert', 'update', 'delete', 'merge', 'call', 'exec', 'execute',
+        'handler', 'lock', 'unlock', 'flush', 'reset', 'purge', 'set',
+    }
+    for token in tokens:
+        if token in DANGEROUS_KEYWORDS:
+            return json_response(error=f'包含危险关键字: {token}，禁止执行')
+
+    ALLOWED_COMMANDS = {'select', 'show', 'describe', 'desc', 'explain'}
+    first_word = tokens[0] if tokens else ''
     if first_word not in ALLOWED_COMMANDS:
-        return json_response(error='仅允许执行查询类语句 (SELECT, SHOW, DESCRIBE, EXPLAIN, SET)')
+        return json_response(error='仅允许执行查询类语句 (SELECT, SHOW, DESCRIBE, EXPLAIN)')
 
     import time
     start = time.time()
@@ -291,7 +302,7 @@ def execute_sql(request):
 
 
 @csrf_exempt
-@auth('database.view')
+@auth('database.instance.view')
 @require_GET
 def slow_queries(request, instance_id):
     if request.method != 'GET':
@@ -315,6 +326,7 @@ def slow_queries(request, instance_id):
 
 
 @csrf_exempt
+@auth('database.instance.execute')
 def sql_history_list(request, instance_id):
     if request.method != 'GET':
         return json_response(error='Method not allowed')
@@ -345,6 +357,7 @@ def sql_history_list(request, instance_id):
 
 
 @csrf_exempt
+@auth('database.instance.execute')
 def sql_history_detail(request, instance_id, history_id):
     if request.method != 'DELETE':
         return json_response(error='Method not allowed')
@@ -357,23 +370,8 @@ def sql_history_detail(request, instance_id, history_id):
     history.delete()
     return json_response(data={'message': '删除成功'})
 
-    try:
-        instance = DatabaseInstance.objects.get(pk=instance_id)
-    except ObjectDoesNotExist:
-        return json_response(error='Instance not found')
 
-    fetcher = SLOW_QUERY_FETCHERS.get(instance.type)
-    if not fetcher:
-        return json_response(error=f'Slow query analysis not supported for type: {instance.type}')
-
-    limit = min(int(request.GET.get('limit', 50)), 200)
-    try:
-        result = fetcher(instance.host, instance.port, instance.username, instance.password, limit=limit)
-        return json_response(result)
-    except Exception as e:
-        return json_response(error=f'Slow query analysis error: {str(e)}')
-
-
+@auth('database.instance.backup_download')
 def backup_download(request, instance_id, backup_id):
     from django.http import FileResponse
     try:
@@ -390,7 +388,7 @@ def backup_download(request, instance_id, backup_id):
 
 
 @csrf_exempt
-@auth('database.view')
+@auth('database.instance.view')
 def backup_list(request, instance_id):
     if request.method == 'GET':
         try:
@@ -411,6 +409,8 @@ def backup_list(request, instance_id):
         return json_response({'total': total, 'results': data})
 
     elif request.method == 'POST':
+        if not request.user.has_perms(['database.instance.backup_add']):
+            return json_response(error='权限拒绝')
         try:
             instance = DatabaseInstance.objects.get(pk=instance_id)
         except ObjectDoesNotExist:
@@ -452,6 +452,7 @@ def backup_list(request, instance_id):
 
 
 @csrf_exempt
+@auth('database.instance.view')
 def backup_detail(request, instance_id, backup_id):
     try:
         backup = DatabaseBackup.objects.get(pk=backup_id, instance_id=instance_id)
@@ -459,6 +460,8 @@ def backup_detail(request, instance_id, backup_id):
         return json_response(error='Backup not found')
 
     if request.method == 'DELETE':
+        if not request.user.has_perms(['database.instance.backup_del']):
+            return json_response(error='权限拒绝')
         if backup.file_path and os.path.exists(backup.file_path):
             os.remove(backup.file_path)
         backup.delete()
@@ -468,6 +471,7 @@ def backup_detail(request, instance_id, backup_id):
 
 
 @csrf_exempt
+@auth('database.instance.view')
 def topology(request):
     if request.method != 'GET':
         return json_response(error='Method not allowed')

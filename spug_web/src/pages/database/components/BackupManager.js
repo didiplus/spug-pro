@@ -8,6 +8,7 @@ import {
   PlusOutlined, DeleteOutlined, ReloadOutlined, DownloadOutlined, FileZipOutlined,
 } from '@ant-design/icons';
 import { http, X_TOKEN } from 'libs';
+import { hasPermission } from 'libs';
 import store from '../store';
 
 const { Text } = Typography;
@@ -218,7 +219,7 @@ export default observer(function BackupManager() {
       fixed: 'right',
       render: (_, r) => (
         <Space size="small">
-          {r.status === 'success' && (
+          {r.status === 'success' && hasPermission('database.instance.backup_download') && (
             <Tooltip title="下载">
               <Button
                 type="link"
@@ -228,11 +229,13 @@ export default observer(function BackupManager() {
               />
             </Tooltip>
           )}
-          <Popconfirm title="确认删除此备份？" onConfirm={() => handleDelete(r.id)}>
-            <Tooltip title="删除">
-              <Button type="link" danger size="small" icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
+          {hasPermission('database.instance.backup_del') && (
+            <Popconfirm title="确认删除此备份？" onConfirm={() => handleDelete(r.id)}>
+              <Tooltip title="删除">
+                <Button type="link" danger size="small" icon={<DeleteOutlined />} />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -268,9 +271,11 @@ export default observer(function BackupManager() {
       <Flex justify="space-between" align="center" wrap="wrap" gap="small">
         <Text type="secondary">共 {total} 条备份记录</Text>
         <Space>
-          <Button type="primary" size="middle" icon={<PlusOutlined />} onClick={() => setFormVisible(true)}>
-            新建备份
-          </Button>
+          {hasPermission('database.instance.backup_add') && (
+            <Button type="primary" size="middle" icon={<PlusOutlined />} onClick={() => setFormVisible(true)}>
+              新建备份
+            </Button>
+          )}
           <Button size="middle" icon={<ReloadOutlined />} loading={loading} onClick={() => fetchData()}>
             刷新
           </Button>

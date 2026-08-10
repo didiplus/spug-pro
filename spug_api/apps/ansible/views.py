@@ -287,7 +287,7 @@ MODULE_CATEGORIES = {
 
 
 class ModuleView(View):
-    @auth('ansible.inventory.view')
+    @auth('ansible.modules.view')
     def get(self, request, name=None):
         if name:
             try:

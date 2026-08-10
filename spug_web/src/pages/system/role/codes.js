@@ -184,6 +184,20 @@ export default [{
     ]
   }]
 }, {
+  key: 'database',
+  label: '数据库管理',
+  pages: [{
+    key: 'instance',
+    label: '数据库实例',
+    perms: [
+      {key: 'view', label: '查看实例'},
+      {key: 'add', label: '新建实例'},
+      {key: 'edit', label: '编辑实例'},
+      {key: 'del', label: '删除实例'},
+      {key: 'execute', label: '执行SQL'},
+    ]
+  }]
+}, {
   key: 'playbook',
   label: 'Playbook 管理',
   pages: [{
@@ -227,6 +241,50 @@ export default [{
     perms: [
       {key: 'view', label: '查看 Role'},
       {key: 'edit', label: '管理 Role'},
+    ]
+  }]
+}, {
+  key: 'system',
+  label: '系统管理',
+  pages: [{
+    key: 'account',
+    label: '账户管理',
+    perms: [
+      {key: 'view', label: '查看账户'},
+      {key: 'add', label: '新建账户'},
+      {key: 'edit', label: '编辑账户'},
+      {key: 'del', label: '删除账户'},
+    ]
+  }, {
+    key: 'role',
+    label: '角色管理',
+    perms: [
+      {key: 'view', label: '查看角色'},
+      {key: 'add', label: '新建角色'},
+      {key: 'edit', label: '编辑角色'},
+      {key: 'del', label: '删除角色'},
+    ]
+  }, {
+    key: 'setting',
+    label: '系统设置',
+    perms: [
+      {key: 'view', label: '查看设置'},
+      {key: 'edit', label: '编辑设置'},
+    ]
+  }, {
+    key: 'login',
+    label: '登录日志',
+    perms: [
+      {key: 'view', label: '查看日志'},
+    ]
+  }, {
+    key: 'menu',
+    label: '菜单管理',
+    perms: [
+      {key: 'view', label: '查看菜单'},
+      {key: 'add', label: '新建菜单'},
+      {key: 'edit', label: '编辑菜单'},
+      {key: 'del', label: '删除菜单'},
     ]
   }]
 }]

@@ -3,7 +3,8 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
+import { Spin } from 'antd';
 import {
   DashboardOutlined,
   DesktopOutlined,
@@ -19,112 +20,60 @@ import {
   ClusterOutlined,
 } from '@ant-design/icons';
 
-import HomeIndex from './pages/home';
-import DashboardIndex from './pages/dashboard';
-import HostIndex from './pages/host';
-import ExecTask from './pages/exec/task';
-import ExecTemplate from './pages/exec/template';
-import ExecTransfer from './pages/exec/transfer';
-import ExecInspect from './pages/exec/inspect';
-import DeployApp from './pages/deploy/app';
-import DeployRepository from './pages/deploy/repository';
-import DeployRequest from './pages/deploy/request';
-import ScheduleIndex from './pages/schedule';
-import ConfigEnvironment from './pages/config/environment';
-import ConfigService from './pages/config/service';
-import ConfigApp from './pages/config/app';
-import ConfigSetting from './pages/config/setting';
-import MonitorIndex from './pages/monitor';
-import AlarmIndex from './pages/alarm/alarm';
-import AlarmGroup from './pages/alarm/group';
-import AlarmContact from './pages/alarm/contact';
-import AlarmPolicy from './pages/alarm/policy';
-import PlaybookIndex from './pages/playbook';
-import AnsibleInventory from './pages/ansible/inventory';
-import AnsibleVault from './pages/ansible/vault';
-import AnsibleFacts from './pages/ansible/facts';
-import AnsibleModules from './pages/ansible/modules';
-import SystemAccount from './pages/system/account';
-import SystemRole from './pages/system/role';
-import SystemSetting from './pages/system/setting';
-import SystemLogin from './pages/system/login';
-import SystemLog from './pages/system/operotionlog';
-import WelcomeIndex from './pages/welcome/index';
-import WelcomeInfo from './pages/welcome/info';
-import Database from './pages/database';
+const withSuspense = (Comp) => (props) => (
+  <Suspense fallback={<Spin/>}>
+    <Comp {...props}/>
+  </Suspense>
+);
 
-export default [
-  {icon: <DesktopOutlined/>, title: '工作台', path: '/home', component: HomeIndex},
-  {
-    icon: <DashboardOutlined/>,
-    title: 'Dashboard',
-    auth: 'dashboard.dashboard.view',
-    path: '/dashboard',
-    component: DashboardIndex
-  },
-  {icon: <CloudServerOutlined/>, title: '主机管理', auth: 'host.host.view', path: '/host', component: HostIndex},
-  {icon: <CloudServerOutlined/>, title: '数据库管理',  path: '/db', component: Database},
-  {
-    icon: <CodeOutlined/>, title: '批量执行', auth: 'exec.task.do|exec.template.view|exec.inspect.view', child: [
-      {title: '执行任务', auth: 'exec.task.do', path: '/exec/task', component: ExecTask},
-      {title: '模板管理', auth: 'exec.template.view', path: '/exec/template', component: ExecTemplate},
-      {title: '文件分发', auth: 'exec.transfer.do', path: '/exec/transfer', component: ExecTransfer},
-      {title: '巡检任务', auth: 'exec.inspect.view', path: '/exec/inspect', component: ExecInspect},
-    ]
-  },
-  {
-    icon: <FlagOutlined/>, title: '应用发布', auth: 'deploy.app.view|deploy.repository.view|deploy.request.view', child: [
-      {title: '发布配置', auth: 'deploy.app.view', path: '/deploy/app', component: DeployApp},
-      {title: '构建仓库', auth: 'deploy.repository.view', path: '/deploy/repository', component: DeployRepository},
-      {title: '发布申请', auth: 'deploy.request.view', path: '/deploy/request', component: DeployRequest},
-    ]
-  },
-  {
-    icon: <ScheduleOutlined/>,
-    title: '任务计划',
-    auth: 'schedule.schedule.view',
-    path: '/schedule',
-    component: ScheduleIndex
-  },
-  {
-    icon: <DeploymentUnitOutlined/>, title: '配置中心', auth: 'config.env.view|config.src.view|config.app.view', child: [
-      {title: '环境管理', auth: 'config.env.view', path: '/config/environment', component: ConfigEnvironment},
-      {title: '服务配置', auth: 'config.src.view', path: '/config/service', component: ConfigService},
-      {title: '应用配置', auth: 'config.app.view', path: '/config/app', component: ConfigApp},
-      {path: '/config/setting/:type/:id', component: ConfigSetting},
-    ]
-  },
-  {icon: <MonitorOutlined/>, title: '监控中心', auth: 'monitor.monitor.view', path: '/monitor', component: MonitorIndex},
-  {
-    icon: <PlayCircleOutlined/>, title: 'Playbook', auth: 'playbook.view|playbook.run', child: [
-      {title: 'Playbook 管理', auth: 'playbook.view', path: '/playbook', component: PlaybookIndex},
-    ]
-  },
-  {
-    icon: <ClusterOutlined/>, title: 'Ansible', auth: 'ansible.inventory.view|ansible.vault.view|ansible.facts.view', child: [
-      {title: 'Inventory', auth: 'ansible.inventory.view', path: '/ansible/inventory', component: AnsibleInventory},
-      {title: 'Vault', auth: 'ansible.vault.view', path: '/ansible/vault', component: AnsibleVault},
-      {title: 'Facts', auth: 'ansible.facts.view', path: '/ansible/facts', component: AnsibleFacts},
-      {title: 'Module 浏览器', auth: 'ansible.inventory.view', path: '/ansible/modules', component: AnsibleModules},
-    ]
-  },
-  {
-    icon: <AlertOutlined/>, title: '报警中心', auth: 'alarm.alarm.view|alarm.contact.view|alarm.group.view', child: [
-      {title: '报警历史', auth: 'alarm.alarm.view', path: '/alarm/alarm', component: AlarmIndex},
-      {title: '告警策略', auth: 'alarm.alarm.view', path: '/alarm/policy', component: AlarmPolicy},
-      {title: '报警联系人', auth: 'alarm.contact.view', path: '/alarm/contact', component: AlarmContact},
-      {title: '报警联系组', auth: 'alarm.group.view', path: '/alarm/group', component: AlarmGroup},
-    ]
-  },
-  {
-    icon: <SettingOutlined/>, title: '系统管理', auth: "system.account.view|system.role.view|system.setting.view", child: [
-      {title: '登录日志', auth: 'system.login.view', path: '/system/login', component: SystemLogin},
-       {title: '操作日志', auth: 'system.login.view', path: '/system/log', component: SystemLog},
-      {title: '账户管理', auth: 'system.account.view', path: '/system/account', component: SystemAccount},
-      {title: '角色管理', auth: 'system.role.view', path: '/system/role', component: SystemRole},
-      {title: '系统设置', auth: 'system.setting.view', path: '/system/setting', component: SystemSetting},
-    ]
-  },
-  {path: '/welcome/index', component: WelcomeIndex},
-  {path: '/welcome/info', component: WelcomeInfo},
-]
+export const ComponentRegistry = {
+  'pages/home': withSuspense(lazy(() => import('./pages/home'))),
+  'pages/dashboard': withSuspense(lazy(() => import('./pages/dashboard'))),
+  'pages/host': withSuspense(lazy(() => import('./pages/host'))),
+  'pages/database': withSuspense(lazy(() => import('./pages/database'))),
+  'pages/exec/task': withSuspense(lazy(() => import('./pages/exec/task'))),
+  'pages/exec/template': withSuspense(lazy(() => import('./pages/exec/template'))),
+  'pages/exec/transfer': withSuspense(lazy(() => import('./pages/exec/transfer'))),
+  'pages/exec/inspect': withSuspense(lazy(() => import('./pages/exec/inspect'))),
+  'pages/deploy/app': withSuspense(lazy(() => import('./pages/deploy/app'))),
+  'pages/deploy/repository': withSuspense(lazy(() => import('./pages/deploy/repository'))),
+  'pages/deploy/request': withSuspense(lazy(() => import('./pages/deploy/request'))),
+  'pages/schedule': withSuspense(lazy(() => import('./pages/schedule'))),
+  'pages/config/environment': withSuspense(lazy(() => import('./pages/config/environment'))),
+  'pages/config/service': withSuspense(lazy(() => import('./pages/config/service'))),
+  'pages/config/app': withSuspense(lazy(() => import('./pages/config/app'))),
+  'pages/config/setting': withSuspense(lazy(() => import('./pages/config/setting'))),
+  'pages/monitor': withSuspense(lazy(() => import('./pages/monitor'))),
+  'pages/alarm/alarm': withSuspense(lazy(() => import('./pages/alarm/alarm'))),
+  'pages/alarm/group': withSuspense(lazy(() => import('./pages/alarm/group'))),
+  'pages/alarm/contact': withSuspense(lazy(() => import('./pages/alarm/contact'))),
+  'pages/alarm/policy': withSuspense(lazy(() => import('./pages/alarm/policy'))),
+  'pages/playbook': withSuspense(lazy(() => import('./pages/playbook'))),
+  'pages/ansible/inventory': withSuspense(lazy(() => import('./pages/ansible/inventory'))),
+  'pages/ansible/vault': withSuspense(lazy(() => import('./pages/ansible/vault'))),
+  'pages/ansible/facts': withSuspense(lazy(() => import('./pages/ansible/facts'))),
+  'pages/ansible/modules': withSuspense(lazy(() => import('./pages/ansible/modules'))),
+  'pages/system/account': withSuspense(lazy(() => import('./pages/system/account'))),
+  'pages/system/role': withSuspense(lazy(() => import('./pages/system/role'))),
+  'pages/system/setting': withSuspense(lazy(() => import('./pages/system/setting'))),
+  'pages/system/login': withSuspense(lazy(() => import('./pages/system/login'))),
+  'pages/system/operotionlog': withSuspense(lazy(() => import('./pages/system/operotionlog'))),
+  'pages/system/menu': withSuspense(lazy(() => import('./pages/system/menu'))),
+  'pages/welcome/index': withSuspense(lazy(() => import('./pages/welcome/index'))),
+  'pages/welcome/info': withSuspense(lazy(() => import('./pages/welcome/info'))),
+};
+
+export const IconRegistry = {
+  DesktopOutlined: <DesktopOutlined/>,
+  DashboardOutlined: <DashboardOutlined/>,
+  CloudServerOutlined: <CloudServerOutlined/>,
+  CodeOutlined: <CodeOutlined/>,
+  FlagOutlined: <FlagOutlined/>,
+  ScheduleOutlined: <ScheduleOutlined/>,
+  DeploymentUnitOutlined: <DeploymentUnitOutlined/>,
+  MonitorOutlined: <MonitorOutlined/>,
+  AlertOutlined: <AlertOutlined/>,
+  SettingOutlined: <SettingOutlined/>,
+  PlayCircleOutlined: <PlayCircleOutlined/>,
+  ClusterOutlined: <ClusterOutlined/>,
+};

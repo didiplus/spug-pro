@@ -58,7 +58,7 @@ function VaultIndex() {
         <Table.Column title="描述" dataIndex="desc" ellipsis/>
         <Table.Column title="更新时间" dataIndex="updated_at" width={180} render={v => v || '-'}/>
         {hasPermission('ansible.vault.view|ansible.vault.edit') && (
-          <Table.Column title="操作" width={180} render={info => (
+          <Table.Column title="操作"  render={info => (
             <Action>
               <Action.Button auth="ansible.vault.view" icon={<EyeOutlined/>} onClick={() => handleDecrypt(info.id)}>查看</Action.Button>
               <Action.Button auth="ansible.vault.edit" onClick={() => {setEditRecord(info); setFormVisible(true)}}>编辑</Action.Button>

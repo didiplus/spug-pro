@@ -12,12 +12,14 @@ import Notification from './Notification';
 import styles from './layout.module.less';
 import http from '../libs/http';
 import history from '../libs/history';
+import { clearMenuCache } from '../libs/menu';
 import avatar from './avatar.png';
 
 export default function (props) {
 
   // 实际退出登录逻辑
   function handleLogout() {
+    clearMenuCache();
     history.push('/');
     http.get('/api/account/logout/');
   }

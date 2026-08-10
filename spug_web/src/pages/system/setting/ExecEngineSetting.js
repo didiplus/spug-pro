@@ -32,7 +32,7 @@ export default observer(function () {
         ansible_callback_whitelist: store.settings.ansible_callback_whitelist || '',
       });
     }
-  }, [execEngine, store.settings]);
+  }, [execEngine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(e) {
     const value = e.target.value;

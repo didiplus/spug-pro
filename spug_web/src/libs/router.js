@@ -5,7 +5,7 @@
  */
 import React, { Suspense } from 'react';
 import { Switch, Route } from 'react-router-dom';
-import moduleRoutes from '../routes';
+
 import styles from './libs.module.css';
 
 
@@ -43,12 +43,7 @@ export class Router extends React.Component {
   }
 
   initialRoutes() {
-    for (let moduleRoute of moduleRoutes) {
-      for (let route of moduleRoute['routes']) {
-        route['path'] = moduleRoute['prefix'] + route['subPath'];
-        this.routes.push(route)
-      }
-    }
+
   }
 
   render() {

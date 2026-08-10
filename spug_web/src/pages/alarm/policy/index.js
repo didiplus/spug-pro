@@ -13,7 +13,7 @@ import store from './store';
 
 export default observer(function () {
   return (
-    <AuthDiv auth="alarm.alarm.view">
+    <AuthDiv auth="alarm.policy.view">
       <Breadcrumb items={['首页', '报警中心', '告警策略']} />
       <SearchForm>
         <SearchForm.Item span={8} title="策略名称">

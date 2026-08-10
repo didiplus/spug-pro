@@ -28,7 +28,7 @@ class PlaybookView(View):
             Argument('content', help='请输入 Playbook 内容'),
             Argument('desc', required=False),
             Argument('extra_vars', type=dict, handler=json.dumps, default={}),
-            Argument('host_pattern', default='all'),
+
             Argument('group_id', type=int, required=False),
             Argument('tags', required=False),
             Argument('forks', type=int, default=0),

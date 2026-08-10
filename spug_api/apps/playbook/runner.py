@@ -11,7 +11,7 @@ from apps.playbook.security import validate_playbook_content, filter_extra_vars,
 from apps.host.models import Host
 from apps.ansible.models import HostVariable, InventoryGroup, VaultSecret
 from apps.setting.utils import AppSetting
-from libs.crypto import decrypt
+
 import shutil
 import json
 import time
@@ -88,15 +88,7 @@ def build_dynamic_inventory(host_ids: list, group_id: int = None) -> dict:
                 value = int(hv.value)
             except (ValueError, TypeError):
                 pass
-        if hv.is_vault:
-            try:
-                from apps.ansible.vault import get_vault_password
-                vp = get_vault_password()
-                if vp:
-                    from apps.ansible.vault import decrypt_value
-                    value = decrypt_value(value, vp)
-            except Exception:
-                pass
+
         host_vars[host.name][hv.key] = value
 
     for hname, vars_dict in host_vars.items():
@@ -119,21 +111,13 @@ def build_dynamic_inventory(host_ids: list, group_id: int = None) -> dict:
                     if host_names:
                         inventory[gname]['hosts'] = {hn: {} for hn in host_names}
 
-    vault_secrets = VaultSecret.objects.all()
-    if vault_secrets.exists():
+    for vs in VaultSecret.objects.all():
         try:
-            from apps.ansible.vault import get_vault_password
-            vp = get_vault_password()
-            if vp:
-                for vs in vault_secrets:
-                    try:
-                        plain = decrypt(vs.encrypted_value)
-                        for hname in inventory['all']['hosts']:
-                            inventory['all']['hosts'][hname][vs.key] = plain
-                    except Exception as e:
-                        logger.warning(f'Vault 解密失败 {vs.key}: {e}')
+            plain = vs.encrypted_value
+            for hname in inventory['all']['hosts']:
+                inventory['all']['hosts'][hname][vs.key] = plain
         except Exception as e:
-            logger.warning(f'Vault 处理失败: {e}')
+            logger.warning(f'Vault 注入失败 {vs.key}: {e}')
 
     return inventory
 

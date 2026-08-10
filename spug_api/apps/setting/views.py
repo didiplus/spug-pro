@@ -4,8 +4,9 @@
 import django
 from django.core.cache import cache
 from django.conf import settings
-from libs import JsonParser, Argument, json_response, auth
+from libs import JsonParser, Argument, json_response, auth, human_datetime
 from libs.utils import generate_random_str
+from django.views.generic import View
 from libs.mail import Mail
 from libs.push import get_balance, send_login_code
 from libs.mixins import AdminView
@@ -156,3 +157,123 @@ def handle_push_balance(request):
         return json_response(error='请先配置推送服务绑定账户')
     res = get_balance(token)
     return json_response(res)
+
+
+def _build_menu_tree(menus, parent_id=0):
+    tree = []
+    for m in menus:
+        if m.parent_id == parent_id:
+            node = m.to_view()
+            children = _build_menu_tree(menus, m.id)
+            if children:
+                node['children'] = children
+            tree.append(node)
+    return tree
+
+
+class MenuView(View):
+    def get(self, request):
+        from apps.setting.models import Menu
+        menus = Menu.objects.filter(status='0').order_by('order_num')
+        if not request.user.is_supper:
+            user_perms = request.user.page_perms
+            filtered = []
+            for m in menus:
+                if not m.perms:
+                    filtered.append(m)
+                else:
+                    codes = [c.strip() for c in m.perms.split('|')]
+                    if user_perms.intersection(codes):
+                        filtered.append(m)
+            menus = filtered
+        tree = _build_menu_tree(list(menus))
+        return json_response(tree)
+
+
+class MenuManageView(AdminView):
+    def get(self, request):
+        from apps.setting.models import Menu
+        menus = Menu.objects.all().order_by('order_num')
+        tree = _build_menu_tree(list(menus))
+        return json_response(tree)
+
+    def post(self, request):
+        from apps.setting.models import Menu
+        form, error = JsonParser(
+            Argument('menu_name', help='请输入菜单名称'),
+            Argument('menu_type', default='C'),
+            Argument('parent_id', type=int, default=0),
+            Argument('order_num', type=int, default=0),
+            Argument('path', required=False),
+            Argument('component', required=False),
+            Argument('perms', required=False),
+            Argument('icon', required=False),
+            Argument('visible', default='0'),
+            Argument('is_frame', type=int, default=1),
+            Argument('is_cache', type=int, default=0),
+            Argument('remark', required=False),
+        ).parse(request.body)
+        if error is None:
+            Menu.objects.create(
+                menu_name=form.menu_name, menu_type=form.menu_type,
+                parent_id=form.parent_id, order_num=form.order_num,
+                path=form.path, component=form.component, perms=form.perms,
+                icon=form.icon, visible=form.visible, is_frame=form.is_frame,
+                is_cache=form.is_cache, remark=form.remark, created_by=request.user,
+            )
+        return json_response(error=error)
+
+    def patch(self, request):
+        from apps.setting.models import Menu
+        form, error = JsonParser(
+            Argument('id', type=int, help='请指定菜单'),
+            Argument('menu_name', required=False),
+            Argument('menu_type', required=False),
+            Argument('parent_id', type=int, required=False),
+            Argument('order_num', type=int, required=False),
+            Argument('path', required=False),
+            Argument('component', required=False),
+            Argument('perms', required=False),
+            Argument('icon', required=False),
+            Argument('visible', required=False),
+            Argument('status', required=False),
+            Argument('is_frame', type=int, required=False),
+            Argument('is_cache', type=int, required=False),
+            Argument('remark', required=False),
+        ).parse(request.body, True)
+        if error is None:
+            updates = {}
+            for k in ('menu_name', 'menu_type', 'parent_id', 'order_num', 'path',
+                      'component', 'perms', 'icon', 'visible', 'status',
+                      'is_frame', 'is_cache', 'remark'):
+                if form.get(k) is not None:
+                    updates[k] = form[k]
+            if updates:
+                updates['updated_at'] = human_datetime()
+                updates['updated_by_id'] = request.user.id
+                Menu.objects.filter(pk=form.id).update(**updates)
+        return json_response(error=error)
+
+    def delete(self, request):
+        from apps.setting.models import Menu
+        form, error = JsonParser(
+            Argument('id', type=int, help='请指定菜单'),
+        ).parse(request.GET)
+        if error is None:
+            menu = Menu.objects.filter(pk=form.id).first()
+            if not menu:
+                return json_response(error='菜单不存在')
+            count = self._delete_with_children(Menu, form.id)
+            if count > 1:
+                return json_response({'deleted_count': count})
+        return json_response(error=error)
+
+    @staticmethod
+    def _delete_with_children(Menu, menu_id):
+        count = 0
+        children = Menu.objects.filter(parent_id=menu_id)
+        for child in children:
+            count += MenuManageView._delete_with_children(Menu, child.id)
+        Menu.objects.filter(pk=menu_id).delete()
+        count += 1
+        return count
