@@ -34,13 +34,10 @@ class Schedule(View):
             Argument('trigger', filter=lambda x: x in dict(Task.TRIGGERS), help='请选择触发器类型'),
             Argument('trigger_args', help='请输入触发器参数'),
             Argument('desc', required=False),
-            Argument('playbook_id', type=int, required=False),
         ).parse(request.body)
         if error is None:
-            if form.interpreter != 'playbook' and not form.command:
+            if not form.command:
                 return json_response(error='请输入任务内容')
-            if form.interpreter == 'playbook' and not form.playbook_id:
-                return json_response(error='请选择 Playbook')
             form.targets = json.dumps(form.targets)
             form.rst_notify = json.dumps(form.rst_notify)
             if form.trigger == 'cron':

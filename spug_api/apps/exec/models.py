@@ -83,17 +83,38 @@ class Transfer(models.Model, ModelMixin):
 
 
 
-class InspectTask(models.Model, ModelMixin):
+class InspectItem(models.Model, ModelMixin):
     name = models.CharField(max_length=50)
-    template_id = models.IntegerField()
+    category = models.CharField(max_length=50, default="custom")
     interpreter = models.CharField(max_length=20, default="sh")
     command = models.TextField()
-    rule = models.TextField(default='{"type":"exit_code","exit_codes":[0]}')
+    match_type = models.CharField(max_length=20, default="regex_pass")
+    pattern = models.TextField(default="")
+    threshold_op = models.CharField(max_length=10, default="none")
+    threshold_val = models.FloatField(null=True)
+    expect_status = models.CharField(max_length=20, default="warning")
+    desc = models.CharField(max_length=255, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.CharField(max_length=20, default=human_datetime)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    updated_at = models.CharField(max_length=20, null=True)
+    updated_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", null=True)
+
+    def __repr__(self):
+        return "<InspectItem %r>" % self.name
+
+    class Meta:
+        db_table = "exec_inspect_items"
+        ordering = ("id",)
+
+
+class InspectTask(models.Model, ModelMixin):
+    name = models.CharField(max_length=50)
+    item_ids = models.TextField(default="[]")
     host_ids = models.TextField(default="[]")
     notify_grp = models.TextField(default="[]")
     notify_mode = models.TextField(default="[]")
     desc = models.CharField(max_length=255, null=True)
-    playbook_id = models.IntegerField(null=True)
     created_at = models.CharField(max_length=20, default=human_datetime)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     updated_at = models.CharField(max_length=20, null=True)
@@ -104,15 +125,15 @@ class InspectTask(models.Model, ModelMixin):
 
     def to_view(self):
         tmp = self.to_dict()
+        tmp["item_ids"] = json.loads(self.item_ids)
         tmp["host_ids"] = json.loads(self.host_ids)
-        tmp["rule"] = json.loads(self.rule)
         tmp["notify_grp"] = json.loads(self.notify_grp)
         tmp["notify_mode"] = json.loads(self.notify_mode)
-        tpl = ExecTemplate.objects.filter(pk=self.template_id).first()
-        tmp["template_name"] = tpl.name if tpl else ''
+        items = InspectItem.objects.filter(id__in=tmp["item_ids"])
+        tmp["items"] = [{"id": x.id, "name": x.name, "category": x.category} for x in items]
         latest = InspectResult.objects.filter(task_id=self.id).order_by('-id').first()
         if latest:
-            results = InspectResult.objects.filter(task_id=self.id, run_at=latest.run_at)
+            results = InspectResult.objects.filter(task_id=self.id, batch_id=latest.batch_id)
             statuses = list(results.values_list('status', flat=True))
             if any(s in statuses for s in ['running', 'pending']):
                 tmp["latest_status"] = 'running'
@@ -122,8 +143,12 @@ class InspectTask(models.Model, ModelMixin):
                 tmp["latest_status"] = 'warning'
             else:
                 tmp["latest_status"] = 'success'
+            tmp["latest_run_at"] = latest.run_at
+            tmp["latest_batch_id"] = latest.batch_id
         else:
             tmp["latest_status"] = 'pending'
+            tmp["latest_run_at"] = None
+            tmp["latest_batch_id"] = None
         return tmp
 
     class Meta:
@@ -133,9 +158,14 @@ class InspectTask(models.Model, ModelMixin):
 
 class InspectResult(models.Model, ModelMixin):
     task_id = models.IntegerField()
+    batch_id = models.CharField(max_length=36, default="")
     host_id = models.IntegerField()
+    item_id = models.IntegerField(default=0)
+    item_name = models.CharField(max_length=50, default="")
     status = models.CharField(max_length=20, default="pending")
     output = models.TextField(default="")
+    matched = models.TextField(default="")
+    actual_value = models.FloatField(null=True)
     exit_code = models.IntegerField(null=True)
     run_at = models.CharField(max_length=20, default=human_datetime)
     duration = models.IntegerField(default=0)

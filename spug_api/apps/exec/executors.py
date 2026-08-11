@@ -7,6 +7,7 @@ from libs.execution.factory import ExecutorFactory
 import threading
 import socket
 import json
+import re
 import time
 import logging
 
@@ -21,12 +22,15 @@ def exec_worker_handler(job):
 
 class Job:
     def __init__(self, key, name, hostname, port, username, pkey, command, interpreter, params=None, token=None,
-                 term=None, inspect_task_id=None):
+                 term=None, inspect_task_id=None, inspect_batch_id=None, inspect_item_id=None, inspect_item_ids=None):
         self.ssh = ExecutorFactory.create(hostname, port, username, pkey, term=term)
         self.key = key
         self.command = self._handle_command(command, interpreter)
         self.token = token
         self.inspect_task_id = inspect_task_id
+        self.inspect_batch_id = inspect_batch_id
+        self.inspect_item_id = inspect_item_id
+        self.inspect_item_ids = inspect_item_ids or []
         self._output_parts = []
         self.rds = get_redis_connection()
         self.env = dict(
@@ -50,43 +54,82 @@ class Job:
         return command
 
     def send(self, data):
-        self._send({'key': self.key, 'data': data})
+        try:
+            self._send({'key': self.key, 'data': data})
+        except Exception:
+            pass
         if self.inspect_task_id:
             self._output_parts.append(data)
 
     def send_status(self, code):
-        self._send({'key': self.key, 'status': code})
+        try:
+            self._send({'key': self.key, 'status': code})
+        except Exception:
+            pass
         if self.inspect_task_id:
             try:
-                from django.db import connections
-                for conn in connections.all():
-                    try:
-                        conn.ensure_connection()
-                    except Exception:
-                        conn.connect()
-                from apps.exec.models import InspectResult, InspectTask
-                result = InspectResult.objects.filter(
-                    task_id=self.inspect_task_id, host_id=self.key
-                ).order_by('-id').first()
-                if result:
-                    task = InspectTask.objects.filter(pk=self.inspect_task_id).first()
-                    rule = json.loads(task.rule) if task else {}
-                    status = self._judge_status(code, rule)
-                    result.status = status
-                    result.exit_code = code
-                    result.duration = int(time.time() - self._start_time) if hasattr(self, '_start_time') else 0
-                    if self._output_parts:
-                        import re
-                        raw = ''.join(self._output_parts)
-                        result.output = re.sub(r'\x1b\[[0-9;]*m', '', raw)
-                    result.save()
-                    logger.warning(f'Inspect result updated: task={self.inspect_task_id} host={self.key} status={status} exit_code={code}')
-                    connections.close_all()
-                    self._try_send_notify(task)
+                from django.db import connections, close_old_connections
+                close_old_connections()
+                from apps.exec.models import InspectResult, InspectTask, InspectItem
+                from apps.exec.inspect import judge_inspect, parse_combined_output
+
+                task = InspectTask.objects.filter(pk=self.inspect_task_id).first()
+                raw_output = ''
+                if self._output_parts:
+                    raw_output = re.sub(r'\x1b\[[0-9;]*m', '', ''.join(self._output_parts))
+                duration = int(time.time() - self._start_time) if hasattr(self, '_start_time') else 0
+
+                if self.inspect_item_ids:
+                    parsed = parse_combined_output(raw_output, self.inspect_item_ids)
+                    for item_id in self.inspect_item_ids:
+                        result = InspectResult.objects.filter(
+                            task_id=self.inspect_task_id, host_id=self.key,
+                            batch_id=self.inspect_batch_id, item_id=item_id
+                        ).order_by('-id').first()
+                        if not result:
+                            continue
+                        item = InspectItem.objects.filter(pk=item_id).first()
+                        part = parsed.get(item_id, {'output': '', 'exit_code': -1})
+                        if item:
+                            status, matched, actual_value = judge_inspect(part['output'], part['exit_code'], item)
+                            result.status = status
+                            result.matched = matched or ''
+                            result.actual_value = actual_value
+                        else:
+                            result.status = 'success' if part['exit_code'] == 0 else 'error'
+                        result.exit_code = part['exit_code']
+                        result.duration = duration
+                        result.output = part['output']
+                        result.save()
+                        logger.warning(f'Inspect updated: task={self.inspect_task_id} host={self.key} item={item_id} status={result.status}')
                 else:
-                    logger.warning(f'Inspect result not found: task={self.inspect_task_id} host={self.key}')
+                    result_qs = InspectResult.objects.filter(
+                        task_id=self.inspect_task_id, host_id=self.key
+                    )
+                    if self.inspect_batch_id:
+                        result_qs = result_qs.filter(batch_id=self.inspect_batch_id)
+                    if self.inspect_item_id:
+                        result_qs = result_qs.filter(item_id=self.inspect_item_id)
+                    result = result_qs.order_by('-id').first()
+                    if result:
+                        item = InspectItem.objects.filter(pk=self.inspect_item_id).first() if self.inspect_item_id else None
+                        if item:
+                            status, matched, actual_value = judge_inspect(raw_output, code, item)
+                            result.status = status
+                            result.matched = matched or ''
+                            result.actual_value = actual_value
+                        else:
+                            result.status = 'success' if code == 0 else 'error'
+                        result.exit_code = code
+                        result.duration = duration
+                        result.output = raw_output
+                        result.save()
+                        logger.warning(f'Inspect updated: task={self.inspect_task_id} host={self.key} item={self.inspect_item_id} status={result.status}')
+
+                self._try_send_notify(task)
             except Exception as e:
-                logger.warning(f'Inspect result update failed: {e}')
+                logger.warning(f'Inspect result update failed: {e}', exc_info=True)
+            finally:
                 try:
                     connections.close_all()
                 except Exception:
@@ -99,21 +142,23 @@ class Job:
             notify_mode = json.loads(task.notify_mode) if task.notify_mode else []
             if not notify_grp or not notify_mode:
                 return
-            pending_count = InspectResult.objects.filter(
-                task_id=task.id, status__in=['pending', 'running']
-            ).count()
+            batch_qs = InspectResult.objects.filter(task_id=task.id)
+            if self.inspect_batch_id:
+                batch_qs = batch_qs.filter(batch_id=self.inspect_batch_id)
+            pending_count = batch_qs.filter(status__in=['pending', 'running']).count()
             if pending_count > 0:
                 return
-            results = InspectResult.objects.filter(task_id=task.id)
-            total = results.count()
-            success = results.filter(status='success').count()
-            warning = results.filter(status='warning').count()
-            error = results.filter(status='error').count()
+            results = list(batch_qs)
+            total = len(results)
+            success = sum(1 for r in results if r.status == 'success')
+            warning = sum(1 for r in results if r.status == 'warning')
+            error = sum(1 for r in results if r.status == 'error')
             from apps.host.models import Host
             error_hosts = []
-            for r in results.filter(status__in=['error', 'warning']):
-                host = Host.objects.filter(pk=r.host_id).first()
-                error_hosts.append(f"{host.name if host else str(r.host_id)}({r.status})")
+            for r in results:
+                if r.status in ['error', 'warning']:
+                    host = Host.objects.filter(pk=r.host_id).first()
+                    error_hosts.append(f"{host.name if host else str(r.host_id)}/{r.item_name}({r.status})")
             has_issue = warning > 0 or error > 0
             if has_issue:
                 event = '1'
@@ -130,7 +175,7 @@ class Job:
             if error > 0:
                 lines.append(f'失败: {error}/{total}')
             if error_hosts:
-                lines.append(f'异常主机: {", ".join(error_hosts)}')
+                lines.append(f'异常项: {", ".join(error_hosts[:10])}')
             message = '\n'.join(lines)
             from libs.spug import Notification
             notify = Notification(notify_grp, event, task.name, title, message, None)
@@ -139,14 +184,6 @@ class Job:
         except Exception as e:
             logger.warning(f'Inspect notify failed: {e}')
 
-    @staticmethod
-    def _judge_status(exit_code, rule):
-        rule_type = rule.get('type', 'exit_code')
-        if rule_type == 'exit_code':
-            if exit_code in rule.get('exit_codes', [0]):
-                return 'success'
-            return 'error'
-        return 'success' if exit_code == 0 else 'error'
 
     def run(self):
         if not self.token:

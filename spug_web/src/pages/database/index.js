@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { AuthDiv, Breadcrumb } from 'components';
 import {
-    Card, Statistic, Row, Col, Tabs,
+    Card, Statistic, Row, Col,
 } from 'antd';
 import {
     DatabaseOutlined, CheckCircleOutlined, WindowsOutlined,
-    CodepenCircleOutlined, TableOutlined, ApartmentOutlined,
+    CodepenCircleOutlined,
 } from '@ant-design/icons';
 
 import store from './store';
@@ -14,31 +14,11 @@ import DatabaseTable from "./components/DatabaseTable";
 import DatabaseDrawer from './components/DatabaseDrawer';
 import DatabaseDetail from './components/DatabaseDetail';
 import SqlTerminal from './components/SqlTerminal';
-import TopologyView from './components/TopologyView';
 
 export default observer(function DatabaseDashboard() {
-    const [activeTab, setActiveTab] = useState('list');
-
     useEffect(() => {
         store.loadData();
     }, []);
-
-    const tabItems = [
-        {
-            key: 'list',
-            label: (
-                <span><TableOutlined style={{ marginRight: 4 }} />实例列表</span>
-            ),
-            children: <DatabaseTable />,
-        },
-        {
-            key: 'topology',
-            label: (
-                <span><ApartmentOutlined style={{ marginRight: 4 }} />拓扑视图</span>
-            ),
-            children: <TopologyView />,
-        },
-    ];
 
     return (
         <>
@@ -86,7 +66,7 @@ export default observer(function DatabaseDashboard() {
                         </Card>
                     </Col>
                 </Row>
-                <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
+                <DatabaseTable />
             </AuthDiv>
             {store.formVisible && <DatabaseDrawer/>}
             {store.detailVisible && <DatabaseDetail/>}

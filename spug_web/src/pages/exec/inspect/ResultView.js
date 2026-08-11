@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { Modal, Table, Tag, Statistic, Row, Col, Card, Empty, Button, Space } from 'antd';
-import { FileTextOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
-import { http, X_TOKEN } from 'libs';
+import { FileTextOutlined } from '@ant-design/icons';
+import { http } from 'libs';
 import S from './store';
 
 const statusMap = {
@@ -13,7 +13,7 @@ const statusMap = {
   running: {color: 'processing', text: '执行中'},
 };
 
-function OutputView({resultId, hostName, onClose}) {
+function OutputView({resultId, hostName, itemName, onClose}) {
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,7 @@ function OutputView({resultId, hostName, onClose}) {
     <Modal
       open
       width={750}
-      title={`执行输出 - ${hostName}`}
+      title={`执行输出 - ${hostName} / ${itemName}`}
       onCancel={onClose}
       footer={null}>
       <pre style={{
@@ -53,79 +53,14 @@ function OutputView({resultId, hostName, onClose}) {
   )
 }
 
-function ReportView({taskId, taskName, onClose}) {
-  const [loading, setLoading] = useState(true);
-  const [html, setHtml] = useState('');
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetch(`/api/exec/inspect/report/?task_id=${taskId}`, {
-      headers: {'X-Token': X_TOKEN}
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`请求失败: ${res.status}`);
-        return res.text();
-      })
-      .then(text => setHtml(text))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [taskId]);
-
-  function handleDownload() {
-    const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `巡检报告_${taskName}_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function handleOpenNew() {
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-    }
-  }
-
-  return (
-    <Modal
-      open
-      width={1000}
-      title={
-        <Space>
-          <FileTextOutlined/>
-          巡检报告 - {taskName}
-          {!loading && !error && (
-            <>
-              <Button size="small" icon={<EyeOutlined/>} onClick={handleOpenNew}>新窗口查看</Button>
-              <Button size="small" icon={<DownloadOutlined/>} onClick={handleDownload}>下载HTML</Button>
-            </>
-          )}
-        </Space>
-      }
-      onCancel={onClose}
-      footer={null}
-      styles={{body: {padding: 0, maxHeight: '70vh', overflow: 'auto'}}}>
-      {loading ? (
-        <div style={{padding: 40, textAlign: 'center', color: '#8c8c8c'}}>生成报告中...</div>
-      ) : error ? (
-        <div style={{padding: 40, textAlign: 'center', color: '#ff4d4f'}}>报告生成失败: {error}</div>
-      ) : (
-        <div dangerouslySetInnerHTML={{__html: html}}/>
-      )}
-    </Modal>
-  )
-}
-
 export default observer(function () {
   const [results, setResults] = useState([]);
   const [outputRecord, setOutputRecord] = useState(null);
-  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
-    http.get('/api/exec/inspect/result/', {params: {task_id: S.record.id}})
+    const params = { task_id: S.record.id };
+    if (S.record.latest_batch_id) params.batch_id = S.record.latest_batch_id;
+    http.get('/api/exec/inspect/result/', { params })
       .then(res => setResults(res))
   }, []);
 
@@ -139,11 +74,11 @@ export default observer(function () {
   return (
     <Modal
       open
-      width={900}
+      width={1000}
       title={
         <Space>
           <span>巡检结果 - {S.record.name}</span>
-          <Button size="small" icon={<FileTextOutlined/>} onClick={() => setShowReport(true)} disabled={results.length === 0}>
+          <Button size="small" icon={<FileTextOutlined/>} onClick={() => S.showReport(S.record)} disabled={results.length === 0}>
             生成报告
           </Button>
         </Space>
@@ -171,17 +106,20 @@ export default observer(function () {
           rowKey="id"
           size="small"
           dataSource={results}
-          pagination={{pageSize: 10, showTotal: total => `共 ${total} 条`}}>
-          <Table.Column title="主机" dataIndex="host_name"/>
-          <Table.Column title="状态" dataIndex="status" render={v => {
+          scroll={{ x: 800 }}
+          pagination={{pageSize: 20, showTotal: total => `共 ${total} 条`}}>
+          <Table.Column title="主机" dataIndex="host_name" width={120}/>
+          <Table.Column title="巡检项" dataIndex="item_name" width={150}/>
+          <Table.Column title="状态" dataIndex="status" width={80} render={v => {
             const s = statusMap[v] || statusMap.pending;
             return <Tag color={s.color}>{s.text}</Tag>;
           }}/>
-          <Table.Column title="退出码" dataIndex="exit_code" render={v => v !== null && v !== undefined ? v : '-'}/>
-          <Table.Column title="耗时" dataIndex="duration" render={v => v ? `${v}s` : '-'}/>
-          <Table.Column title="执行时间" dataIndex="run_at"/>
-          <Table.Column title="操作" width={100} render={record => (
-            <Button type="link" size="small" onClick={() => setOutputRecord(record)}>查看输出</Button>
+          <Table.Column title="实际值" dataIndex="actual_value" width={80} render={v => v !== null && v !== undefined ? v : '-'}/>
+          <Table.Column title="退出码" dataIndex="exit_code" width={70} render={v => v !== null && v !== undefined ? v : '-'}/>
+          <Table.Column title="耗时" dataIndex="duration" width={70} render={v => v ? `${v}s` : '-'}/>
+          <Table.Column title="执行时间" dataIndex="run_at" width={160}/>
+          <Table.Column title="操作" width={80} render={record => (
+            <Button type="link" size="small" onClick={() => setOutputRecord(record)}>输出</Button>
           )}/>
         </Table>
       )}
@@ -189,14 +127,10 @@ export default observer(function () {
         <OutputView
           resultId={outputRecord.id}
           hostName={outputRecord.host_name}
+          itemName={outputRecord.item_name}
           onClose={() => setOutputRecord(null)}/>
       )}
-      {showReport && (
-        <ReportView
-          taskId={S.record.id}
-          taskName={S.record.name}
-          onClose={() => setShowReport(false)}/>
-      )}
+
     </Modal>
   )
 })

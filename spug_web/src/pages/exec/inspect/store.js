@@ -1,4 +1,4 @@
-import { observable} from "mobx";
+import { observable } from "mobx";
 import { http, includes } from 'libs';
 
 class Store {
@@ -7,15 +7,16 @@ class Store {
   @observable isFetching = false;
   @observable formVisible = false;
   @observable resultVisible = false;
+  @observable reportVisible = false;
   @observable results = [];
   @observable f_name;
   @observable f_status;
 
   get dataSource() {
-    let data = this.records
-    if (this.f_name) data = data.filter(x => includes(x.name, this.f_name))
-    if (this.f_status) data = data.filter(x => x.latest_status === this.f_status)
-    return data
+    let data = this.records;
+    if (this.f_name) data = data.filter(x => includes(x.name, this.f_name));
+    if (this.f_status) data = data.filter(x => x.latest_status === this.f_status);
+    return data;
   }
 
   fetchRecords = () => {
@@ -25,16 +26,23 @@ class Store {
       .finally(() => this.isFetching = false)
   };
 
-  showForm = (info = {interpreter: 'sh', host_ids: [], rule: {type: 'exit_code', exit_codes: [0]}, notify_grp: [], notify_mode: []}) => {
+  showForm = (info = {item_ids: [], host_ids: [], notify_grp: [], notify_mode: []}) => {
     this.formVisible = true;
-    this.record = info
+    this.record = info;
   };
 
   showResult = (record) => {
     this.resultVisible = true;
     this.record = record;
-    http.get('/api/exec/inspect/result/', {params: {task_id: record.id}})
+    const params = { task_id: record.id };
+    if (record.latest_batch_id) params.batch_id = record.latest_batch_id;
+    http.get('/api/exec/inspect/result/', { params })
       .then(res => this.results = res)
+  };
+
+  showReport = (record) => {
+    this.reportVisible = true;
+    this.record = record;
   };
 }
 

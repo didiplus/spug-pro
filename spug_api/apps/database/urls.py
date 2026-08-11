@@ -14,7 +14,7 @@ urlpatterns = [
     path('instances/<int:instance_id>/backups/<int:backup_id>/download/', backup_download),
     path('instances/<int:instance_id>/sql-history/', sql_history_list),
     path('instances/<int:instance_id>/sql-history/<int:history_id>/', sql_history_detail),
-    path('topology/', topology),
+
     path('test/', test_connection_databases),
     path('execute/', execute_sql),
 ]

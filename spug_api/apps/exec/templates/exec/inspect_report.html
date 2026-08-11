@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>巡检报告 - {{ task_name }}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#262626; background:#f5f5f5; padding:32px 24px; }
+
+.container { max-width:1000px; margin:0 auto; background:#fff; border-radius:8px; box-shadow:0 6px 16px rgba(0,0,0,0.08); overflow:hidden; }
+
+.header { background:linear-gradient(135deg,#1677ff 0%,#4096ff 100%); color:#fff; padding:36px 40px; }
+.header h1 { font-size:22px; font-weight:600; margin-bottom:6px; letter-spacing:0.5px; }
+.header .meta { font-size:13px; opacity:0.8; }
+
+.summary { display:flex; padding:28px 40px; gap:16px; border-bottom:1px solid #f0f0f0; }
+.summary .card { flex:1; text-align:center; padding:18px 8px; border-radius:6px; border:1px solid #f0f0f0; transition:box-shadow 0.2s; }
+.summary .card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.summary .card .icon { font-size:18px; margin-bottom:6px; opacity:0.85; }
+.summary .card .num { font-size:28px; font-weight:700; line-height:1.2; }
+.summary .card .label { font-size:12px; color:#8c8c8c; margin-top:6px; }
+
+.progress-section { padding:20px 40px; border-bottom:1px solid #f0f0f0; }
+.progress-section .label { font-size:13px; color:#595959; margin-bottom:8px; display:flex; justify-content:space-between; }
+.progress-bar { height:12px; background:#f0f0f0; border-radius:6px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:4px; transition:width 0.3s; }
+
+.info { padding:20px 40px; border-bottom:1px solid #f0f0f0; display:flex; gap:32px; flex-wrap:wrap; }
+.info .item { font-size:13px; }
+.info .item .k { color:#8c8c8c; margin-right:8px; }
+.info .item .v { color:#262626; font-weight:500; }
+
+.content { padding:24px 40px; }
+
+.host-card { margin-bottom:20px; border:1px solid #f0f0f0; border-radius:6px; overflow:hidden; }
+.host-card-header { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:#fafafa; border-bottom:1px solid #f0f0f0; }
+.host-info { display:flex; align-items:center; gap:12px; }
+.host-name { font-weight:600; font-size:15px; color:#262626; }
+.host-ip { color:#8c8c8c; font-size:13px; font-family:monospace; }
+.host-stats { display:flex; align-items:center; gap:12px; }
+.host-pass-rate { display:flex; align-items:center; gap:8px; }
+.mini-progress { width:60px; height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; }
+.mini-progress-fill { height:100%; border-radius:3px; }
+.mini-stat { font-size:12px; color:#595959; display:flex; align-items:center; gap:4px; }
+.mini-stat i { width:6px; height:6px; border-radius:50%; display:inline-block; }
+
+.tag { display:inline-block; padding:2px 10px; border-radius:4px; font-size:12px; font-weight:500; border:1px solid transparent; line-height:20px; }
+.tag-success { background:#f6ffed; color:#52c41a; border-color:#b7eb8f; }
+.tag-warning { background:#fffbe6; color:#faad14; border-color:#ffe58f; }
+.tag-error { background:#fff2f0; color:#ff4d4f; border-color:#ffccc7; }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { padding:10px 20px; text-align:left; font-weight:600; color:#595959; background:#fafafa; border-bottom:1px solid #f0f0f0; }
+td { padding:10px 20px; border-bottom:1px solid #f5f5f5; color:#262626; }
+tbody tr:nth-child(even):not(.output-row) td { background:#fbfbfb; }
+tr:hover td { background:#fafafa; }
+.col-name { font-weight:500; }
+.col-value, .col-matched { font-family:monospace; font-size:12px; color:#595959; }
+.col-code, .col-duration { text-align:center; color:#8c8c8c; }
+
+.output-row td { padding:4px 20px 12px; background:#fafafa; }
+details { margin-top:4px; }
+summary { cursor:pointer; color:#1677ff; font-size:12px; user-select:none; }
+summary:hover { color:#4096ff; }
+pre { background:#1e1e1e; color:#d4d4d4; padding:14px; border-radius:6px; margin-top:8px; white-space:pre-wrap; word-break:break-all; font-size:12px; line-height:1.6; font-family:"SFMono-Regular",Consolas,monospace; }
+
+.footer { padding:16px 40px; text-align:center; color:#bfbfbf; font-size:12px; border-top:1px solid #f0f0f0; }
+
+@media print {
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { background:#fff; padding:0; }
+    .container { box-shadow:none; border-radius:0; max-width:100%; }
+    .header { padding:24px 40px; }
+    .host-card { page-break-inside:avoid; }
+    .summary .card:hover { box-shadow:none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>巡检报告</h1>
+        <div class="meta">{{ task_name }} · {{ now }}</div>
+    </div>
+
+    <div class="summary">
+        <div class="card" style="border-color:#d9d9d9"><div class="icon" style="color:#8c8c8c">&#9670;</div><div class="num" style="color:#262626">{{ total }}</div><div class="label">全部</div></div>
+        <div class="card" style="border-color:#b7eb8f"><div class="icon" style="color:#52c41a">&#10003;</div><div class="num" style="color:#52c41a">{{ success }}</div><div class="label">正常</div></div>
+        <div class="card" style="border-color:#ffe58f"><div class="icon" style="color:#faad14">&#9888;</div><div class="num" style="color:#faad14">{{ warning }}</div><div class="label">告警</div></div>
+        <div class="card" style="border-color:#ffccc7"><div class="icon" style="color:#ff4d4f">&#10005;</div><div class="num" style="color:#ff4d4f">{{ error_count }}</div><div class="label">失败</div></div>
+        <div class="card" style="border-color:#d9d9d9"><div class="icon" style="color:#8c8c8c">&#9675;</div><div class="num" style="color:#8c8c8c">{{ pending }}</div><div class="label">待执行</div></div>
+    </div>
+
+    <div class="progress-section">
+        <div class="label"><span>通过率</span><span style="color:{{ pass_color }};font-weight:600">{{ pass_rate }}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:{{ pass_rate }}%;background:{{ pass_color }}"></div></div>
+    </div>
+
+    <div class="info">
+        <div class="item"><span class="k">巡检状态</span>{% if is_normal %}<span class="tag tag-success">正常</span>{% else %}<span class="tag tag-error">异常</span>{% endif %}</div>
+        <div class="item"><span class="k">目标主机</span><span class="v">{{ host_count }} 台</span></div>
+        <div class="item"><span class="k">巡检项数</span><span class="v">{{ item_count }} 项</span></div>
+        <div class="item"><span class="k">任务描述</span><span class="v">{{ task_desc|default:"-" }}</span></div>
+    </div>
+
+    <div class="content">
+        {% for host in hosts %}
+        <div class="host-card">
+            <div class="host-card-header">
+                <div class="host-info">
+                    <span class="host-name">{{ host.name }}</span>
+                    <span class="host-ip">{{ host.hostname }}</span>
+                </div>
+                <div class="host-stats">
+                    <span class="mini-stat"><i style="background:#52c41a"></i>正常 {{ host.h_success }}</span>
+                    <span class="mini-stat"><i style="background:#faad14"></i>告警 {{ host.h_warning }}</span>
+                    <span class="mini-stat"><i style="background:#ff4d4f"></i>失败 {{ host.h_error }}</span>
+                    <span class="host-pass-rate"><span style="font-size:12px;color:#595959">{{ host.h_pass_rate }}%</span><div class="mini-progress"><div class="mini-progress-fill" style="width:{{ host.h_pass_rate }}%;background:{{ host.h_pass_color }}"></div></div></span>
+                    <span class="tag tag-{{ host.badge_type }}">{{ host.badge_text }}</span>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>巡检项</th><th>状态</th><th>实际值</th><th>匹配内容</th><th>退出码</th><th>耗时</th></tr></thead>
+                <tbody>
+                    {% for item in host.items %}
+                    <tr>
+                        <td class="col-name">{{ item.name }}</td>
+                        <td><span class="tag" style="background:{{ item.status_bg }};color:{{ item.status_color }};border-color:{{ item.status_border }}">{{ item.status_text }}</span></td>
+                        <td class="col-value">{{ item.actual_value|default:"-" }}</td>
+                        <td class="col-matched">{{ item.matched|default:"-" }}</td>
+                        <td class="col-code">{{ item.exit_code|default:"-" }}</td>
+                        <td class="col-duration">{{ item.duration }}s</td>
+                    </tr>
+                    {% if item.output %}
+                    <tr class="output-row">
+                        <td colspan="6">
+                            <details>
+                                <summary>查看输出</summary>
+                                <pre>{{ item.output }}</pre>
+                            </details>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer">Spug 运维平台 · 巡检报告 · {{ now }}</div>
+</div>
+</body>
+</html>

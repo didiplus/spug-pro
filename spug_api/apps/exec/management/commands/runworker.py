@@ -62,25 +62,22 @@ class Worker:
                         PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
         while True:
             try:
-                # 设置 timeout=0 表示无限等待，但会受到 socket_timeout 限制
-                # 如果超时，会抛出 TimeoutError，我们在外层捕获并重连
                 key, job = self.rds.blpop(
                     [EXEC_WORKER_KEY, SCHEDULE_WORKER_KEY, MONITOR_WORKER_KEY,
                      PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY],
-                    timeout=0
+                    timeout=30
                 )
             except Exception as e:
-                # 捕获连接超时等异常，重新获取连接后继续
                 logging.warning(f"Redis connection error: {e}, reconnecting...")
                 try:
                     from django_redis import get_redis_connection
                     self.rds = get_redis_connection()
-                    # 删除可能残留的键，确保状态一致
-                    self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY,
-                                    PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
                 except Exception as reconnect_error:
                     logging.error(f"Reconnect failed: {reconnect_error}")
-                    time.sleep(5)  # 重连失败后等待 5 秒再试
+                    time.sleep(5)
+                continue
+            
+            if key is None:
                 continue
             
             key = key.decode()
