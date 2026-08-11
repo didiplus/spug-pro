@@ -103,7 +103,7 @@ export default observer(function InspectItemManage() {
       setSubmitting(true);
       const payload = { ...values, command };
       const req = editRecord
-        ? http.patch('/api/exec/inspect/item/', { ...payload, id: editRecord.id })
+        ? http.post('/api/exec/inspect/item/', { ...payload, id: editRecord.id })
         : http.post('/api/exec/inspect/item/', payload);
       req.then(() => {
         message.success('操作成功');
