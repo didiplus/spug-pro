@@ -1,10 +1,10 @@
 # Copyright: (c) OpenSpug Organization. https://github.com/openspug/spug
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
-from django.urls import re_path
+from django.urls import re_path, path
 from apps.setting.views import *
 from apps.setting.user import UserSettingView
-from apps.setting.views import MenuView, MenuManageView
+from apps.setting.views import MenuView, MenuManageView, StorageConfigView, StorageConfigDetailView, test_storage
 
 urlpatterns = [
     re_path(r"^$", SettingView.as_view()),
@@ -17,4 +17,8 @@ urlpatterns = [
     re_path(r"^push/balance/$", handle_push_balance),
     re_path(r"^menus/$", MenuView.as_view()),
     re_path(r"^menus/manage/$", MenuManageView.as_view()),
+
+    path('storage-configs/', StorageConfigView.as_view()),
+    path('storage-configs/<int:config_id>/', StorageConfigDetailView.as_view()),
+    path('storage-configs/test/', test_storage),
 ]

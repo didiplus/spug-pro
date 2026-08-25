@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Layout, Menu } from 'antd';
 import { history } from 'libs';
 import { IconRegistry } from '../routes';
+import { IconByName } from '../components/IconSelect';
 import styles from './layout.module.less';
 import logo from './logo-spug-white.png';
 
@@ -11,8 +12,12 @@ function buildMenuItems(menus, openKeysMap) {
     if (m.visible === '1') continue;
     if (m.menu_type === 'F') continue;
     const item = { label: m.menu_name, key: m.path || `group_${m.id}` };
-    if (m.icon && IconRegistry[m.icon]) {
-      item.icon = IconRegistry[m.icon];
+    if (m.icon) {
+      if (IconRegistry[m.icon]) {
+        item.icon = IconRegistry[m.icon];
+      } else {
+        item.icon = <IconByName name={m.icon} />;
+      }
     }
     if (m.children && m.children.length > 0) {
       const children = buildMenuItems(m.children, openKeysMap);

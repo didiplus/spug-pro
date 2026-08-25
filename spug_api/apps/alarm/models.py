@@ -23,16 +23,16 @@ class Alarm(models.Model, ModelMixin):
         ("1", "报警发生"),
         ("2", "故障恢复"),
     )
-    name = models.CharField(max_length=50)
-    type = models.CharField(max_length=50)
-    target = models.CharField(max_length=100)
-    notify_mode = models.JSONField(default=list)
-    notify_grp = models.JSONField(default=list)
-    status = models.CharField(max_length=2, choices=STATUS)
-    duration = models.CharField(max_length=50)
-    fingerprint = models.CharField(max_length=64, db_index=True, null=True)
-    is_escalated = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=50, verbose_name="告警名称")
+    type = models.CharField(max_length=50, verbose_name="告警类型")
+    target = models.CharField(max_length=100, verbose_name="目标")
+    notify_mode = models.JSONField(default=list, verbose_name="通知方式")
+    notify_grp = models.JSONField(default=list, verbose_name="通知组")
+    status = models.CharField(max_length=2, choices=STATUS, verbose_name="状态")
+    duration = models.CharField(max_length=50, verbose_name="持续时间")
+    fingerprint = models.CharField(max_length=64, db_index=True, null=True, verbose_name="指纹")
+    is_escalated = models.BooleanField(default=False, verbose_name="是否已升级")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     @classmethod
     def make_fingerprint(cls, name, target):
@@ -57,15 +57,15 @@ class Alarm(models.Model, ModelMixin):
 
 
 class AlarmPolicy(models.Model, ModelMixin):
-    name = models.CharField(max_length=50)
-    desc = models.CharField(max_length=255, null=True)
-    silence_window = models.IntegerField(default=30)
-    escalate_after = models.IntegerField(null=True)
-    escalate_to = models.JSONField(default=list)
-    repeat_interval = models.IntegerField(null=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=50, verbose_name="策略名称")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    silence_window = models.IntegerField(default=30, verbose_name="静默窗口(分钟)")
+    escalate_after = models.IntegerField(null=True, verbose_name="升级时间(分钟)")
+    escalate_to = models.JSONField(default=list, verbose_name="升级到")
+    repeat_interval = models.IntegerField(null=True, verbose_name="重复间隔(分钟)")
+    is_active = models.BooleanField(default=True, verbose_name="启用状态")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
 
     def to_dict(self, *args, **kwargs):
         return super().to_dict(*args, **kwargs)
@@ -79,11 +79,11 @@ class AlarmPolicy(models.Model, ModelMixin):
 
 
 class Group(models.Model, ModelMixin):
-    name = models.CharField(max_length=50)
-    desc = models.CharField(max_length=255, null=True)
-    contacts = models.JSONField(default=list)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=50, verbose_name="组名称")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    contacts = models.JSONField(default=list, verbose_name="联系人")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
 
     def to_dict(self, *args, **kwargs):
         tmp = super().to_dict(*args, **kwargs)
@@ -99,10 +99,10 @@ class Group(models.Model, ModelMixin):
 
 
 class Contact(models.Model, ModelMixin):
-    name = models.CharField(max_length=50)
-    phone = models.CharField(max_length=20, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=50, verbose_name="联系人姓名")
+    phone = models.CharField(max_length=20, null=True, verbose_name="手机号")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
 
     def to_dict(self, *args, **kwargs):
         tmp = super().to_dict(*args, **kwargs)
@@ -136,10 +136,10 @@ class ContactChannel(models.Model, ModelMixin):
         ("qy_wx", "企业微信"),
         ("feishu", "飞书"),
     )
-    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, related_name="channels")
-    type = models.CharField(max_length=20, choices=TYPES)
-    identifier = EncryptedTextField()
-    secret = EncryptedTextField(null=True)
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, related_name="channels", verbose_name="联系人")
+    type = models.CharField(max_length=20, choices=TYPES, verbose_name="渠道类型")
+    identifier = EncryptedTextField(verbose_name="标识符")
+    secret = EncryptedTextField(null=True, verbose_name="密钥")
 
     def __repr__(self):
         return "<ContactChannel %r>" % self.type

@@ -11,15 +11,15 @@ import json
 
 
 class Host(models.Model, ModelMixin):
-    name = models.CharField(max_length=100)
-    hostname = models.CharField(max_length=50)
-    port = models.IntegerField(null=True)
-    username = models.CharField(max_length=50)
-    pkey = EncryptedTextField(null=True)
-    desc = models.CharField(max_length=255, null=True)
-    is_verified = models.BooleanField(default=False)
-    created_at = models.CharField(max_length=20, default=human_datetime)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=100, verbose_name="主机名称")
+    hostname = models.CharField(max_length=50, verbose_name="主机地址")
+    port = models.IntegerField(null=True, verbose_name="SSH端口")
+    username = models.CharField(max_length=50, verbose_name="用户名")
+    pkey = EncryptedTextField(null=True, verbose_name="密钥")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    is_verified = models.BooleanField(default=False, verbose_name="已验证")
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
 
     @property
     def private_key(self):
@@ -57,25 +57,25 @@ class HostExtend(models.Model, ModelMixin):
         ("PayByBandwidth", "按带宽计费"),
         ("Other", "其他"),
     )
-    host = models.OneToOneField(Host, on_delete=models.CASCADE)
-    instance_id = models.CharField(max_length=64, null=True)
-    zone_id = models.CharField(max_length=30, null=True)
-    cpu = models.IntegerField()
-    memory = models.FloatField()
-    disk = models.CharField(max_length=255, default="[]")
-    os_name = models.CharField(max_length=50)
-    os_type = models.CharField(max_length=20)
-    private_ip_address = models.CharField(max_length=255)
-    public_ip_address = models.CharField(max_length=255)
+    host = models.OneToOneField(Host, on_delete=models.CASCADE, verbose_name="关联主机")
+    instance_id = models.CharField(max_length=64, null=True, verbose_name="实例ID")
+    zone_id = models.CharField(max_length=30, null=True, verbose_name="可用区ID")
+    cpu = models.IntegerField(verbose_name="CPU核心数")
+    memory = models.FloatField(verbose_name="内存(GB)")
+    disk = models.CharField(max_length=255, default="[]", verbose_name="磁盘信息")
+    os_name = models.CharField(max_length=50, verbose_name="操作系统名称")
+    os_type = models.CharField(max_length=20, verbose_name="操作系统类型")
+    private_ip_address = models.CharField(max_length=255, verbose_name="内网IP")
+    public_ip_address = models.CharField(max_length=255, verbose_name="公网IP")
     instance_charge_type = models.CharField(
-        max_length=20, choices=INSTANCE_CHARGE_TYPES
+        max_length=20, choices=INSTANCE_CHARGE_TYPES, verbose_name="实例计费类型"
     )
     internet_charge_type = models.CharField(
-        max_length=20, choices=INTERNET_CHARGE_TYPES
+        max_length=20, choices=INTERNET_CHARGE_TYPES, verbose_name="网络计费类型"
     )
-    created_time = models.CharField(max_length=20, null=True)
-    expired_time = models.CharField(max_length=20, null=True)
-    updated_at = models.CharField(max_length=20, default=human_datetime)
+    created_time = models.CharField(max_length=20, null=True, verbose_name="创建时间")
+    expired_time = models.CharField(max_length=20, null=True, verbose_name="过期时间")
+    updated_at = models.CharField(max_length=20, default=human_datetime, verbose_name="更新时间")
 
     def to_view(self):
         tmp = self.to_dict(excludes=("id",))
@@ -91,10 +91,10 @@ class HostExtend(models.Model, ModelMixin):
 
 
 class Group(models.Model, ModelMixin):
-    name = models.CharField(max_length=50)
-    parent_id = models.IntegerField(default=0)
-    sort_id = models.IntegerField(default=0)
-    hosts = models.ManyToManyField(Host, related_name="groups")
+    name = models.CharField(max_length=50, verbose_name="分组名称")
+    parent_id = models.IntegerField(default=0, verbose_name="父分组ID")
+    sort_id = models.IntegerField(default=0, verbose_name="排序ID")
+    hosts = models.ManyToManyField(Host, related_name="groups", verbose_name="关联主机")
 
     def to_view(self, with_hosts=False):
         response = dict(key=self.id, value=self.id, title=self.name, children=[])

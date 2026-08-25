@@ -2,14 +2,14 @@ import React, { useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { AuthDiv, Breadcrumb } from 'components';
 import {
-    Card, Statistic, Row, Col,
+    Card, Statistic, Row, Col, Tag,
 } from 'antd';
 import {
-    DatabaseOutlined, CheckCircleOutlined, WindowsOutlined,
-    CodepenCircleOutlined,
+    DatabaseOutlined, CheckCircleOutlined,
 } from '@ant-design/icons';
 
 import store from './store';
+import { DB_TYPES } from './dbTypes';
 import DatabaseTable from "./components/DatabaseTable";
 import DatabaseDrawer from './components/DatabaseDrawer';
 import DatabaseDetail from './components/DatabaseDetail';
@@ -19,6 +19,22 @@ export default observer(function DatabaseDashboard() {
     useEffect(() => {
         store.loadData();
     }, []);
+
+    const typeCards = Object.entries(DB_TYPES)
+        .filter(([key]) => store.typeCounts[key])
+        .slice(0, 4)
+        .map(([key, conf]) => (
+            <Col key={key} xs={24} sm={12} lg={6}>
+                <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    <Statistic
+                        title={<Tag color={conf.tagColor} style={{ margin: 0 }}>{conf.label}</Tag>}
+                        value={store.typeCounts[key] || 0}
+                        prefix={<DatabaseOutlined style={{ color: conf.hexColor }} />}
+                        valueStyle={{ color: conf.hexColor }}
+                    />
+                </Card>
+            </Col>
+        ));
 
     return (
         <>
@@ -45,26 +61,7 @@ export default observer(function DatabaseDashboard() {
                             />
                         </Card>
                     </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                            <Statistic
-                                title="MySQL"
-                                value={store.mysql || 0}
-                                prefix={<WindowsOutlined style={{ color: '#fa8c16' }} />}
-                                valueStyle={{ color: '#fa8c16' }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                            <Statistic
-                                title="Redis"
-                                value={store.redis || 0}
-                                prefix={<CodepenCircleOutlined style={{ color: '#eb2f96' }} />}
-                                valueStyle={{ color: '#eb2f96' }}
-                            />
-                        </Card>
-                    </Col>
+                    {typeCards}
                 </Row>
                 <DatabaseTable />
             </AuthDiv>

@@ -13,6 +13,7 @@ import KeySetting from './KeySetting';
 import SecuritySetting from './SecuritySetting';
 import PushSetting from './PushSetting';
 import ExecEngineSetting from './ExecEngineSetting';
+import StorageSetting from './StorageSetting';
 import About from './About';
 import styles from './index.module.css';
 import store from './store';
@@ -50,6 +51,7 @@ class Index extends React.Component {
                 {key: 'alarm', label: '报警服务设置'},
                 {key: 'service', label: '开放服务设置'},
                 {key: 'engine', label: '执行引擎设置'},
+                {key: 'storage', label: '存储配置'},
                 {key: 'about', label: '关于'},
               ]}
             />
@@ -62,6 +64,7 @@ class Index extends React.Component {
             {selectedKeys[0] === 'service' && <OpenService/>}
             {selectedKeys[0] === 'key' && <KeySetting/>}
             {selectedKeys[0] === 'engine' && <ExecEngineSetting/>}
+            {selectedKeys[0] === 'storage' && <StorageSetting/>}
             {selectedKeys[0] === 'about' && <About/>}
           </div>
         </div>

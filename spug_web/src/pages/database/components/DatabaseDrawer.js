@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Drawer, Form, Input, Select, Button, Space, message } from 'antd';
 import store from '../store';
+import { DB_TYPE_OPTIONS, getDbTypeConfig } from '../dbTypes';
 const { Option } = Select;
 
 const DatabaseDrawer = () => {
@@ -9,7 +10,8 @@ const DatabaseDrawer = () => {
   const isEdit = !!store.editRecord;
 
   const dbType = Form.useWatch('type', form);
-  const isRedis = dbType === 'redis';
+  const dbConf = getDbTypeConfig(dbType);
+  const noAuth = !dbConf.auth;
 
   useEffect(() => {
     if (store.formVisible) {
@@ -96,9 +98,9 @@ const DatabaseDrawer = () => {
           rules={[{ required: true, message: '请选择数据库类型' }]}
         >
           <Select placeholder="请选择数据库类型">
-            <Option value="mysql">MySQL</Option>
-            <Option value="redis">Redis</Option>
-            <Option value="postgresql">PostgreSQL</Option>
+            {DB_TYPE_OPTIONS.map(opt => (
+              <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+            ))}
           </Select>
         </Form.Item>
 
@@ -115,7 +117,7 @@ const DatabaseDrawer = () => {
           label="端口"
           rules={[{ required: true, message: '请输入端口号' }]}
         >
-          <Input placeholder={isRedis ? '6379' : '3306'} />
+          <Input placeholder={String(dbConf.port || '3306')} />
         </Form.Item>
 
         <Form.Item
@@ -123,13 +125,13 @@ const DatabaseDrawer = () => {
           label="用户名"
           rules={[
             {
-              required: !isRedis,
-              message: isRedis ? '用户名非必填' : '请输入用户名',
+              required: !noAuth,
+              message: noAuth ? '用户名非必填' : '请输入用户名',
             },
           ]}
-          extra={isRedis ? 'Redis 连接通常无需用户名，可留空' : ''}
+          extra={noAuth ? '该数据库连接通常无需用户名，可留空' : ''}
         >
-          <Input placeholder={isRedis ? '用户名（可选）' : 'root'} />
+          <Input placeholder={noAuth ? '用户名（可选）' : 'root'} />
         </Form.Item>
 
         <Form.Item
@@ -137,13 +139,13 @@ const DatabaseDrawer = () => {
           label="密码"
           rules={isEdit ? [] : [
             {
-              required: !isRedis,
-              message: isRedis ? '密码非必填' : '请输入密码',
+              required: !noAuth,
+              message: noAuth ? '密码非必填' : '请输入密码',
             },
           ]}
-          extra={isEdit ? '留空则不修改密码' : (isRedis ? 'Redis 连接通常无需密码，可留空' : '')}
+          extra={isEdit ? '留空则不修改密码' : (noAuth ? '该数据库连接通常无需密码，可留空' : '')}
         >
-          <Input.Password placeholder={isEdit ? '留空不修改' : (isRedis ? '密码（可选）' : '请输入密码')} />
+          <Input.Password placeholder={isEdit ? '留空不修改' : (noAuth ? '密码（可选）' : '请输入密码')} />
         </Form.Item>
 
         <Form.Item

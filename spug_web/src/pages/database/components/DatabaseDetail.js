@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { hasPermission } from 'libs';
 import store from '../store';
+import { getDbTypeConfig } from '../dbTypes';
 import SlowQuery from './SlowQuery';
 import BackupManager from './BackupManager';
 
@@ -19,13 +20,6 @@ const { Text } = Typography;
 const statusMap = {
   0: { text: '在线', color: 'success' },
   1: { text: '离线', color: 'error' },
-};
-
-const typeTagMap = {
-  mysql: { color: 'blue', label: 'MySQL' },
-  redis: { color: 'magenta', label: 'Redis' },
-  postgresql: { color: 'purple', label: 'PostgreSQL' },
-  mongodb: { color: 'cyan', label: 'MongoDB' },
 };
 
 const iconComponentMap = {
@@ -137,7 +131,7 @@ function BasicTab({ record }) {
     }
   };
 
-  const typeTag = typeTagMap[record.type] || { color: 'blue', label: record.type };
+  const typeTag = { color: getDbTypeConfig(record.type).tagColor, label: getDbTypeConfig(record.type).label };
 
   return (
     <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }} styles={{ label: { width: 120, fontWeight: 500 } }}>
@@ -182,7 +176,7 @@ export default observer(function DatabaseDetail() {
   const record = store.detailData || store.detailRecord || {};
   const live = record.live || null;
   const liveError = record.live_error || null;
-  const typeTag = typeTagMap[record.type] || { color: 'blue', label: record.type || 'MySQL' };
+  const typeTag = { color: getDbTypeConfig(record.type).tagColor, label: getDbTypeConfig(record.type).label };
 
   const handleRefresh = () => {
     if (record.id) {
@@ -224,12 +218,15 @@ export default observer(function DatabaseDetail() {
     }
   }
 
-  if (record.type === 'mysql') {
+  const dbConf = getDbTypeConfig(record.type);
+  if (dbConf.slowQuery) {
     tabItems.push({
       key: 'slow_query',
       label: '慢查询分析',
       children: <SlowQuery />,
     });
+  }
+  if (dbConf.backup) {
     tabItems.push({
       key: 'backup',
       label: '备份管理',

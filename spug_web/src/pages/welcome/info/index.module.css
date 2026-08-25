@@ -1,25 +1,101 @@
 .container {
-    display: flex;
-    background-color: #fff;
-    padding: 16px 0;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
 }
-.left {
-    flex: 2;
-    border-right: 1px solid #e8e8e8;
+
+.sidebar {
+  flex: 0 0 300px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
 }
-.right {
-    flex: 7;
-    padding: 8px 40px;
+
+.main {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.sidebarTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.85);
+  margin-bottom: 20px;
+}
+
+.avatarWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.infoList {
+  margin-bottom: 20px;
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.infoIcon {
+  width: 28px;
+  color: #8c8c8c;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.infoLabel {
+  color: #8c8c8c;
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: rgba(0, 0, 0, 0.85);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.securityTitle {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 8px;
+}
+
+.securityLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.securityLink {
+  color: #1890ff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.securityLink:hover {
+  opacity: 0.85;
 }
 
 .title {
-    margin-bottom: 24px;
-    color: rgba(0, 0, 0, .85);
-    font-weight: 500;
-    font-size: 20px;
-    line-height: 28px;
+  margin-bottom: 24px;
+  color: rgba(0, 0, 0, .85);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 .form {
-    max-width: 320px;
+  max-width: 420px;
 }

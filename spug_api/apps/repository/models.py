@@ -18,16 +18,16 @@ class Repository(models.Model, ModelMixin):
         ('2', '失败'),
         ('5', '成功'),
     )
-    app = models.ForeignKey(App, on_delete=models.PROTECT)
-    env = models.ForeignKey(Environment, on_delete=models.PROTECT)
-    deploy = models.ForeignKey(Deploy, on_delete=models.PROTECT)
-    version = models.CharField(max_length=100)
-    spug_version = models.CharField(max_length=50)
-    remarks = models.CharField(max_length=255, null=True)
-    extra = models.TextField()
-    status = models.CharField(max_length=2, choices=STATUS, default='0')
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    app = models.ForeignKey(App, on_delete=models.PROTECT, verbose_name="应用")
+    env = models.ForeignKey(Environment, on_delete=models.PROTECT, verbose_name="环境")
+    deploy = models.ForeignKey(Deploy, on_delete=models.PROTECT, verbose_name="发布配置")
+    version = models.CharField(max_length=100, verbose_name="版本号")
+    spug_version = models.CharField(max_length=50, verbose_name="Spug版本")
+    remarks = models.CharField(max_length=255, null=True, verbose_name="备注")
+    extra = models.TextField(verbose_name="扩展信息")
+    status = models.CharField(max_length=2, choices=STATUS, default='0', verbose_name="构建状态")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="创建人")
 
     @staticmethod
     def make_spug_version(deploy_id):

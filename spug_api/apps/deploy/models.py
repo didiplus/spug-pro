@@ -25,29 +25,29 @@ class DeployRequest(models.Model, ModelMixin):
         ("2", "回滚"),
         ("3", "自动发布"),
     )
-    deploy = models.ForeignKey(Deploy, on_delete=models.CASCADE)
-    repository = models.ForeignKey(Repository, null=True, on_delete=models.SET_NULL)
-    name = models.CharField(max_length=100)
-    type = models.CharField(max_length=2, choices=TYPES, default="1")
-    extra = models.TextField()
-    host_ids = models.TextField()
-    desc = models.CharField(max_length=255, null=True)
-    status = models.CharField(max_length=2, choices=STATUS)
-    reason = models.CharField(max_length=255, null=True)
-    version = models.CharField(max_length=100, null=True)
-    spug_version = models.CharField(max_length=50, null=True)
-    plan = models.DateTimeField(null=True)
-    fail_host_ids = models.TextField(default="[]")
+    deploy = models.ForeignKey(Deploy, on_delete=models.CASCADE, verbose_name="发布配置")
+    repository = models.ForeignKey(Repository, null=True, on_delete=models.SET_NULL, verbose_name="代码仓库")
+    name = models.CharField(max_length=100, verbose_name="发布标题")
+    type = models.CharField(max_length=2, choices=TYPES, default="1", verbose_name="发布类型")
+    extra = models.TextField(verbose_name="扩展信息")
+    host_ids = models.TextField(verbose_name="目标主机")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    status = models.CharField(max_length=2, choices=STATUS, verbose_name="状态")
+    reason = models.CharField(max_length=255, null=True, verbose_name="驳回原因")
+    version = models.CharField(max_length=100, null=True, verbose_name="版本号")
+    spug_version = models.CharField(max_length=50, null=True, verbose_name="Spug版本")
+    plan = models.DateTimeField(null=True, verbose_name="计划发布时间")
+    fail_host_ids = models.TextField(default="[]", verbose_name="失败主机")
 
-    created_at = models.CharField(max_length=20, default=human_datetime)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
-    approve_at = models.CharField(max_length=20, null=True)
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
+    approve_at = models.CharField(max_length=20, null=True, verbose_name="审核时间")
     approve_by = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="+", null=True
+        User, on_delete=models.PROTECT, related_name="+", null=True, verbose_name="审核人"
     )
-    do_at = models.CharField(max_length=20, null=True)
+    do_at = models.CharField(max_length=20, null=True, verbose_name="发布时间")
     do_by = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="+", null=True
+        User, on_delete=models.PROTECT, related_name="+", null=True, verbose_name="发布人"
     )
 
     @property

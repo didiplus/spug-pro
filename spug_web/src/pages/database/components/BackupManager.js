@@ -2,14 +2,16 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react';
 import {
   Table, Button, Space, Tag, Popconfirm, Modal, Form, Select, Input, message, Progress,
-  Flex, Typography, Alert, Card, Statistic, Row, Col, Tooltip,
+  Flex, Typography, Alert, Card, Statistic, Row, Col, Tooltip, Switch, InputNumber, Divider,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, ReloadOutlined, DownloadOutlined, FileZipOutlined,
+  SettingOutlined, ClearOutlined, CloudUploadOutlined,
 } from '@ant-design/icons';
 import { http, X_TOKEN } from 'libs';
 import { hasPermission } from 'libs';
 import store from '../store';
+
 
 const { Text } = Typography;
 
@@ -41,12 +43,21 @@ export default observer(function BackupManager() {
   const [creating, setCreating] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [form] = Form.useForm();
+  const [policyVisible, setPolicyVisible] = useState(false);
+  const [policyForm] = Form.useForm();
+  const [policySaving, setPolicySaving] = useState(false);
+  const [pollingIds, setPollingIds] = useState(new Set());
+
 
   const record = store.detailData || store.detailRecord || {};
   const live = store.detailData?.live;
   const dbOptions = live?.databases?.rows?.map((r) => ({
     label: r.name, value: r.name,
   })) || [];
+
+  useEffect(() => {
+    store.fetchStorageConfigs();
+  }, []);
 
   // 计算统计信息
   const successCount = records.filter(r => r.status === 'success').length;
@@ -75,11 +86,12 @@ export default observer(function BackupManager() {
     try {
       const values = await form.validateFields();
       setCreating(true);
-      await http.post(`/api/db/instances/${record.id}/backups/`, values);
-      message.success('备份任务已创建');
+      const res = await http.post(`/api/db/instances/${record.id}/backups/`, values);
+      message.success('备份任务已创建，正在异步执行');
       setFormVisible(false);
       form.resetFields();
       fetchData(1);
+      pollBackupStatus(res.id);
     } catch (err) {
       if (err.response?.data?.error) {
         message.error(err.response.data.error);
@@ -87,6 +99,60 @@ export default observer(function BackupManager() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const pollBackupStatus = (backupId) => {
+    setPollingIds(prev => new Set([...prev, backupId]));
+    const timer = setInterval(async () => {
+      try {
+        const res = await http.get(`/api/db/instances/${record.id}/backups/${backupId}/status/`);
+        setRecords(prev => prev.map(r => r.id === backupId ? { ...r, status: res.status, progress: res.progress } : r));
+        if (res.status === 'success' || res.status === 'failed') {
+          clearInterval(timer);
+          setPollingIds(prev => {
+            const next = new Set(prev);
+            next.delete(backupId);
+            return next;
+          });
+          fetchData();
+        }
+      } catch {
+        clearInterval(timer);
+      }
+    }, 2000);
+  };
+
+  const handleSavePolicy = async () => {
+    try {
+      const values = await policyForm.validateFields();
+      setPolicySaving(true);
+      await store.saveRetentionPolicy(record.id, values);
+      message.success('保留策略已保存');
+      setPolicyVisible(false);
+    } catch (err) {
+      if (err.response?.data?.error) {
+        message.error(err.response.data.error);
+      }
+    } finally {
+      setPolicySaving(false);
+    }
+  };
+
+  const handleCleanup = async () => {
+    try {
+      const res = await store.cleanupBackups(record.id);
+      message.success(`已清理 ${res.deleted || 0} 个过期备份`);
+      fetchData();
+    } catch (err) {
+      message.error('清理失败');
+    }
+  };
+
+  const openPolicyModal = async () => {
+    await store.fetchRetentionPolicy(record.id);
+    const p = store.retentionPolicy;
+    policyForm.setFieldsValue(p || { strategy_type: 'count', keep_count: 30, keep_days: 7, keep_weekly: 4, keep_monthly: 12, enabled: true, auto_cleanup: true });
+    setPolicyVisible(true);
   };
 
   const handleDelete = async (backupId) => {
@@ -103,12 +169,12 @@ export default observer(function BackupManager() {
   const downloadAbortRef = useRef(null);
 
   const handleDownload = async (backup) => {
-    if (!backup.file_path) {
+    if (!backup.file_path && !backup.remote_path) {
       message.warning('备份文件不存在');
       return;
     }
     const url = `/api/db/instances/${record.id}/backups/${backup.id}/download/?x-token=${X_TOKEN}`;
-    const fileName = backup.file_path.split('/').pop() || `backup_${backup.id}.sql.gz`;
+    const fileName = (backup.file_path || backup.remote_path || '').split('/').pop() || `backup_${backup.id}.sql.gz`;
 
     setDownloadState({ visible: true, percent: 0, name: fileName, size: backup.file_size || 0, loaded: 0 });
     const controller = new AbortController();
@@ -179,9 +245,17 @@ export default observer(function BackupManager() {
     {
       title: '状态',
       dataIndex: 'status',
-      width: 80,
-      render: (v) => {
+      width: 100,
+      render: (v, r) => {
         const s = statusMap[v] || { text: v, color: 'default' };
+        if (v === 'running' || v === 'pending') {
+          return (
+            <Flex vertical gap={4}>
+              <Tag color={s.color}>{s.text}</Tag>
+              <Progress percent={r.progress || 0} size="small" />
+            </Flex>
+          );
+        }
         return <Tag color={s.color}>{s.text}</Tag>;
       },
     },
@@ -204,6 +278,22 @@ export default observer(function BackupManager() {
       render: (v) => v || '-',
     },
     {
+      title: '存储',
+      width: 100,
+      render: (_, r) => {
+        if (r.storage_status === 'uploaded') {
+          return <Tag color="success" icon={<CloudUploadOutlined />}>远程</Tag>;
+        }
+        if (r.storage_status === 'upload_failed') {
+          return <Tooltip title={r.error_message || '上传失败'}><Tag color="error">上传失败</Tag></Tooltip>;
+        }
+        if (r.remote_path) {
+          return <Tag color="blue">远程</Tag>;
+        }
+        return <Tag color="default">本地</Tag>;
+      },
+    },
+    {
       title: '创建人',
       dataIndex: 'created_by_name',
       width: 90,
@@ -219,7 +309,7 @@ export default observer(function BackupManager() {
       fixed: 'right',
       render: (_, r) => (
         <Space size="small">
-          {r.status === 'success' && hasPermission('database.instance.backup_download') && (
+          {r.status === 'success' && (r.file_path || r.remote_path) && hasPermission('database.instance.backup_download') && (
             <Tooltip title="下载">
               <Button
                 type="link"
@@ -276,6 +366,19 @@ export default observer(function BackupManager() {
               新建备份
             </Button>
           )}
+          {hasPermission('database.instance.backup_add') && (
+            <Button size="middle" icon={<SettingOutlined />} onClick={openPolicyModal}>
+              保留策略
+            </Button>
+          )}
+
+          {hasPermission('database.instance.backup_del') && (
+            <Popconfirm title="确认按保留策略清理过期备份？" onConfirm={handleCleanup}>
+              <Button size="middle" icon={<ClearOutlined />}>
+                清理过期
+              </Button>
+            </Popconfirm>
+          )}
           <Button size="middle" icon={<ReloadOutlined />} loading={loading} onClick={() => fetchData()}>
             刷新
           </Button>
@@ -300,7 +403,7 @@ export default observer(function BackupManager() {
         size="middle"
         bordered
         loading={loading}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1300 }}
         pagination={total > 20 ? {
           current: page,
           total,
@@ -367,8 +470,76 @@ export default observer(function BackupManager() {
           <Form.Item name="remark" label="备注">
             <Input.TextArea rows={3} placeholder="可选，最多200字" maxLength={200} />
           </Form.Item>
+          <Form.Item name="storage_config_id" label="远程存储" tooltip="选择后将备份文件上传到远程 S3 兼容存储">
+            <Select
+              placeholder="仅本地存储"
+              allowClear
+              options={store.storageConfigs
+                .filter(c => c.enabled)
+                .map(c => ({ label: `${c.name} (${c.bucket})`, value: c.id }))}
+            />
+          </Form.Item>
         </Form>
       </Modal>
+
+      {/* 保留策略弹窗 */}
+      <Modal
+        title="保留策略配置"
+        open={policyVisible}
+        onCancel={() => setPolicyVisible(false)}
+        onOk={handleSavePolicy}
+        confirmLoading={policySaving}
+        width={520}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={policyForm} layout="vertical">
+          <Form.Item name="strategy_type" label="策略类型" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="count">按数量保留（保留最近 N 个）</Select.Option>
+              <Select.Option value="time">按时间保留（保留最近 N 天）</Select.Option>
+              <Select.Option value="gfs">GFS 祖父-父-子（分层保留）</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item shouldUpdate noStyle>
+            {({ getFieldValue }) => {
+              const st = getFieldValue('strategy_type');
+              return (
+                <>
+                  {(st === 'count' || st === 'gfs') && (
+                    <Form.Item name="keep_count" label="保留数量（个）" rules={[{ required: true }]}>
+                      <InputNumber min={1} max={999} style={{ width: '100%' }} placeholder="如 30" />
+                    </Form.Item>
+                  )}
+                  {(st === 'time' || st === 'gfs') && (
+                    <Form.Item name="keep_days" label="保留天数（天）" rules={[{ required: true }]}>
+                      <InputNumber min={1} max={3650} style={{ width: '100%' }} placeholder="如 7" />
+                    </Form.Item>
+                  )}
+                  {st === 'gfs' && (
+                    <>
+                      <Form.Item name="keep_weekly" label="保留周数（周）" rules={[{ required: true }]}>
+                        <InputNumber min={1} max={520} style={{ width: '100%' }} placeholder="如 4" />
+                      </Form.Item>
+                      <Form.Item name="keep_monthly" label="保留月数（月）" rules={[{ required: true }]}>
+                        <InputNumber min={1} max={120} style={{ width: '100%' }} placeholder="如 12" />
+                      </Form.Item>
+                    </>
+                  )}
+                </>
+              );
+            }}
+          </Form.Item>
+          <Divider />
+          <Form.Item name="enabled" label="启用策略" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="auto_cleanup" label="备份后自动清理" valuePropName="checked" tooltip="每次备份成功后自动按策略清理过期备份">
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+
     </Flex>
   );
 });

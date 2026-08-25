@@ -37,9 +37,11 @@ def host_executor(host, command):
 
 
 def db_backup_executor(command, created_by_id=None):
-    from apps.database.models import DatabaseInstance, DatabaseBackup
-    from apps.database.utils import BACKUP_CREATORS
+    from apps.database.models import DatabaseInstance, DatabaseBackup, RetentionPolicy
+    from apps.setting.models import StorageConfig
+    from apps.database.utils import BACKUP_CREATORS, cleanup_old_backups
     from apps.account.models import User
+    import uuid
 
     code, out, now = 1, None, time.time()
     try:
@@ -47,6 +49,7 @@ def db_backup_executor(command, created_by_id=None):
         instance_id = config.get('instance_id')
         database = config.get('database') or None
         mode = config.get('mode', 'full')
+        storage_config_id = config.get('storage_config_id')
 
         instance = DatabaseInstance.objects.filter(pk=instance_id).first()
         if not instance:
@@ -57,6 +60,10 @@ def db_backup_executor(command, created_by_id=None):
             return 1, round(time.time() - now, 3), f'Backup not supported for type: {instance.type}'
 
         created_by = User.objects.filter(pk=created_by_id).first() if created_by_id else None
+        task_id = uuid.uuid4().hex
+        storage_config = None
+        if storage_config_id:
+            storage_config = StorageConfig.objects.filter(pk=storage_config_id, enabled=True).first()
 
         with transaction.atomic():
             backup = DatabaseBackup.objects.create(
@@ -64,6 +71,9 @@ def db_backup_executor(command, created_by_id=None):
                 database=database,
                 mode=mode,
                 status='running',
+                progress=10,
+                task_id=task_id,
+                storage_config=storage_config,
                 remark='定时任务自动备份',
                 created_by=created_by,
             )
@@ -77,15 +87,50 @@ def db_backup_executor(command, created_by_id=None):
                 backup.file_size = file_size
                 backup.duration = duration
                 backup.status = 'success'
+                backup.progress = 80
                 backup.save()
+
+            upload_msg = ''
+            if storage_config:
+                try:
+                    from apps.setting.storage_backends import upload_to_s3, build_config_from_model
+                    s3_config = build_config_from_model(storage_config)
+                    remote_key, remote_uri = upload_to_s3(s3_config, filepath)
+                    with transaction.atomic():
+                        backup = DatabaseBackup.objects.get(pk=backup_id)
+                        backup.remote_path = remote_key
+                        backup.storage_status = 'uploaded'
+                        backup.progress = 100
+                        backup.save()
+                    upload_msg = f', 已上传至 {remote_uri}'
+                except Exception as upload_err:
+                    with transaction.atomic():
+                        backup = DatabaseBackup.objects.get(pk=backup_id)
+                        backup.storage_status = 'upload_failed'
+                        backup.error_message = f'远程上传失败: {str(upload_err)[:300]}'
+                        backup.progress = 100
+                        backup.save()
+                    upload_msg = f', 远程上传失败: {str(upload_err)}'
+            else:
+                with transaction.atomic():
+                    backup = DatabaseBackup.objects.get(pk=backup_id)
+                    backup.progress = 100
+                    backup.save()
+
+            cleanup_msg = ''
+            if RetentionPolicy.objects.filter(instance=instance, enabled=True, auto_cleanup=True).exists():
+                deleted = cleanup_old_backups(instance)
+                cleanup_msg = f', 保留策略清理: {deleted} 个旧备份已删除'
+
+            out = f'备份成功: {filepath} ({file_size} bytes, {duration}ms){upload_msg}{cleanup_msg}'
             code = 0
-            out = f'备份成功: {filepath} ({file_size} bytes, {duration}ms)'
         except Exception as e:
             try:
                 with transaction.atomic():
                     backup = DatabaseBackup.objects.get(pk=backup_id)
                     backup.status = 'failed'
                     backup.error_message = str(e)[:500]
+                    backup.progress = 0
                     backup.save()
             except Exception:
                 pass

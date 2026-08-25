@@ -19,6 +19,7 @@ import uuid
 import json
 import time
 import os
+import shlex
 
 
 class TransferView(View):
@@ -47,7 +48,7 @@ class TransferView(View):
                     return json_response(error='请输入正确的数据源路径')
                 host = Host.objects.get(pk=host_id)
                 with host.get_ssh() as ssh:
-                    code, _ = ssh.exec_command_raw(f'[ -d {path} ]')
+                    code, _ = ssh.exec_command_raw(f'[ -d {shlex.quote(path)} ]')
                     if code != 0:
                         return json_response(error='数据源路径必须为该主机上已存在的目录')
                 os.makedirs(base_dir)

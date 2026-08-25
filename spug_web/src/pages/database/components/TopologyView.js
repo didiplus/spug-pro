@@ -9,10 +9,11 @@ import {
 } from '@ant-design/icons';
 import { http } from 'libs';
 import store from '../store';
+import { DB_TYPES } from '../dbTypes';
 
 const { Text } = Typography;
 
-const TYPE_COLORS = { mysql: '#1677ff', redis: '#eb2f96', postgresql: '#722ed1', mongodb: '#13c2c2' };
+const TYPE_COLORS = Object.fromEntries(Object.entries(DB_TYPES).map(([k, v]) => [k, v.hexColor]));
 
 const ROLE_CONFIG = {
   master: { label: '主库', color: '#1677ff', bg: '#e6f4ff', border: '#91caff' },

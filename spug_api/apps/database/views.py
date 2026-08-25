@@ -3,11 +3,14 @@ from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
-from apps.database.utils import TEST_FETCHERS, DETAIL_FETCHERS, SQL_EXECUTORS, SLOW_QUERY_FETCHERS, BACKUP_CREATORS
-from apps.database.models import DatabaseInstance, DatabaseBackup, SQLExecutionHistory
+import uuid
+from threading import Thread
+from apps.database.utils import TEST_FETCHERS, DETAIL_FETCHERS, SQL_EXECUTORS, SLOW_QUERY_FETCHERS, BACKUP_CREATORS, run_backup_async, cleanup_old_backups
+from apps.database.models import DatabaseInstance, DatabaseBackup, SQLExecutionHistory, RetentionPolicy
+from apps.setting.models import StorageConfig
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.decorators import method_decorator
-from libs import json_response
+from libs import json_response, human_datetime
 from libs.decorators import auth
 
 
@@ -74,7 +77,7 @@ class DatabaseInstanceView(View):
                 'count': len(data),
                 'results': data,
                 'online': online,
-                **{k: v for k, v in type_counts.items()},
+                'type_counts': type_counts,
             })
 
     # ---------- POST：创建 ----------
@@ -374,17 +377,32 @@ def sql_history_detail(request, instance_id, history_id):
 @auth('database.instance.backup_download')
 def backup_download(request, instance_id, backup_id):
     from django.http import FileResponse
+    import tempfile
     try:
         backup = DatabaseBackup.objects.get(pk=backup_id, instance_id=instance_id)
     except DatabaseBackup.DoesNotExist:
         return json_response(error='Backup not found')
 
-    if not backup.file_path or not os.path.exists(backup.file_path):
-        return json_response(error='备份文件不存在')
+    if backup.file_path and os.path.exists(backup.file_path):
+        filename = os.path.basename(backup.file_path)
+        response = FileResponse(open(backup.file_path, 'rb'), as_attachment=True, filename=filename)
+        return response
 
-    filename = os.path.basename(backup.file_path)
-    response = FileResponse(open(backup.file_path, 'rb'), as_attachment=True, filename=filename)
-    return response
+    if backup.remote_path and backup.storage_config and backup.storage_config.enabled:
+        try:
+            from apps.setting.storage_backends import download_from_s3, build_config_from_model
+            config = build_config_from_model(backup.storage_config)
+            filename = os.path.basename(backup.remote_path)
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=f'_{filename}')
+            os.close(tmp_fd)
+            download_from_s3(config, backup.remote_path, tmp_path)
+            response = FileResponse(open(tmp_path, 'rb'), as_attachment=True, filename=filename)
+            response['Content-Length'] = os.path.getsize(tmp_path)
+            return response
+        except Exception as e:
+            return json_response(error=f'从远程存储下载失败: {str(e)}')
+
+    return json_response(error='备份文件不存在')
 
 
 @csrf_exempt
@@ -420,34 +438,100 @@ def backup_list(request, instance_id):
         database = data.get('database') or None
         mode = data.get('mode', 'full')
         remark = data.get('remark', '')
+        storage_config_id = data.get('storage_config_id')
+
+        storage_config = None
+        if storage_config_id:
+            try:
+                storage_config = StorageConfig.objects.get(pk=storage_config_id, enabled=True)
+            except StorageConfig.DoesNotExist:
+                return json_response(error='指定的存储配置不存在或未启用')
 
         creator = BACKUP_CREATORS.get(instance.type)
         if not creator:
             return json_response(error=f'Backup not supported for type: {instance.type}')
 
+        task_id = uuid.uuid4().hex
         backup = DatabaseBackup.objects.create(
             instance=instance,
             database=database,
             mode=mode,
-            status='running',
+            status='pending',
+            storage_config=storage_config,
             remark=remark,
+            task_id=task_id,
             created_by=request.user,
         )
 
-        try:
-            filepath, file_size, duration = creator(instance, database=database)
-            backup.file_path = filepath
-            backup.file_size = file_size
-            backup.duration = duration
-            backup.status = 'success'
-            backup.save()
-            return json_response(backup.to_dict())
-        except Exception as e:
-            backup.status = 'failed'
-            backup.error_message = str(e)[:500]
-            backup.save()
-            return json_response(error=f'备份失败: {str(e)}')
+        Thread(target=run_backup_async, args=(backup.id,)).start()
+        return json_response(backup.to_dict())
 
+    return json_response(error='Method not allowed')
+
+
+@csrf_exempt
+@auth('database.instance.view')
+def backup_status(request, instance_id, backup_id):
+    try:
+        backup = DatabaseBackup.objects.get(pk=backup_id, instance_id=instance_id)
+    except DatabaseBackup.DoesNotExist:
+        return json_response(error='Backup not found')
+    data = backup.to_dict()
+    data['progress'] = backup.progress
+    data['status'] = backup.status
+    return json_response(data)
+
+
+@csrf_exempt
+@auth('database.instance.view')
+def retention_policy(request, instance_id):
+    try:
+        instance = DatabaseInstance.objects.get(pk=instance_id)
+    except ObjectDoesNotExist:
+        return json_response(error='Instance not found')
+
+    if request.method == 'GET':
+        policy = RetentionPolicy.objects.filter(instance=instance).first()
+        if not policy:
+            return json_response(data=None)
+        return json_response(policy.to_dict())
+
+    elif request.method == 'POST':
+        if not request.user.has_perms(['database.instance.backup_add']):
+            return json_response(error='权限拒绝')
+        data = json.loads(request.body) if request.content_type == 'application/json' else {}
+        policy, _created = RetentionPolicy.objects.get_or_create(instance=instance)
+        policy.strategy_type = data.get('strategy_type', 'count')
+        policy.keep_count = int(data.get('keep_count', 30))
+        policy.keep_days = int(data.get('keep_days', 7))
+        policy.keep_weekly = int(data.get('keep_weekly', 4))
+        policy.keep_monthly = int(data.get('keep_monthly', 12))
+        policy.enabled = bool(data.get('enabled', True))
+        policy.auto_cleanup = bool(data.get('auto_cleanup', True))
+        policy.save()
+        return json_response(policy.to_dict())
+
+    elif request.method == 'DELETE':
+        if not request.user.has_perms(['database.instance.backup_del']):
+            return json_response(error='权限拒绝')
+        RetentionPolicy.objects.filter(instance=instance).delete()
+        return json_response(data={'message': '保留策略已删除'})
+
+    return json_response(error='Method not allowed')
+
+
+@csrf_exempt
+@auth('database.instance.view')
+def cleanup_backups(request, instance_id):
+    if request.method == 'POST':
+        if not request.user.has_perms(['database.instance.backup_del']):
+            return json_response(error='权限拒绝')
+        try:
+            instance = DatabaseInstance.objects.get(pk=instance_id)
+        except ObjectDoesNotExist:
+            return json_response(error='Instance not found')
+        deleted = cleanup_old_backups(instance)
+        return json_response(data={'deleted': deleted})
     return json_response(error='Method not allowed')
 
 
@@ -463,9 +547,20 @@ def backup_detail(request, instance_id, backup_id):
         if not request.user.has_perms(['database.instance.backup_del']):
             return json_response(error='权限拒绝')
         if backup.file_path and os.path.exists(backup.file_path):
-            os.remove(backup.file_path)
+            try:
+                os.remove(backup.file_path)
+            except OSError:
+                pass
+        if backup.remote_path and backup.storage_config and backup.storage_config.enabled:
+            try:
+                from apps.setting.storage_backends import delete_from_s3, build_config_from_model
+                config = build_config_from_model(backup.storage_config)
+                delete_from_s3(config, backup.remote_path)
+            except Exception:
+                pass
         backup.delete()
         return json_response(data={'message': '删除成功'})
 
     return json_response(error='Method not allowed')
+
 

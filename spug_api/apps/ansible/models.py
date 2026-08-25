@@ -11,12 +11,12 @@ import json
 
 class InventoryGroup(models.Model, ModelMixin):
     """Ansible Inventory 分组，支持嵌套子组和组变量"""
-    name = models.CharField(max_length=100)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, related_name="children")
-    hosts = models.ManyToManyField(Host, related_name="inventory_groups")
-    variables = models.TextField(default="{}")
-    children_pattern = models.CharField(max_length=255, null=True)
-    sort_id = models.IntegerField(default=0)
+    name = models.CharField(max_length=100, verbose_name="分组名称")
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, related_name="children", verbose_name="父分组")
+    hosts = models.ManyToManyField(Host, related_name="inventory_groups", verbose_name="关联主机")
+    variables = models.TextField(default="{}", verbose_name="组变量")
+    children_pattern = models.CharField(max_length=255, null=True, verbose_name="子组匹配模式")
+    sort_id = models.IntegerField(default=0, verbose_name="排序ID")
 
     def to_view(self, with_hosts=False):
         tmp = self.to_dict(excludes=("variables",))
@@ -41,12 +41,12 @@ class HostVariable(models.Model, ModelMixin):
         ("bool", "布尔"),
         ("json", "JSON"),
     )
-    host = models.ForeignKey(Host, on_delete=models.CASCADE, related_name="variables")
-    key = models.CharField(max_length=100)
-    value = EncryptedTextField()
-    value_type = models.CharField(max_length=20, default="string", choices=VALUE_TYPES)
-    is_vault = models.BooleanField(default=False)
-    updated_at = models.CharField(max_length=20, default=human_datetime)
+    host = models.ForeignKey(Host, on_delete=models.CASCADE, related_name="variables", verbose_name="关联主机")
+    key = models.CharField(max_length=100, verbose_name="变量名")
+    value = EncryptedTextField(verbose_name="变量值")
+    value_type = models.CharField(max_length=20, default="string", choices=VALUE_TYPES, verbose_name="值类型")
+    is_vault = models.BooleanField(default=False, verbose_name="是否Vault加密")
+    updated_at = models.CharField(max_length=20, default=human_datetime, verbose_name="更新时间")
 
     def to_view(self):
         tmp = self.to_dict()
@@ -74,14 +74,14 @@ class HostVariable(models.Model, ModelMixin):
 
 class VaultSecret(models.Model, ModelMixin):
     """Vault 加密变量"""
-    name = models.CharField(max_length=100)
-    key = models.CharField(max_length=100)
-    encrypted_value = EncryptedTextField()
-    vault_id = models.CharField(max_length=50, default="default")
-    desc = models.CharField(max_length=255, null=True)
-    created_at = models.CharField(max_length=20, default=human_datetime)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
-    updated_at = models.CharField(max_length=20, null=True)
+    name = models.CharField(max_length=100, verbose_name="名称")
+    key = models.CharField(max_length=100, verbose_name="变量名")
+    encrypted_value = EncryptedTextField(verbose_name="加密值")
+    vault_id = models.CharField(max_length=50, default="default", verbose_name="Vault ID")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
+    updated_at = models.CharField(max_length=20, null=True, verbose_name="更新时间")
 
     def to_view(self):
         return self.to_dict(excludes=("encrypted_value",))
@@ -93,10 +93,10 @@ class VaultSecret(models.Model, ModelMixin):
 
 class HostFacts(models.Model, ModelMixin):
     """主机 Facts 缓存 (ansible setup 模块输出)"""
-    host = models.OneToOneField(Host, on_delete=models.CASCADE, related_name="facts")
-    facts = models.TextField(default="{}")
-    ansible_version = models.CharField(max_length=50, null=True)
-    collected_at = models.CharField(max_length=20, default=human_datetime)
+    host = models.OneToOneField(Host, on_delete=models.CASCADE, related_name="facts", verbose_name="关联主机")
+    facts = models.TextField(default="{}", verbose_name="Facts数据")
+    ansible_version = models.CharField(max_length=50, null=True, verbose_name="Ansible版本")
+    collected_at = models.CharField(max_length=20, default=human_datetime, verbose_name="采集时间")
 
     def to_view(self):
         tmp = self.to_dict(excludes=("facts",))

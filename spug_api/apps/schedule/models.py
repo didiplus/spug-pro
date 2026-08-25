@@ -13,10 +13,10 @@ class History(models.Model, ModelMixin):
         (1, "成功"),
         (2, "失败"),
     )
-    task_id = models.IntegerField()
-    status = models.SmallIntegerField(choices=STATUS)
-    run_time = models.CharField(max_length=20)
-    output = models.TextField()
+    task_id = models.IntegerField(verbose_name="任务ID")
+    status = models.SmallIntegerField(choices=STATUS, verbose_name="状态")
+    run_time = models.CharField(max_length=20, verbose_name="执行时间")
+    output = models.TextField(verbose_name="执行输出")
 
     def to_list(self):
         tmp = super().to_dict(selects=("id", "status", "run_time"))
@@ -35,24 +35,24 @@ class Task(models.Model, ModelMixin):
         ("cron", "UNIX cron"),
         ("interval", "普通间隔"),
     )
-    name = models.CharField(max_length=50)
-    type = models.CharField(max_length=50)
-    interpreter = models.CharField(max_length=20, default="sh")
-    command = models.TextField()
-    targets = models.TextField()
-    trigger = models.CharField(max_length=20, choices=TRIGGERS)
-    trigger_args = models.CharField(max_length=255)
-    is_active = models.BooleanField(default=False)
-    desc = models.CharField(max_length=255, null=True)
-    latest = models.ForeignKey(History, on_delete=models.PROTECT, null=True)
-    rst_notify = models.CharField(max_length=255, null=True)
+    name = models.CharField(max_length=50, verbose_name="任务名称")
+    type = models.CharField(max_length=50, verbose_name="任务类型")
+    interpreter = models.CharField(max_length=20, default="sh", verbose_name="解释器")
+    command = models.TextField(verbose_name="执行命令")
+    targets = models.TextField(verbose_name="目标主机")
+    trigger = models.CharField(max_length=20, choices=TRIGGERS, verbose_name="触发器类型")
+    trigger_args = models.CharField(max_length=255, verbose_name="触发器参数")
+    is_active = models.BooleanField(default=False, verbose_name="启用状态")
+    desc = models.CharField(max_length=255, null=True, verbose_name="描述")
+    latest = models.ForeignKey(History, on_delete=models.PROTECT, null=True, verbose_name="最近执行记录")
+    rst_notify = models.CharField(max_length=255, null=True, verbose_name="结果通知")
 
 
-    created_at = models.CharField(max_length=20, default=human_datetime)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
-    updated_at = models.CharField(max_length=20, null=True)
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
+    updated_at = models.CharField(max_length=20, null=True, verbose_name="更新时间")
     updated_by = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="+", null=True
+        User, on_delete=models.PROTECT, related_name="+", null=True, verbose_name="更新人"
     )
 
     def to_dict(self, *args, **kwargs):

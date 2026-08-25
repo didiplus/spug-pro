@@ -19,14 +19,14 @@ class Notify(models.Model, ModelMixin):
         ('flag', '应用发布'),
         ('alert', '系统警告'),
     )
-    title = models.CharField(max_length=255)
-    source = models.CharField(max_length=10, choices=SOURCES)
-    type = models.CharField(max_length=2, choices=TYPES)
-    content = models.TextField(null=True)
-    unread = models.BooleanField(default=True)
-    link = models.CharField(max_length=255, null=True)
+    title = models.CharField(max_length=255, verbose_name="标题")
+    source = models.CharField(max_length=10, choices=SOURCES, verbose_name="来源")
+    type = models.CharField(max_length=2, choices=TYPES, verbose_name="类型")
+    content = models.TextField(null=True, verbose_name="内容")
+    unread = models.BooleanField(default=True, verbose_name="未读")
+    link = models.CharField(max_length=255, null=True, verbose_name="链接")
 
-    created_at = models.CharField(max_length=20, default=human_datetime)
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
 
     @classmethod
     def make_system_notify(cls, title, content):

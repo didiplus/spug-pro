@@ -15,9 +15,10 @@ class DatabaseStore {
   @observable sqlRecord = {};
   @observable total = 0;
   @observable online = 0;
-  @observable mysql = 0;
-  @observable redis = 0;
+  @observable typeCounts = {};
   @observable loading = false;
+  @observable retentionPolicy = null;
+  @observable retentionLoading = false;
 
   // 分页状态
   @observable pagination = {
@@ -52,8 +53,7 @@ class DatabaseStore {
         this.list = data.results || [];
         this.total = data.count || 0;
         this.online = data.online || 0;
-        this.mysql = data.mysql || 0;
-        this.redis = data.redis || 0;
+        this.typeCounts = data.type_counts || {};
 
         this.pagination.current = query.page;
         this.pagination.pageSize = query.page_size;
@@ -149,6 +149,66 @@ showEdit = (record) => {
     } finally {
       runInAction(() => {
         this.detailLoading = false;
+      });
+    }
+  }
+
+  @action
+  async fetchRetentionPolicy(instanceId) {
+    this.retentionLoading = true;
+    try {
+      const res = await http.get(`/api/db/instances/${instanceId}/retention-policy/`);
+      runInAction(() => {
+        this.retentionPolicy = res;
+      });
+    } catch (error) {
+      console.error('加载保留策略失败:', error);
+    } finally {
+      runInAction(() => {
+        this.retentionLoading = false;
+      });
+    }
+  }
+
+  @action
+  async saveRetentionPolicy(instanceId, values) {
+    const res = await http.post(`/api/db/instances/${instanceId}/retention-policy/`, values);
+    runInAction(() => {
+      this.retentionPolicy = res;
+    });
+    return res;
+  }
+
+  @action
+  async deleteRetentionPolicy(instanceId) {
+    await http.delete(`/api/db/instances/${instanceId}/retention-policy/`);
+    runInAction(() => {
+      this.retentionPolicy = null;
+    });
+  }
+
+  @action
+  async cleanupBackups(instanceId) {
+    const res = await http.post(`/api/db/instances/${instanceId}/backups/cleanup/`);
+    return res;
+  }
+
+  @observable storageConfigs = [];
+  @observable storageLoading = false;
+
+  @action
+  async fetchStorageConfigs() {
+    this.storageLoading = true;
+    try {
+      const res = await http.get('/api/setting/storage-configs/');
+      runInAction(() => {
+        this.storageConfigs = res || [];
+      });
+    } catch (error) {
+      console.error('加载存储配置失败:', error);
+    } finally {
+      runInAction(() => {
+        this.storageLoading = false;
       });
     }
   }

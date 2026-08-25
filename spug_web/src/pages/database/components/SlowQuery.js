@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { http } from 'libs';
 import store from '../store';
+import { getDbTypeConfig } from '../dbTypes';
 
 const { Text } = Typography;
 
@@ -82,13 +83,13 @@ export default observer(function SlowQuery() {
   }, [record.id]);
 
   useEffect(() => {
-    if (store.detailVisible && record.id && record.type === 'mysql') {
+    if (store.detailVisible && record.id && getDbTypeConfig(record.type).slowQuery) {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.detailVisible]);
 
-  if (record.type !== 'mysql') {
+  if (!getDbTypeConfig(record.type).slowQuery) {
     return <Flex justify="center" style={{ padding: '40px 0' }}><Text type="secondary">当前数据库类型不支持慢查询分析</Text></Flex>;
   }
 

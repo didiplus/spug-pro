@@ -17,6 +17,8 @@ import Breadcrumb from './Breadcrumb';
 import AppSelector from './AppSelector';
 import NotFound from './NotFound';
 import Link from './Link';
+import IconSelect from './IconSelect';
+export { IconByName } from './IconSelect';
 
 
 export {
@@ -34,4 +36,6 @@ export {
   AppSelector,
   NotFound,
   Link,
+  IconSelect,
+
 }

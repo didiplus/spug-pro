@@ -5,6 +5,7 @@ import { PlusOutlined, DeleteOutlined, EditOutlined, InfoCircleOutlined, LinkOut
 import store from '../store';
 import { TableCard, AuthButton } from 'components';
 import { hasPermission } from 'libs';
+import { getDbTypeConfig } from '../dbTypes';
 // 状态颜色映射
 const statusMap = {
   0: { text: '在线', color: 'green' },
@@ -29,8 +30,11 @@ const DatabaseTable = observer(() => {
     {
       title: '类型',
       dataIndex: 'type',
-      render: (type) => <Tag color="blue">{type}</Tag>,
-      width: 100,
+      render: (type) => {
+        const conf = getDbTypeConfig(type);
+        return <Tag color={conf.tagColor}>{conf.label}</Tag>;
+      },
+      width: 110,
     },
     {
       title: '版本',
@@ -59,7 +63,7 @@ const DatabaseTable = observer(() => {
           <Button type="link" icon={<InfoCircleOutlined />} size="small" onClick={() => store.showDetail(record)}>
             详情
           </Button>
-          {record.type !== 'redis' && hasPermission('database.instance.execute') && (
+          {getDbTypeConfig(record.type).sql && hasPermission('database.instance.execute') && (
             <Button type="link" icon={<LinkOutlined />} size="small" onClick={() => store.showSql(record)}>
               连接
             </Button>

@@ -21,7 +21,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPUG_ENV = os.getenv('SPUG_ENV', 'dev').lower()
 IS_PROD = SPUG_ENV == 'prod'
 
-SECRET_KEY = os.getenv('SECRET_KEY', "vk0do47)egwzz!uk49%(y3s(fpx4+ha@ugt-hcv&%&d@hwr&p7")
+SECRET_KEY = os.getenv('SECRET_KEY', '')
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY 未配置！请在 .env 文件或环境变量中设置随机 SECRET_KEY。\n"
+        "生成方式: python -c \"from django.core.management.utils import "
+        "get_random_secret_key; print(get_random_secret_key())\""
+    )
 
 DEBUG = os.getenv('DEBUG', 'true' if not IS_PROD else 'false').lower() == 'true'
 

@@ -28,6 +28,10 @@ function flattenMenus(menus, result = []) {
   return result;
 }
 
+const BUILTIN_ROUTES = [
+  {path: '/welcome/info', component: 'pages/welcome/info'},
+];
+
 export default function () {
   const [collapsed, setCollapsed] = useState(false)
   const [Routes, setRoutes] = useState([]);
@@ -41,12 +45,17 @@ export default function () {
     fetchMenus().then(menuTree => {
       setMenus(menuTree);
       const flat = flattenMenus(menuTree);
-      const routes = flat.map(m => {
+      const menuRoutes = flat.map(m => {
         const Comp = ComponentRegistry[m.component];
         if (!Comp) return null;
         return <Route exact key={m.path} path={m.path} component={Comp}/>;
       }).filter(Boolean);
-      setRoutes(routes);
+      const builtinRoutes = BUILTIN_ROUTES.map(r => {
+        const Comp = ComponentRegistry[r.component];
+        if (!Comp) return null;
+        return <Route exact key={r.path} path={r.path} component={Comp}/>;
+      }).filter(Boolean);
+      setRoutes([...builtinRoutes, ...menuRoutes]);
     });
   }, [])
 

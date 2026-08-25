@@ -156,7 +156,7 @@ class RoleView(AdminView):
 
 class SelfView(View):
     def get(self, request):
-        data = request.user.to_dict(selects=('nickname', 'wx_token'))
+        data = request.user.to_dict(excludes=('access_token', 'password_hash', 'token_expired'))
         return json_response(data)
 
     def patch(self, request):
@@ -165,6 +165,10 @@ class SelfView(View):
             Argument('new_password', required=False),
             Argument('nickname', required=False, help='请输入昵称'),
             Argument('wx_token', required=False),
+            Argument('phone', required=False),
+            Argument('email', required=False),
+            Argument('gender', required=False),
+            Argument('department', required=False),
         ).parse(request.body)
         if error is None:
             if form.old_password and form.new_password:
@@ -185,6 +189,14 @@ class SelfView(View):
                 request.user.nickname = form.nickname
             if form.wx_token is not None:
                 request.user.wx_token = form.wx_token
+            if form.phone is not None:
+                request.user.phone = form.phone
+            if form.email is not None:
+                request.user.email = form.email
+            if form.gender is not None:
+                request.user.gender = form.gender
+            if form.department is not None:
+                request.user.department = form.department
             request.user.save()
         return json_response(error=error)
 

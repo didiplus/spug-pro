@@ -223,8 +223,6 @@ export default observer(function InspectItemManage() {
 
   return (
     <AuthDiv auth="exec.inspect.view">
-      <Breadcrumb items={['首页', '批量执行', '巡检项管理']}/>
-
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
         <Col xs={12} sm={6}>
           <Card size="small" style={{ borderRadius: 8 }}>
@@ -261,7 +259,22 @@ export default observer(function InspectItemManage() {
         </Flex>
       </Card>
 
-      <Table columns={columns} dataSource={filteredItems} rowKey="id" loading={loading} size="middle" pagination={false} style={{ background: '#fff', borderRadius: 8 }} scroll={{ x: 900 }}/>
+      <Table
+        columns={columns}
+        dataSource={filteredItems}
+        rowKey="id"
+        loading={loading}
+        size="middle"
+        pagination={{
+          showSizeChanger: true,
+          showLessItems: true,
+          hideOnSinglePage: true,
+          showTotal: total => `共 ${total} 条`,
+          pageSizeOptions: ['10', '20', '50', '100'],
+        }}
+        style={{ background: '#fff', borderRadius: 8 }}
+        scroll={{ x: 900 }}
+      />
 
       <Modal visible={formVisible} width={720} maskClosable={false} title={editRecord ? '编辑巡检项' : '新建巡检项'} onCancel={() => setFormVisible(false)} footer={
         <Space>

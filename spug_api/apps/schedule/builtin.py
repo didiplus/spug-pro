@@ -19,6 +19,7 @@ from collections import defaultdict
 from pathlib import Path
 import time
 import os
+import subprocess
 
 
 def auto_run_by_day():
@@ -67,6 +68,20 @@ def auto_run_by_day():
                         subprocess.run(['rm', '-rf', transfer_dir], check=False)
                     except Exception:
                         pass  # 静默失败，避免影响主流程
+
+        # 每日自动清理旧数据库备份（基于保留策略）
+        try:
+            from apps.database.models import DatabaseInstance, RetentionPolicy
+            from apps.database.utils import cleanup_old_backups
+            for instance in DatabaseInstance.objects.filter(
+                id__in=RetentionPolicy.objects.filter(enabled=True, auto_cleanup=True).values_list('instance_id', flat=True)
+            ):
+                try:
+                    cleanup_old_backups(instance)
+                except Exception:
+                    pass
+        except Exception:
+            pass
     finally:
         connections.close_all()
 

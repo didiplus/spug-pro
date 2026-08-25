@@ -4,6 +4,7 @@
 import django
 from django.core.cache import cache
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from libs import JsonParser, Argument, json_response, auth, human_datetime
 from libs.utils import generate_random_str
 from django.views.generic import View
@@ -277,3 +278,105 @@ class MenuManageView(AdminView):
         Menu.objects.filter(pk=menu_id).delete()
         count += 1
         return count
+
+
+class StorageConfigView(AdminView):
+    def get(self, request):
+        from apps.setting.models import StorageConfig
+        configs = StorageConfig.objects.all().order_by('-id')
+        return json_response([c.to_dict() for c in configs])
+
+    def post(self, request):
+        from apps.setting.models import StorageConfig
+        import json
+        data = json.loads(request.body) if request.content_type == 'application/json' else {}
+        required = ['name', 'bucket', 'access_key', 'secret_key']
+        missing = [f for f in required if not data.get(f)]
+        if missing:
+            return json_response(error=f'Missing fields: {", ".join(missing)}')
+
+        if StorageConfig.objects.filter(name=data['name']).exists():
+            return json_response(error='存储配置名称已存在')
+
+        config = StorageConfig.objects.create(
+            name=data['name'],
+            storage_type=data.get('storage_type', 's3'),
+            endpoint_url=data.get('endpoint_url') or None,
+            region=data.get('region') or None,
+            bucket=data['bucket'],
+            prefix=data.get('prefix') or None,
+            access_key=data['access_key'],
+            secret_key=data['secret_key'],
+            is_default=bool(data.get('is_default', False)),
+            enabled=bool(data.get('enabled', True)),
+            created_by=request.user,
+        )
+        if config.is_default:
+            StorageConfig.objects.exclude(pk=config.pk).update(is_default=False)
+        return json_response(config.to_dict())
+
+
+class StorageConfigDetailView(AdminView):
+    def get(self, request, config_id):
+        from apps.setting.models import StorageConfig
+        try:
+            config = StorageConfig.objects.get(pk=config_id)
+        except StorageConfig.DoesNotExist:
+            return json_response(error='Storage config not found')
+        return json_response(config.to_dict())
+
+    def put(self, request, config_id):
+        from apps.setting.models import StorageConfig
+        import json
+        try:
+            config = StorageConfig.objects.get(pk=config_id)
+        except StorageConfig.DoesNotExist:
+            return json_response(error='Storage config not found')
+        data = json.loads(request.body) if request.content_type == 'application/json' else {}
+        config.name = data.get('name', config.name)
+        config.endpoint_url = data.get('endpoint_url') or None
+        config.region = data.get('region') or None
+        config.bucket = data.get('bucket', config.bucket)
+        config.prefix = data.get('prefix') or None
+        config.access_key = data.get('access_key', config.access_key)
+        if data.get('secret_key'):
+            config.secret_key = data['secret_key']
+        config.is_default = bool(data.get('is_default', config.is_default))
+        config.enabled = bool(data.get('enabled', config.enabled))
+        config.updated_at = human_datetime()
+        config.save()
+        if config.is_default:
+            StorageConfig.objects.exclude(pk=config.pk).update(is_default=False)
+        return json_response(config.to_dict())
+
+    def delete(self, request, config_id):
+        from apps.setting.models import StorageConfig
+        from apps.database.models import DatabaseBackup
+        try:
+            config = StorageConfig.objects.get(pk=config_id)
+        except StorageConfig.DoesNotExist:
+            return json_response(error='Storage config not found')
+        if DatabaseBackup.objects.filter(storage_config=config).exists():
+            return json_response(error='该存储配置被备份记录引用，无法删除')
+        config.delete()
+        return json_response(data={'message': '删除成功'})
+
+
+@csrf_exempt
+@auth('admin')
+def test_storage(request):
+    import json
+    if request.method != 'POST':
+        return json_response(error='Method not allowed')
+    data = json.loads(request.body) if request.content_type == 'application/json' else {}
+    from apps.setting.storage_backends import test_s3_connection
+    config = {
+        'endpoint_url': data.get('endpoint_url') or None,
+        'access_key': data.get('access_key'),
+        'secret_key': data.get('secret_key'),
+        'region': data.get('region') or None,
+        'bucket': data.get('bucket'),
+        'prefix': data.get('prefix'),
+    }
+    result = test_s3_connection(config)
+    return json_response(result)

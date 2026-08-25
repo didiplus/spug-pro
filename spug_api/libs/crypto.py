@@ -22,9 +22,12 @@
     plain = decrypt(cipher)
 """
 from django.conf import settings
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 import base64
 import hashlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 _ENCRYPT_PREFIX = 'enc:'
 _fernet_instance = None
@@ -51,12 +54,16 @@ def encrypt(value):
 
 
 def decrypt(value):
-    """解密 'enc:<cipher>' 格式，旧明文原样返回"""
+    """解密 'enc:<cipher>' 格式，旧明文原样返回，解密失败返回 None"""
     if value is None:
         return None
     if isinstance(value, str) and value.startswith(_ENCRYPT_PREFIX):
         cipher = value[len(_ENCRYPT_PREFIX):]
-        return _get_fernet().decrypt(cipher.encode('utf-8')).decode('utf-8')
+        try:
+            return _get_fernet().decrypt(cipher.encode('utf-8')).decode('utf-8')
+        except InvalidToken:
+            logger.warning("解密失败：数据可能由不同的 SECRET_KEY 加密，已返回 None")
+            return None
     return value
 
 
