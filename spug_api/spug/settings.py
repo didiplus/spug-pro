@@ -157,6 +157,7 @@ MONITOR_WORKER_KEY = "spug:monitor:worker"
 EXEC_WORKER_KEY = "spug:exec:worker"
 PLAYBOOK_WORKER_KEY = "spug:playbook:worker"
 FACTS_WORKER_KEY = "spug:facts:worker"
+OPERATION_LOG_WORKER_KEY = "spug:oplog:worker"
 REQUEST_KEY = "spug:request"
 BUILD_KEY = "spug:build"
 REPOS_DIR = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "repos")

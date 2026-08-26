@@ -93,9 +93,9 @@ def db_backup_executor(command, created_by_id=None):
             upload_msg = ''
             if storage_config:
                 try:
-                    from apps.setting.storage_backends import upload_to_s3, build_config_from_model
+                    from apps.setting.storage_backends import upload_to_remote, build_config_from_model
                     s3_config = build_config_from_model(storage_config)
-                    remote_key, remote_uri = upload_to_s3(s3_config, filepath)
+                    remote_key, remote_uri = upload_to_remote(s3_config, filepath)
                     with transaction.atomic():
                         backup = DatabaseBackup.objects.get(pk=backup_id)
                         backup.remote_path = remote_key

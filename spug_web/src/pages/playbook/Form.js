@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select, Typography, Space, Flex } from 'antd';
+import { CheckCircleOutlined, FileTextOutlined, CodeOutlined } from '@ant-design/icons';
 import { ACEditor } from 'components';
 import { http } from 'libs';
 import S from './store';
 
+const { Text } = Typography;
+
 export default observer(function () {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [content, setContent] = useState(S.record.content || '');
   const [extraVars, setExtraVars] = useState(
     S.record.extra_vars ? JSON.stringify(S.record.extra_vars, null, 2) : '{}'
@@ -40,68 +44,92 @@ export default observer(function () {
   }
 
   function handleValidate() {
+    setValidating(true);
     http.post('/api/playbook/validate/', {content})
       .then(res => {
         const roles = res.roles && res.roles.length ? `，引用 Role: ${res.roles.join(', ')}` : '';
         message.success(`校验通过，共 ${res.plays} 个 play${roles}`);
       })
+      .finally(() => setValidating(false))
   }
 
   const info = S.record;
+  const isEdit = !!S.record.id;
   return (
     <Modal
-      visible
+      open
       width={1000}
       maskClosable={false}
-      title={S.record.id ? '编辑 Playbook' : '新建 Playbook'}
+      title={isEdit ? '编辑 Playbook' : '新建 Playbook'}
       onCancel={() => S.formVisible = false}
       confirmLoading={loading}
       onOk={handleSubmit}>
-      <Form form={form} initialValues={info} labelCol={{span: 5}} wrapperCol={{span: 17}}>
-        <Form.Item required name="name" label="名称">
-          <Input placeholder="请输入 Playbook 名称"/>
-        </Form.Item>
-        <Form.Item name="desc" label="描述">
-          <Input placeholder="请输入描述信息"/>
-        </Form.Item>
-        <Form.Item name="group_id" label="关联分组" extra="关联 Inventory 分组，加载组变量和分组结构">
-          <Select
-            allowClear
-            placeholder="不关联"
-            options={groups.map(g => ({value: g.id, label: g.name}))}
-          />
-        </Form.Item>
-
-        <Form.Item name="tags" label="标签" extra="逗号分隔，如 install,config">
-          <Input placeholder="可选"/>
-        </Form.Item>
+      <Form form={form} initialValues={info} labelCol={{span: 6}} wrapperCol={{span: 16}}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item required name="name" label="名称">
+              <Input placeholder="请输入 Playbook 名称"/>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="desc" label="描述">
+              <Input placeholder="请输入描述信息"/>
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="group_id" label="关联分组" extra="加载组变量和分组结构">
+              <Select
+                allowClear
+                placeholder="不关联"
+                options={groups.map(g => ({value: g.id, label: g.name}))}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="tags" label="标签" extra="逗号分隔，如 install,config">
+              <Input placeholder="可选"/>
+            </Form.Item>
+          </Col>
+        </Row>
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item name="forks" label="并发数" labelCol={{span: 10}} wrapperCol={{span: 14}}>
+            <Form.Item name="forks" label="并发数" labelCol={{span: 9}} wrapperCol={{span: 15}}>
               <InputNumber min={0} max={100} style={{width: '100%'}} placeholder="0=默认"/>
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item name="timeout" label="超时(秒)" labelCol={{span: 10}} wrapperCol={{span: 14}}>
+            <Form.Item name="timeout" label="超时(秒)" labelCol={{span: 9}} wrapperCol={{span: 15}}>
               <InputNumber min={0} max={3600} style={{width: '100%'}} placeholder="0=不限"/>
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item name="is_active" label="启用" labelCol={{span: 10}} wrapperCol={{span: 14}} valuePropName="checked">
+            <Form.Item name="is_active" label="启用" labelCol={{span: 9}} wrapperCol={{span: 15}} valuePropName="checked">
               <Switch/>
             </Form.Item>
           </Col>
         </Row>
       </Form>
-      <Divider style={{margin: '12px 0'}} orientation="left">Playbook 内容</Divider>
-      <div style={{marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        <span style={{fontSize: 13, color: '#8c8c8c'}}>YAML 格式，定义 Ansible Playbook 的执行内容</span>
-        <Button size="small" onClick={handleValidate} style={{color: '#2563fc'}}>YAML 语法校验</Button>
+
+      <Divider orientation="left" style={{margin: '8px 0 12px'}}>
+        <Space><FileTextOutlined/><Text strong>Playbook 内容</Text></Space>
+      </Divider>
+      <Flex justify="space-between" align="center" style={{marginBottom: 8}}>
+        <Text type="secondary" style={{fontSize: 13}}>YAML 格式，定义 Ansible Playbook 的执行内容</Text>
+        <Button size="small" icon={<CheckCircleOutlined/>} loading={validating} onClick={handleValidate}>YAML 语法校验</Button>
+      </Flex>
+      <div style={{background: '#f5f5f5', borderRadius: 6, padding: 4}}>
+        <ACEditor mode="yaml" value={content} onChange={setContent} height="280px" width="100%"/>
       </div>
-      <ACEditor mode="yaml" value={content} onChange={setContent} height="280px" width="100%"/>
-      <Divider style={{margin: '12px 0'}} orientation="left">额外变量</Divider>
-      <span style={{fontSize: 13, color: '#8c8c8c', display: 'block', marginBottom: 8}}>JSON 格式，执行时作为 extra_vars 传入</span>
-      <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="100px" width="100%"/>
+
+      <Divider orientation="left" style={{margin: '16px 0 12px'}}>
+        <Space><CodeOutlined/><Text strong>额外变量</Text></Space>
+      </Divider>
+      <Text type="secondary" style={{fontSize: 13, display: 'block', marginBottom: 8}}>JSON 格式，执行时作为 extra_vars 传入</Text>
+      <div style={{background: '#f5f5f5', borderRadius: 6, padding: 4}}>
+        <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="100px" width="100%"/>
+      </div>
     </Modal>
   )
 })

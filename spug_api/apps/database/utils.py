@@ -1308,9 +1308,9 @@ def cleanup_old_backups(instance):
                     pass
             if b.remote_path and b.storage_config and b.storage_config.enabled:
                 try:
-                    from apps.setting.storage_backends import delete_from_s3, build_config_from_model
+                    from apps.setting.storage_backends import delete_from_remote, build_config_from_model
                     config = build_config_from_model(b.storage_config)
-                    delete_from_s3(config, b.remote_path)
+                    delete_from_remote(config, b.remote_path)
                 except Exception as e:
                     logger.warning(f"远程删除失败: backup_id={b.id}, error={e}")
             b.delete()
@@ -1350,9 +1350,9 @@ def run_backup_async(backup_id):
 
         if backup.storage_config and backup.storage_config.enabled:
             try:
-                from apps.setting.storage_backends import upload_to_s3, build_config_from_model
+                from apps.setting.storage_backends import upload_to_remote, build_config_from_model
                 config = build_config_from_model(backup.storage_config)
-                remote_key, remote_uri = upload_to_s3(config, filepath)
+                remote_key, remote_uri = upload_to_remote(config, filepath)
                 backup.remote_path = remote_key
                 backup.storage_status = 'uploaded'
                 backup.progress = 100

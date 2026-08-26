@@ -390,12 +390,12 @@ def backup_download(request, instance_id, backup_id):
 
     if backup.remote_path and backup.storage_config and backup.storage_config.enabled:
         try:
-            from apps.setting.storage_backends import download_from_s3, build_config_from_model
+            from apps.setting.storage_backends import download_from_remote, build_config_from_model
             config = build_config_from_model(backup.storage_config)
             filename = os.path.basename(backup.remote_path)
             tmp_fd, tmp_path = tempfile.mkstemp(suffix=f'_{filename}')
             os.close(tmp_fd)
-            download_from_s3(config, backup.remote_path, tmp_path)
+            download_from_remote(config, backup.remote_path, tmp_path)
             response = FileResponse(open(tmp_path, 'rb'), as_attachment=True, filename=filename)
             response['Content-Length'] = os.path.getsize(tmp_path)
             return response
@@ -553,9 +553,9 @@ def backup_detail(request, instance_id, backup_id):
                 pass
         if backup.remote_path and backup.storage_config and backup.storage_config.enabled:
             try:
-                from apps.setting.storage_backends import delete_from_s3, build_config_from_model
+                from apps.setting.storage_backends import delete_from_remote, build_config_from_model
                 config = build_config_from_model(backup.storage_config)
-                delete_from_s3(config, backup.remote_path)
+                delete_from_remote(config, backup.remote_path)
             except Exception:
                 pass
         backup.delete()

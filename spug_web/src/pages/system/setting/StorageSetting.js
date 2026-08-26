@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Table, Button, Space, Tag, Modal, Form, Input, Switch, message,
+  Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message,
   Flex, Typography, Popconfirm, Tooltip, Badge,
 } from 'antd';
 import {
@@ -9,6 +9,15 @@ import {
 import { http } from 'libs';
 
 const { Text } = Typography;
+
+const STORAGE_TYPES = [
+  { value: 's3', label: 'S3 兼容存储', color: 'blue', endpointHint: '留空则使用 AWS 默认端点。MinIO / Ceph 等需填写', endpointPlaceholder: '如：http://minio:9000' },
+  { value: 'oss', label: '阿里云 OSS', color: 'orange', endpointHint: '留空则根据 Region 自动生成（如 https://oss-cn-hangzhou.aliyuncs.com）', endpointPlaceholder: '如：https://oss-cn-hangzhou.aliyuncs.com' },
+  { value: 'cos', label: '腾讯云 COS', color: 'green', endpointHint: '如：https://cos.ap-guangzhou.myqcloud.com', endpointPlaceholder: '如：https://cos.ap-guangzhou.myqcloud.com' },
+  { value: 'obs', label: '华为云 OBS', color: 'red', endpointHint: '如：https://obs.cn-north-4.myhuaweicloud.com', endpointPlaceholder: '如：https://obs.cn-north-4.myhuaweicloud.com' },
+];
+
+const TYPE_MAP = Object.fromEntries(STORAGE_TYPES.map(t => [t.value, t]));
 
 export default function StorageSetting() {
   const [loading, setLoading] = useState(false);
@@ -115,8 +124,11 @@ export default function StorageSetting() {
     {
       title: '类型',
       dataIndex: 'storage_type',
-      width: 100,
-      render: (v) => <Tag color="blue">{v === 's3' ? 'S3 兼容' : v}</Tag>,
+      width: 120,
+      render: (v) => {
+        const cfg = TYPE_MAP[v] || { label: v, color: 'default' };
+        return <Tag color={cfg.color}>{cfg.label}</Tag>;
+      },
     },
     {
       title: 'Endpoint',
@@ -170,7 +182,7 @@ export default function StorageSetting() {
   return (
     <Flex vertical gap={12}>
       <Flex justify="space-between" align="center">
-        <Text type="secondary">配置 S3 兼容的远程存储后端（AWS S3 / MinIO / 华为云OBS / 阿里云OSS 等）</Text>
+        <Text type="secondary">配置远程存储后端，支持 S3 兼容存储 / 阿里云 OSS / 腾讯云 COS / 华为云 OBS</Text>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
           新建存储配置
         </Button>
@@ -207,11 +219,26 @@ export default function StorageSetting() {
           <Form.Item name="name" label="配置名称" rules={[{ required: true, message: '请输入配置名称' }]}>
             <Input placeholder="如：aws-s3-backup" />
           </Form.Item>
-          <Form.Item name="storage_type" label="存储类型" rules={[{ required: true }]}>
-            <Input disabled />
+          <Form.Item name="storage_type" label="存储类型" rules={[{ required: true, message: '请选择存储类型' }]}>
+            <Select
+              disabled={!!editing}
+              options={STORAGE_TYPES.map(t => ({ value: t.value, label: t.label }))}
+              placeholder="请选择存储类型"
+            />
           </Form.Item>
-          <Form.Item name="endpoint_url" label="Endpoint URL" tooltip="留空则使用 AWS 默认端点。MinIO/华为云/阿里云等需填写">
-            <Input placeholder="如：https://s3.cn-north-1.myhuaweicloud.com" />
+          <Form.Item noStyle dependencies={['storage_type']}>
+            {({ getFieldValue }) => {
+              const typeCfg = TYPE_MAP[getFieldValue('storage_type')] || TYPE_MAP.s3;
+              return (
+                <Form.Item
+                  name="endpoint_url"
+                  label="Endpoint URL"
+                  tooltip={typeCfg.endpointHint}
+                >
+                  <Input placeholder={typeCfg.endpointPlaceholder} />
+                </Form.Item>
+              );
+            }}
           </Form.Item>
           <Form.Item name="region" label="Region">
             <Input placeholder="如：cn-north-1" />

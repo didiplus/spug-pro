@@ -16,6 +16,7 @@ export default observer(function () {
   const [dbBackupConfig, setDbBackupConfig] = useState({});
   const [dbList, setDbList] = useState([]);
   const [dbListLoading, setDbListLoading] = useState(false);
+  const [storageConfigs, setStorageConfigs] = useState([]);
 
   const { modal } = App.useApp();
 
@@ -49,6 +50,10 @@ export default observer(function () {
     if (store.dbInstances.length === 0) {
       store.fetchDbInstances();
     }
+
+    http.get('/api/setting/storage-configs/').then(res => {
+      if (mountedRef.current) setStorageConfigs(res || []);
+    });
 
     if (store.record.interpreter === 'db_backup') {
       try {
@@ -176,11 +181,9 @@ export default observer(function () {
           </Radio.Group>
         </Form.Item>
         {isDbBackup ? (
-          <Space direction="vertical" style={{ width: '100%' }} size={12}>
-            <div>
-              <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 13 }}>数据库实例</div>
+          <Form style={{width: '100%'}}>
+            <Form.Item label="数据库实例">
               <Select
-                style={{ width: '100%' }}
                 placeholder="请选择数据库实例"
                 showSearch
                 optionFilterProp="label"
@@ -206,34 +209,47 @@ export default observer(function () {
                   </Select.Option>
                 ))}
               </Select>
-            </div>
-            <div>
-              <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 13 }}>备份范围</div>
+            </Form.Item>
+            <Form.Item label="备份范围">
               <Select
-                style={{ width: '100%' }}
                 placeholder="全部数据库"
                 allowClear
                 loading={dbListLoading}
                 value={dbBackupConfig.database}
                 onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, database: v || '' })}
-              >
-                <Select.Option value="">全部数据库</Select.Option>
-                {dbList.map((name) => (
-                  <Select.Option key={name} value={name}>{name}</Select.Option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 13 }}>备份类型</div>
-              <Radio.Group
+                options={[{ label: '全部数据库', value: '' }, ...dbList.map(name => ({ label: name, value: name }))]}
+              />
+            </Form.Item>
+            <Form.Item label="备份类型">
+              <Select
                 value={dbBackupConfig.mode || 'full'}
-                onChange={(e) => setDbBackupConfig({ ...dbBackupConfig, mode: e.target.value })}
+                onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, mode: v })}
               >
-                <Radio.Button value="full">全量备份</Radio.Button>
-                <Radio.Button value="incremental">增量备份</Radio.Button>
-              </Radio.Group>
-            </div>
-          </Space>
+                <Select.Option value="full">全量备份</Select.Option>
+                <Select.Option value="incremental">增量备份</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item label="备注">
+              <Input.TextArea
+                rows={2}
+                placeholder="可选，最多200字"
+                maxLength={200}
+                value={dbBackupConfig.remark}
+                onChange={(e) => setDbBackupConfig({ ...dbBackupConfig, remark: e.target.value })}
+              />
+            </Form.Item>
+            <Form.Item label="远程存储" tooltip="选择后将备份文件上传到远程存储">
+              <Select
+                placeholder="仅本地存储"
+                allowClear
+                value={dbBackupConfig.storage_config_id}
+                onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, storage_config_id: v })}
+                options={storageConfigs
+                  .filter(c => c.enabled)
+                  .map(c => ({ label: `${c.name} (${c.bucket})`, value: c.id }))}
+              />
+            </Form.Item>
+          </Form>
         ) : (
           <Form.Item noStyle shouldUpdate>
             {({ getFieldValue }) => (

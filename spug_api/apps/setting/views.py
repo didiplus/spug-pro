@@ -369,8 +369,9 @@ def test_storage(request):
     if request.method != 'POST':
         return json_response(error='Method not allowed')
     data = json.loads(request.body) if request.content_type == 'application/json' else {}
-    from apps.setting.storage_backends import test_s3_connection
+    from apps.setting.storage_backends import test_connection
     config = {
+        'storage_type': data.get('storage_type', 's3'),
         'endpoint_url': data.get('endpoint_url') or None,
         'access_key': data.get('access_key'),
         'secret_key': data.get('secret_key'),
@@ -378,5 +379,5 @@ def test_storage(request):
         'bucket': data.get('bucket'),
         'prefix': data.get('prefix'),
     }
-    result = test_s3_connection(config)
+    result = test_connection(config)
     return json_response(result)

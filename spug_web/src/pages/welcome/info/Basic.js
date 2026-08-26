@@ -47,12 +47,17 @@ export default observer(function Basic() {
           required
           name="phone"
           label="手机号"
-          rules={[{ required: true, message: '请输入手机号' }]}
+          rules={[
+            { required: true, message: '请输入手机号' },
+            { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' },
+          ]}
           extra="手机号码不能重复"
         >
           <Input placeholder="请输入手机号" style={{ maxWidth: 240 }}/>
         </Form.Item>
-        <Form.Item name="email" label="邮箱">
+        <Form.Item name="email" label="邮箱" rules={[
+          { pattern: /^[\w.-]+@[\w-]+(\.[\w-]+)+$/, message: '请输入正确的邮箱地址' },
+        ]}>
           <Input placeholder="请输入邮箱" style={{ maxWidth: 240 }}/>
         </Form.Item>
         <Form.Item name="gender" label="性别">

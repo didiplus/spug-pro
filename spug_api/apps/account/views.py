@@ -24,9 +24,9 @@ import json
 class UserView(AdminView):
     def get(self, request):
         users = []
-        for u in User.objects.filter(deleted_by_id__isnull=True):
+        for u in User.objects.filter(deleted_by_id__isnull=True).prefetch_related('roles'):
             tmp = u.to_dict(excludes=('access_token', 'password_hash'))
-            tmp['role_ids'] = [x.id for x in u.roles.all()]
+            tmp['role_ids'] = [r.id for r in u.roles.all()]
             tmp['password'] = '******'
             users.append(tmp)
         return json_response(users)
@@ -39,6 +39,10 @@ class UserView(AdminView):
             Argument('nickname', help='请输入姓名'),
             Argument('role_ids', type=list, default=[]),
             Argument('wx_token', required=False),
+            Argument('phone', required=False),
+            Argument('email', required=False),
+            Argument('gender', required=False),
+            Argument('department', required=False),
         ).parse(request.body)
         if error is None:
             user = User.objects.filter(username=form.username, deleted_by_id__isnull=True).first()
@@ -47,7 +51,7 @@ class UserView(AdminView):
 
             role_ids, password = form.pop('role_ids'), form.pop('password')
             if form.id:
-                user = User.objects.get(pk=form.id)
+                user = User.objects.get(pk=form.pop('id'))
                 user.update_by_dict(form)
             else:
                 if not verify_password(password):

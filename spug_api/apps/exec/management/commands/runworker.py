@@ -11,6 +11,7 @@ from apps.monitor.executors import monitor_worker_handler
 from apps.exec.executors import exec_worker_handler
 from apps.playbook.runner import playbook_worker_handler
 from apps.ansible.facts import facts_worker_handler
+from apps.account.log_worker import oplog_consumer
 from apps.notify.models import Notify
 from threading import Thread
 import logging
@@ -58,6 +59,7 @@ class Worker:
     def run(self):
         logging.warning("Running worker")
         Thread(target=self.queue_monitor, daemon=True).start()
+        Thread(target=oplog_consumer, daemon=True).start()
         self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY,
                         PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
         while True:

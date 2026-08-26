@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Input, Modal, Table, Tag, Drawer, Select, Space, Tooltip, Button } from 'antd';
+import { Input, Modal, Table, Tag, Drawer, Select, Space, Tooltip, Button, Typography } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, HistoryOutlined, EyeOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';
@@ -39,7 +39,7 @@ class PlaybookIndex extends React.Component {
   };
 
   renderTags = (tags) => {
-    if (!tags) return <Tag style={{margin: 0}}>-</Tag>;
+    if (!tags) return <Typography.Text type="secondary">-</Typography.Text>;
     const list = tags.split(',').filter(Boolean);
     return (
       <Space size={4} wrap>
@@ -101,9 +101,9 @@ class PlaybookIndex extends React.Component {
             width={200}
             render={(name, record) => (
               <Space direction="vertical" size={0}>
-                <span style={{fontWeight: 500}}>{name}</span>
+                <Typography.Text strong>{name}</Typography.Text>
                 {record.desc && (
-                  <span style={{fontSize: 12, color: '#8c8c8c'}}>{record.desc}</span>
+                  <Typography.Text type="secondary" style={{fontSize: 12}}>{record.desc}</Typography.Text>
                 )}
               </Space>
             )}/>
@@ -118,12 +118,12 @@ class PlaybookIndex extends React.Component {
             title="创建时间"
             dataIndex="created_at"
             width={170}
-            render={v => v || '-'}/>
+            render={v => v ? <Typography.Text>{v}</Typography.Text> : <Typography.Text type="secondary">-</Typography.Text>}/>
           <Table.Column
             title="更新时间"
             dataIndex="updated_at"
             width={170}
-            render={v => v || '-'}/>
+            render={v => v ? <Typography.Text>{v}</Typography.Text> : <Typography.Text type="secondary">-</Typography.Text>}/>
           {hasPermission('playbook.run|playbook.edit|playbook.del') && (
             <Table.Column title="操作" width={200} render={info => (
               <Action>
@@ -160,11 +160,17 @@ class PlaybookIndex extends React.Component {
             <Table.Column
               title="耗时"
               dataIndex="duration"
-              width={80}
+              width={90}
               align="center"
-              render={v => <span style={{color: v > 60 ? '#fa8c16' : '#52c41a'}}>{v}s</span>}/>
-            <Table.Column title="Token" dataIndex="token" ellipsis width={180}/>
-            <Table.Column title="执行时间" dataIndex="created_at" width={170}/>
+              render={v => (
+                <Typography.Text style={{color: v > 60 ? '#fa8c16' : '#52c41a'}}>
+                  {v > 60 ? `${Math.floor(v / 60)}m${v % 60}s` : `${v}s`}
+                </Typography.Text>
+              )}/>
+            <Table.Column title="Token" dataIndex="token" ellipsis width={180}
+              render={v => <Typography.Text code style={{fontSize: 12}}>{v}</Typography.Text>}/>
+            <Table.Column title="执行时间" dataIndex="created_at" width={170}
+              render={v => v || <Typography.Text type="secondary">-</Typography.Text>}/>
             <Table.Column
               title="操作"
               width={90}

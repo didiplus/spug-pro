@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { observer } from 'mobx-react';
 import { Avatar, Tabs, Spin } from 'antd';
 import {
   UserOutlined, MobileOutlined, MailOutlined, ApartmentOutlined,
@@ -10,7 +11,7 @@ import OperationLog from './OperationLog';
 import store from './store';
 import styles from './index.module.css';
 
-export default function Index() {
+function Index() {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
@@ -64,3 +65,5 @@ export default function Index() {
     </div>
   );
 }
+
+export default observer(Index);

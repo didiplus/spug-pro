@@ -7,7 +7,7 @@ import React from 'react';
 import { observer } from 'mobx-react';
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
-import {Form, Radio, Modal, Button, Badge, Input} from 'antd';
+import {Form, Radio, Modal, Button, Badge, Input, Tag, Space, Typography} from 'antd';
 import { TableCard, Action } from 'components';
 import http from 'libs/http';
 import store from './store';
@@ -38,21 +38,52 @@ class ComTable extends React.Component {
   columns = [{
     title: '登录名',
     dataIndex: 'username',
+    width: 120,
+    render: v => <Typography.Text strong>{v}</Typography.Text>,
   }, {
     title: '姓名',
     dataIndex: 'nickname',
+    width: 100,
   }, {
     title: '角色',
     dataIndex: 'role_ids',
-    render: v => v.map(x => rStore.idMap[x]?.name).join(',')
+    width: 160,
+    ellipsis: true,
+    render: v => v.length ? (
+      <Space size={4} wrap>
+        {v.map(x => {
+          const name = rStore.idMap[x]?.name;
+          return name ? <Tag color="blue" key={x} style={{ margin: 0 }}>{name}</Tag> : null;
+        })}
+      </Space>
+    ) : <Typography.Text type="secondary">-</Typography.Text>,
+  }, {
+    title: '手机号',
+    dataIndex: 'phone',
+    width: 130,
+    render: v => v || <Typography.Text type="secondary">-</Typography.Text>,
+  }, {
+    title: '部门',
+    dataIndex: 'department',
+    width: 120,
+    ellipsis: true,
+    render: v => v || <Typography.Text type="secondary">-</Typography.Text>,
   }, {
     title: '状态',
-    render: text => text['is_active'] ? <Badge status="success" text="正常"/> : <Badge status="default" text="禁用"/>
+    width: 80,
+    align: 'center',
+    render: text => text['is_active']
+      ? <Badge status="success" text="正常"/>
+      : <Badge status="default" text="禁用"/>,
   }, {
     title: '最近登录',
-    dataIndex: 'last_login'
+    dataIndex: 'last_login',
+    width: 170,
+    render: v => v || <Typography.Text type="secondary">-</Typography.Text>,
   }, {
     title: '操作',
+    width: 180,
+    align: 'center',
     render: info => (
       <Action>
         <Action.Button onClick={() => this.handleActive(info)}>{info['is_active'] ? '禁用' : '启用'}</Action.Button>

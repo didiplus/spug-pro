@@ -1,10 +1,19 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Tag, Radio, Button, Modal, Descriptions, Typography } from 'antd';
-import { TableCard, ACEditor } from 'components';
+import { Tag, Radio, Button, Modal, Descriptions, Typography, Input, Tabs, Tooltip } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
+import { TableCard, ACEditor, SearchForm } from 'components';
 import store from './store';
 
 const { Text } = Typography;
+
+const METHOD_COLORS = {
+  GET: 'blue',
+  POST: 'success',
+  PUT: 'warning',
+  PATCH: 'purple',
+  DELETE: 'error',
+};
 
 @observer
 class ComTable extends React.Component {
@@ -38,30 +47,56 @@ class ComTable extends React.Component {
     this.setState({ visible: true, current: record });
   };
 
+  renderCostTime = (ms) => {
+    const val = ms || 0;
+    let color = '#52c41a';
+    if (val > 3000) color = '#ff4d4f';
+    else if (val > 1000) color = '#fa8c16';
+    return <Text style={{ color }}>{val} ms</Text>;
+  };
+
   columns = [
-    { title: '时间', width: 170, dataIndex: 'create_time' },
-    { title: '用户', width: 100, dataIndex: 'username' },
-    { title: '模块', width: 120, dataIndex: 'module' },
     {
-      title: '请求方式', width: 100, dataIndex: 'method',
-      render: (text) => <Tag color="blue">{text}</Tag>,
-    },
-    { title: 'IP', width: 140, dataIndex: 'client_ip' },
-    {
-      title: '状态', width: 90,
-      render: (record) =>
-        record.status === 'success'
-          ? <Tag color="success">成功</Tag>
-          : <Tag color="error">失败</Tag>,
+      title: '时间', width: 170, dataIndex: 'create_time',
+      render: v => v || <Text type="secondary">-</Text>,
     },
     {
-      title: '耗时', width: 100,
-      render: (record) => `${record.cost_time || 0} ms`,
+      title: '用户', width: 100, dataIndex: 'username',
+      render: v => <Text strong>{v}</Text>,
     },
     {
-      title: '操作', width: 80,
-      render: (record) => (
-        <Button type="link" onClick={() => this.showDetail(record)}>详情</Button>
+      title: '模块', width: 120, dataIndex: 'module',
+      ellipsis: true,
+      render: v => v ? <Tag style={{ margin: 0 }}>{v}</Tag> : <Text type="secondary">-</Text>,
+    },
+    {
+      title: '请求方式', width: 90, dataIndex: 'method', align: 'center',
+      render: v => v ? <Tag color={METHOD_COLORS[v] || 'default'} style={{ margin: 0 }}>{v}</Tag> : '-',
+    },
+    {
+      title: '请求路径', dataIndex: 'uri', ellipsis: true,
+      render: v => v ? <Tooltip title={v}><Text style={{ fontSize: 13 }}>{v}</Text></Tooltip> : '-',
+    },
+    {
+      title: 'IP', width: 140, dataIndex: 'client_ip',
+      render: v => v || <Text type="secondary">-</Text>,
+    },
+    {
+      title: '状态', width: 80, align: 'center',
+      render: r => r.status === 'success'
+        ? <Tag color="success" style={{ margin: 0 }}>成功</Tag>
+        : <Tag color="error" style={{ margin: 0 }}>失败</Tag>,
+    },
+    {
+      title: '耗时', width: 100, align: 'center',
+      render: r => this.renderCostTime(r.cost_time),
+    },
+    {
+      title: '操作', width: 70, align: 'center',
+      render: r => (
+        <Tooltip title="详情">
+          <Button type="link" size="small" icon={<EyeOutlined/>} onClick={() => this.showDetail(r)}/>
+        </Tooltip>
       ),
     },
   ];
@@ -112,58 +147,68 @@ class ComTable extends React.Component {
           width={900}
           footer={null}
           onCancel={() => this.setState({ visible: false })}
-          styles={{
-            body: { padding: '24px 24px 32px' },
-          }}
+          styles={{ body: { padding: '16px 24px 24px' } }}
         >
           <Descriptions
+            size="small"
+            column={2}
             bordered
-            column={1}
-            labelStyle={{
-              width: 120,
-              fontWeight: 500,
-              background: '#fafafa',
-            }}
-            contentStyle={{
-              background: '#ffffff',
-            }}
+            labelStyle={{ width: 100, fontWeight: 500, background: '#fafafa' }}
+            contentStyle={{ background: '#ffffff' }}
           >
-            <Descriptions.Item label="请求地址">
-              <Text copyable>{current.url}</Text>
+            <Descriptions.Item label="用户">{current.username}</Descriptions.Item>
+            <Descriptions.Item label="状态码">{current.response_status}</Descriptions.Item>
+            <Descriptions.Item label="请求方法">
+              <Tag color={METHOD_COLORS[current.method] || 'default'}>{current.method}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="请求参数">
-              <div style={{
-                background: '#f5f5f5',
-                borderRadius: 6,
-                padding: 4,
-                marginTop: -4,
-              }}>
-                <ACEditor
-                  mode="json"
-                  value={this.formatJson(current.request_params)}
-                  height="200px"
-                  width="100%"
-                  readOnly
-                />
-              </div>
+            <Descriptions.Item label="耗时">{this.renderCostTime(current.cost_time)}</Descriptions.Item>
+            <Descriptions.Item label="模块">{current.module || '-'}</Descriptions.Item>
+            <Descriptions.Item label="客户端 IP">{current.client_ip || '-'}</Descriptions.Item>
+            <Descriptions.Item label="请求地址" span={2}>
+              <Text copyable style={{ fontSize: 13 }}>{current.uri || current.url}</Text>
             </Descriptions.Item>
-            <Descriptions.Item label="响应结果">
-              <div style={{
-                background: '#f5f5f5',
-                borderRadius: 6,
-                padding: 4,
-                marginTop: -4,
-              }}>
-                <ACEditor
-                  mode="json"
-                  value={this.formatJson(current.response_data)}
-                  height="250px"
-                  width="100%"
-                  readOnly
-                />
-              </div>
-            </Descriptions.Item>
+            {current.error_message && (
+              <Descriptions.Item label="错误信息" span={2}>
+                <Text type="danger">{current.error_message}</Text>
+              </Descriptions.Item>
+            )}
           </Descriptions>
+
+          <Tabs
+            style={{ marginTop: 16 }}
+            items={[
+              {
+                key: 'request',
+                label: '请求参数',
+                children: (
+                  <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 4 }}>
+                    <ACEditor
+                      mode="json"
+                      value={this.formatJson(current.request_params)}
+                      height="220px"
+                      width="100%"
+                      readOnly
+                    />
+                  </div>
+                ),
+              },
+              {
+                key: 'response',
+                label: '响应结果',
+                children: (
+                  <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 4 }}>
+                    <ACEditor
+                      mode="json"
+                      value={this.formatJson(current.response_data)}
+                      height="220px"
+                      width="100%"
+                      readOnly
+                    />
+                  </div>
+                ),
+              },
+            ]}
+          />
         </Modal>
       </>
     );

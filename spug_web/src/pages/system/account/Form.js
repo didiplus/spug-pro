@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Modal, Form, Select, Input } from 'antd';
+import { Modal, Form, Select, Input, Radio } from 'antd';
 import { http, includes } from 'libs';
 import store from './store';
 import rStore from '../role/store';
@@ -75,6 +75,25 @@ export default observer(function () {
         <Form.Item required hidden={store.record.id} name="password" label="密码"
           extra="至少8位包含数字、小写和大写字母。">
           <Input.Password placeholder="请输入密码" />
+        </Form.Item>
+        <Form.Item name="phone" label="手机号" rules={[
+          { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' },
+        ]}>
+          <Input placeholder="请输入手机号" />
+        </Form.Item>
+        <Form.Item name="email" label="邮箱" rules={[
+          { pattern: /^[\w.-]+@[\w-]+(\.[\w-]+)+$/, message: '请输入正确的邮箱地址' },
+        ]}>
+          <Input placeholder="请输入邮箱" />
+        </Form.Item>
+        <Form.Item name="gender" label="性别" initialValue="male">
+          <Radio.Group>
+            <Radio value="male">男</Radio>
+            <Radio value="female">女</Radio>
+          </Radio.Group>
+        </Form.Item>
+        <Form.Item name="department" label="部门">
+          <Input placeholder="请输入部门" />
         </Form.Item>
         <Form.Item hidden={store.record.is_supper} label="角色" style={{ marginBottom: 0 }}>
           <Form.Item name="role_ids" style={{ display: 'inline-block', width: '80%' }}

@@ -18,6 +18,7 @@ dependencies = [
     "django-redis==5.2.0",
     "gitpython==3.1.50",
     "openpyxl==3.0.3",
+    "oss2>=2.19.1",
     "paramiko==3.4.0",
     "psycopg2-binary>=2.9.12",
     "pymysql>=1.2.0",

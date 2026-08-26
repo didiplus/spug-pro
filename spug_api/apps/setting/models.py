@@ -113,6 +113,9 @@ class Menu(models.Model, ModelMixin):
 class StorageConfig(models.Model, ModelMixin):
     STORAGE_TYPES = (
         ("s3", "S3 兼容存储"),
+        ("oss", "阿里云 OSS"),
+        ("cos", "腾讯云 COS"),
+        ("obs", "华为云 OBS"),
     )
 
     name = models.CharField(max_length=100, unique=True, verbose_name="配置名称")
@@ -123,6 +126,7 @@ class StorageConfig(models.Model, ModelMixin):
     prefix = models.CharField(max_length=255, null=True, blank=True, verbose_name="路径前缀")
     access_key = models.CharField(max_length=255, verbose_name="AccessKey")
     secret_key = EncryptedTextField(verbose_name="SecretKey")
+    extra = models.TextField(default="{}", verbose_name="扩展配置")
     is_default = models.BooleanField(default=False, verbose_name="默认存储")
     enabled = models.BooleanField(default=True, verbose_name="启用状态")
     created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")

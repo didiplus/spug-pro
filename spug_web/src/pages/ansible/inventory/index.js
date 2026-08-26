@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Form, Input, InputNumber, Select, Tree, Button, Flex, Typography, Tag, Table, Empty, Spin, Switch } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, InputNumber, Select, Tree, Button, Flex, Typography, Tag, Table, Empty, Spin, Switch, Tooltip, Space, Divider } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined, FolderOutlined, DesktopOutlined, SaveOutlined, KeyOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';
 import { AuthDiv, Breadcrumb, AuthButton, ACEditor } from 'components';
@@ -58,9 +58,10 @@ class InventoryIndex extends React.Component {
   render() {
     return (
       <AuthDiv auth="ansible.inventory.view">
+        <style>{`.ant-tree-treenode:hover .tree-actions{opacity:1!important}`}</style>
         <Breadcrumb items={['首页', 'Ansible', 'Inventory 管理']}/>
         <Flex gap={16} style={{height: 'calc(100vh - 120px)'}}>
-          <div style={{width: 300, background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'auto'}}>
+          <div style={{width: 300, background: '#fff', borderRadius: 8, padding: 16, border: '1px solid #f0f0f0', overflow: 'auto'}}>
             <Flex align="center" justify="space-between" style={{marginBottom: 12}}>
               <Text strong>分组列表</Text>
               {hasPermission('ansible.inventory.edit') && (
@@ -70,6 +71,7 @@ class InventoryIndex extends React.Component {
             <Spin spinning={store.isFetching}>
               <Tree
                 treeData={store.combinedTree}
+                blockNode
                 onSelect={(keys, info) => {
                   const node = info.node;
                   if (!node) return;
@@ -80,23 +82,32 @@ class InventoryIndex extends React.Component {
                   }
                 }}
                 titleRender={(node) => (
-                  <Flex align="center" justify="space-between">
-                    <Text ellipsis style={{flex: 1}}>
-                      {node.nodeType === 'host' ? `🖥 ${node.title}` : `📁 ${node.title}`}
-                    </Text>
+                  <Flex align="center" justify="space-between" style={{width: '100%'}}>
+                    <Flex align="center" gap={6} style={{flex: 1, minWidth: 0}}>
+                      {node.nodeType === 'host'
+                        ? <DesktopOutlined style={{color: '#52c41a', flexShrink: 0}}/>
+                        : <FolderOutlined style={{color: '#1677ff', flexShrink: 0}}/>}
+                      <Text ellipsis style={{flex: 1}}>{node.title}</Text>
+                    </Flex>
                     {node.nodeType !== 'host' && hasPermission('ansible.inventory.edit') && (
-                      <Flex gap={4}>
-                        <Button type="text" size="small" icon={<PlusOutlined/>} onClick={(e) => {e.stopPropagation(); store.showForm({parent_id: node.key})}}/>
-                        <Button type="text" size="small" icon={<EditOutlined/>} onClick={(e) => {e.stopPropagation(); store.showForm(store.groups.find(g => g.id === node.key))}}/>
-                        <Button type="text" size="small" danger icon={<DeleteOutlined/>} onClick={(e) => {e.stopPropagation(); this.handleDeleteGroup(node.key)}}/>
-                      </Flex>
+                      <Space size={0} className="tree-actions" style={{opacity: 0, transition: 'opacity 0.2s'}}>
+                        <Tooltip title="新建子分组">
+                          <Button type="text" size="small" icon={<PlusOutlined/>} onClick={(e) => {e.stopPropagation(); store.showForm({parent_id: node.key})}}/>
+                        </Tooltip>
+                        <Tooltip title="编辑">
+                          <Button type="text" size="small" icon={<EditOutlined/>} onClick={(e) => {e.stopPropagation(); store.showForm(store.groups.find(g => g.id === node.key))}}/>
+                        </Tooltip>
+                        <Tooltip title="删除">
+                          <Button type="text" size="small" danger icon={<DeleteOutlined/>} onClick={(e) => {e.stopPropagation(); this.handleDeleteGroup(node.key)}}/>
+                        </Tooltip>
+                      </Space>
                     )}
                   </Flex>
                 )}
               />
             </Spin>
           </div>
-          <div style={{flex: 1, background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'auto'}}>
+          <div style={{flex: 1, background: '#fff', borderRadius: 8, padding: 20, border: '1px solid #f0f0f0', overflow: 'auto'}}>
             {store.selectedType === 'host' ? this.renderHostPanel() : this.renderGroupPanel()}
           </div>
         </Flex>
@@ -146,23 +157,27 @@ class GroupPanel extends React.Component {
     return (
       <div>
         <Flex align="center" justify="space-between" style={{marginBottom: 16}}>
-          <Text strong style={{fontSize: 16}}>{group.name}</Text>
+          <Space align="center">
+            <FolderOutlined style={{color: '#1677ff', fontSize: 18}}/>
+            <Text strong style={{fontSize: 16}}>{group.name}</Text>
+          </Space>
           <Tag color="blue">{this.state.hostIds.length} 台主机</Tag>
         </Flex>
+        <Divider style={{margin: '0 0 16px'}}/>
         <Form layout="vertical">
           <Form.Item label="分组名称">
-            <Input value={group.name} disabled/>
+            <Input value={group.name} disabled style={{maxWidth: 300}}/>
           </Form.Item>
           <Form.Item label="主机列表">
-            <Flex gap={8}>
+            <Flex gap={8} align="center">
               <HostSelector nullable value={this.state.hostIds} onChange={ids => this.setState({hostIds: ids})}/>
-              <Button type="primary" onClick={this.handleSaveHosts}>保存</Button>
+              <Button type="primary" icon={<SaveOutlined/>} onClick={this.handleSaveHosts}>保存主机</Button>
             </Flex>
           </Form.Item>
           <Form.Item label="组变量 (JSON)">
-            <ACEditor mode="json" value={this.state.vars} onChange={v => this.setState({vars: v})} height="200px" width="100%"/>
+            <ACEditor mode="json" value={this.state.vars} onChange={v => this.setState({vars: v})} height="220px" width="100%"/>
           </Form.Item>
-          <Button type="primary" onClick={this.handleSave}>保存变量</Button>
+          <Button type="primary" icon={<SaveOutlined/>} onClick={this.handleSave}>保存变量</Button>
         </Form>
       </div>
     )
@@ -186,22 +201,37 @@ class HostPanel extends React.Component {
     return (
       <div>
         <Flex align="center" justify="space-between" style={{marginBottom: 16}}>
-          <Text strong style={{fontSize: 16}}>{host.name} ({host.hostname})</Text>
+          <Space align="center">
+            <DesktopOutlined style={{color: '#52c41a', fontSize: 18}}/>
+            <Text strong style={{fontSize: 16}}>{host.name}</Text>
+            <Text type="secondary">({host.hostname})</Text>
+          </Space>
           <AuthButton auth="ansible.inventory.edit" size="small" type="primary" icon={<PlusOutlined/>} onClick={() => this.setState({addVisible: true})}>添加变量</AuthButton>
         </Flex>
+        <Divider style={{margin: '0 0 16px'}}/>
         <Spin spinning={store.hostVarsFetching}>
           <Table
             rowKey="id"
             size="small"
             dataSource={vars}
-            pagination={false}>
-            <Table.Column title="变量名" dataIndex="key"/>
-            <Table.Column title="值" dataIndex="value" ellipsis render={(v, record) => record.is_vault ? '******' : v}/>
-            <Table.Column title="类型" dataIndex="value_type" width={80} render={v => <Tag>{v}</Tag>}/>
-            <Table.Column title="Vault" dataIndex="is_vault" width={60} render={v => v ? <Tag color="orange">是</Tag> : '-'}/>
-            <Table.Column title="操作" width={80} render={info => (
-              <Button danger size="small" type="link" icon={<DeleteOutlined/>} onClick={() => this.handleDeleteVar(info.id)}/>
-            )}/>
+            pagination={false}
+            locale={{emptyText: <Empty description="暂无主机变量" image={Empty.PRESENTED_IMAGE_SIMPLE}/>}}>
+            <Table.Column title="变量名" dataIndex="key" width={200} ellipsis
+              render={v => <Typography.Text code style={{fontSize: 13}}>{v}</Typography.Text>}/>
+            <Table.Column title="值" dataIndex="value" ellipsis
+              render={(v, record) => record.is_vault
+                ? <Space><KeyOutlined style={{color: '#fa8c16'}}/><Text type="secondary">******</Text></Space>
+                : (v || <Text type="secondary">-</Text>)}/>
+            <Table.Column title="类型" dataIndex="value_type" width={90} align="center"
+              render={v => v ? <Tag color="blue" style={{margin: 0}}>{v}</Tag> : '-'}/>
+            <Table.Column title="Vault" dataIndex="is_vault" width={70} align="center"
+              render={v => v ? <Tag color="orange" style={{margin: 0}}>是</Tag> : <Text type="secondary">-</Text>}/>
+            <Table.Column title="操作" width={70} align="center"
+              render={info => (
+                <Tooltip title="删除变量">
+                  <Button danger size="small" type="link" icon={<DeleteOutlined/>} onClick={() => this.handleDeleteVar(info.id)}/>
+                </Tooltip>
+              )}/>
           </Table>
         </Spin>
         {this.state.addVisible && (
