@@ -56,14 +56,20 @@ class SSHConsumer(BaseConsumer):
         self.id = self.scope["url_route"]["kwargs"]["id"]
         self.chan = None
         self.ssh = None
+        self._closed = False
         super().connect()
 
     def loop_read(self):
         is_ready, data = False, b""
-        while True:
-            out = self.chan.recv(32 * 1024)
+        while not self._closed:
+            try:
+                if not self.chan.recv_ready():
+                    time.sleep(0.02)
+                    continue
+                out = self.chan.recv(32 * 1024)
+            except Exception:
+                break
             if not out:
-                self.close(3333)
                 break
             data += out
             try:
@@ -95,10 +101,17 @@ class SSHConsumer(BaseConsumer):
                 self.chan.send(data["data"])
 
     def disconnect(self, code):
+        self._closed = True
         if self.chan:
-            self.chan.close()
+            try:
+                self.chan.close()
+            except Exception:
+                pass
         if self.ssh:
-            self.ssh.close()
+            try:
+                self.ssh.close()
+            except Exception:
+                pass
 
     def init(self):
         if has_host_perm(self.user, self.id):
@@ -114,7 +127,7 @@ class SSHConsumer(BaseConsumer):
 
             self.chan = self.ssh.invoke_shell(term="xterm")
             self.chan.transport.set_keepalive(30)
-            Thread(target=self.loop_read).start()
+            Thread(target=self.loop_read, daemon=True).start()
         else:
             self.close_with_message("你当前无权限操作该主机，请联系管理员授权。")
 

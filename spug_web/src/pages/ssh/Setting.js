@@ -88,7 +88,7 @@ function Setting(props) {
                   hoverable
                   size="small"
                   className={css.themeCard}
-                  style={{ background: item.background, borderColor: theme === key ? '#1890ff' : 'transparent' }}
+                  style={{ background: item.background, borderColor: theme === key ? 'var(--color-primary)' : 'transparent' }}
                   onClick={() => setTheme(key)}
                   styles={{ body: { padding: '6px 8px' } }}
                 >
@@ -103,7 +103,7 @@ function Setting(props) {
                     <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.cyan, display: 'inline-block' }} />
                   </div>
                   {theme === key && (
-                    <CheckOutlined style={{ position: 'absolute', top: 6, right: 8, color: '#1890ff', fontSize: 14 }} />
+                    <CheckOutlined style={{ position: 'absolute', top: 6, right: 8, color: 'var(--color-primary)', fontSize: 14 }} />
                   )}
                 </Card>
               </Col>

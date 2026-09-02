@@ -106,7 +106,7 @@ function NoticeIndex(props) {
         <List>
           {records.map(item => (
             <List.Item key={item.id} className={styles.item} onClick={() => setNotice(item)}>
-              {!item.read_ids.includes(id) && <SoundOutlined style={{color: '#ff4d4f', marginRight: 4}}/>}
+              {!item.read_ids.includes(id) && <SoundOutlined style={{color: 'var(--color-red-600)', marginRight: 4}}/>}
               <span className={styles.title}>{item.title}</span>
               <span className={styles.date}>{item.created_at.substr(0, 10)}</span>
             </List.Item>

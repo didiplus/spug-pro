@@ -7,8 +7,9 @@ export default function OperationLog() {
   useEffect(() => {
     logStore.f_name = store.user.username || '';
     logStore.current = 1;
+    logStore.fetchRecords();
     return () => { logStore.f_name = ''; };
   }, [store.user.username]);
 
-  return <ComTable/>;
+  return <ComTable autoFetch={false}/>;
 }

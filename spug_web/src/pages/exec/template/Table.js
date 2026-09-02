@@ -6,11 +6,12 @@
 import React from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import {Table, Modal, Tag, Space, Divider} from 'antd';
+import {Table, Modal, Space, Divider} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { http, hasPermission } from 'libs';
 import { Action, TableCard, AuthButton, ACEditor } from "components";
 import store from './store';
+import styles from './template.module.css';
 
 @observer
 class ComTable extends React.Component {
@@ -63,27 +64,29 @@ class ComTable extends React.Component {
           dataIndex="name"
           width={200}
           render={(name, record) => (
-            <Space direction="vertical" size={0}>
-              <span style={{fontWeight: 500}}>{name}</span>
-              {record.desc && (
-                <span style={{fontSize: 12, color: '#8c8c8c'}}>{record.desc}</span>
-              )}
-            </Space>
+            <div className={styles.nameCell}>
+              <span className={styles.nameText}>{name}</span>
+              {record.desc && <span className={styles.nameDesc}>{record.desc}</span>}
+            </div>
           )}/>
         <Table.Column
           title="类型"
           dataIndex="type"
           width={100}
-          render={v => v ? <Tag color="blue" style={{margin: 0}}>{v}</Tag> : <Tag style={{margin: 0}}>-</Tag>}/>
+          render={v => (
+            <span className={`${styles.typeTag} ${v ? '' : styles.typeEmpty}`}>
+              {v || '-'}
+            </span>
+          )}/>
         <Table.Column
           title="语言"
           dataIndex="interpreter"
           width={80}
           align="center"
           render={v => (
-            <Tag color={v === 'python' ? 'geekblue' : 'green'} style={{margin: 0}}>
+            <span className={`${styles.langTag} ${v === 'python' ? styles.langPython : styles.langShell}`}>
               {v === 'python' ? 'Python' : 'Shell'}
-            </Tag>
+            </span>
           )}/>
         {hasPermission('exec.template.view|exec.template.edit|exec.template.del') && (
           <Table.Column title="操作" width={160} render={info => (
@@ -97,29 +100,41 @@ class ComTable extends React.Component {
       </TableCard>
       <Modal
         visible={!!viewRecord}
-        width={700}
+        width={760}
         footer={null}
         title={viewRecord ? `${viewRecord.name} - 模板内容` : ''}
         onCancel={() => this.setState({viewRecord: null})}>
         {viewRecord && (
           <>
-            <Space size={16} style={{marginBottom: 12}}>
-              <span><Tag color="blue">{viewRecord.type}</Tag></span>
-              <span><Tag color={viewRecord.interpreter === 'python' ? 'geekblue' : 'green'}>
-                {viewRecord.interpreter === 'python' ? 'Python' : 'Shell'}
-              </Tag></span>
+            <div className={styles.viewMeta}>
+              <span className={styles.viewMetaItem}>
+                <span className={`${styles.typeTag} ${viewRecord.type ? '' : styles.typeEmpty}`}>{viewRecord.type || '-'}</span>
+              </span>
+              <span className={styles.viewMetaItem}>
+                <span className={`${styles.langTag} ${viewRecord.interpreter === 'python' ? styles.langPython : styles.langShell}`}>
+                  {viewRecord.interpreter === 'python' ? 'Python' : 'Shell'}
+                </span>
+              </span>
               {viewRecord.parameters && viewRecord.parameters.length > 0 && (
-                <span style={{fontSize: 13, color: '#8c8c8c'}}>
-                  参数化：{viewRecord.parameters.map(p => p.name).join('、')}
+                <span className={styles.viewParams}>
+                  {viewRecord.parameters.map(p => (
+                    <span key={p.id || p.name} className={styles.viewParamTag}>{p.name}</span>
+                  ))}
                 </span>
               )}
-            </Space>
-            <ACEditor
-              mode={viewRecord.interpreter || 'sh'}
-              value={viewRecord.body || ''}
-              height="400px"
-              readOnly
-            />
+            </div>
+            <div className={styles.viewCodeHeader}>
+              <span className={styles.viewCodeTitle}>脚本内容</span>
+              <span className={styles.viewCodeHint}>只读</span>
+            </div>
+            <div className={styles.viewEditorWrap}>
+              <ACEditor
+                mode={viewRecord.interpreter || 'sh'}
+                value={viewRecord.body || ''}
+                height="400px"
+                readOnly
+              />
+            </div>
           </>
         )}
       </Modal>

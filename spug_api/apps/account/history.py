@@ -1,19 +1,20 @@
 # Copyright: (c) OpenSpug Organization. https://github.com/openspug/spug
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
-from libs.mixins import AdminView
-from libs import json_response
+from django.views.generic import View
+from libs import json_response, auth
 from apps.account.models import History, OperationLog
 
 
-class HistoryView(AdminView):
+class HistoryView(View):
+    @auth('system.login.view')
     def get(self, request):
         histories = History.objects.all()
         return json_response(histories)
 
 
-class OperotionLogView(AdminView):
-
+class OperotionLogView(View):
+    @auth('system.log.view')
     def get(self, request):
         page = int(request.GET.get('page', 1))
         page_size = min(int(request.GET.get('page_size', 10)), 100)

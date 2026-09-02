@@ -1,0 +1,26 @@
+/* login-tokens.css - 登录页组件级令牌
+ * 公共令牌（primitive/semantic/dark mode）见 src/styles/tokens.css
+ */
+
+:root {
+  /* 登录卡片 */
+  --login-card-bg:      var(--color-card);
+  --login-card-text:    var(--color-card-text);
+  --login-card-border:  var(--color-border-secondary);
+  --login-card-shadow:  var(--shadow-md);
+  --login-card-shadow-hover: var(--shadow-lg);
+  --login-card-radius:  var(--radius-xl);
+  --login-card-width:   400px;
+  --login-card-padding: var(--space-12);
+
+  /* 登录按钮 */
+  --login-button-height:    44px;
+  --login-button-radius:   var(--radius-md);
+  --login-button-font:     var(--font-size-base);
+
+  /* 输入框 */
+  --login-input-height:    44px;
+
+  /* 页脚 */
+  --login-footer-text: var(--color-text-secondary);
+}

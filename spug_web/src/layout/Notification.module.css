@@ -1,0 +1,167 @@
+/* Notification 组件令牌 — 消息中心弹出面板 */
+
+.trigger {
+  cursor: pointer;
+  transition: background var(--duration-normal) var(--ease-standard);
+  padding: 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.trigger:hover {
+  background: var(--color-gray-200);
+}
+
+/* ── 弹出面板 ── */
+.panel {
+  width: 380px;
+  max-width: calc(100vw - var(--space-8));
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.headerTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.markAll {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.markAll:hover {
+  background: var(--color-blue-50);
+}
+
+/* ── 列表区 ── */
+.list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* ── 列表项 ── */
+.item {
+  cursor: pointer;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-secondary);
+  transition: background var(--duration-fast) var(--ease-standard);
+  position: relative;
+}
+
+.item:hover {
+  background: var(--color-blue-50);
+}
+
+.itemRead {
+  opacity: 0.45;
+}
+
+/* 未读左侧色条 */
+.itemUnread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-2);
+  bottom: var(--space-2);
+  width: 3px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-primary);
+}
+
+/* ── 图标容器 ── */
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.iconMonitor { background: var(--color-blue-50); }
+.iconSchedule { background: rgba(82, 196, 26, 0.1); }
+.iconFlag     { background: rgba(114, 46, 209, 0.1); }
+.iconAlert    { background: rgba(255, 77, 79, 0.1); }
+
+/* ── 文本区 ── */
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.content {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-1);
+}
+
+/* ── 空状态 ── */
+.empty {
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* ── 深色模式（跟随系统） ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .item:hover {
+    background: rgba(22, 119, 255, 0.08);
+  }
+  :global(:root:not([data-theme="light"])) .iconMonitor { background: rgba(22, 119, 255, 0.15); }
+  :global(:root:not([data-theme="light"])) .iconSchedule { background: rgba(82, 196, 26, 0.15); }
+  :global(:root:not([data-theme="light"])) .iconFlag { background: rgba(114, 46, 209, 0.15); }
+  :global(:root:not([data-theme="light"])) .iconAlert { background: rgba(255, 77, 79, 0.15); }
+  :global(:root:not([data-theme="light"])) .markAll:hover {
+    background: rgba(22, 119, 255, 0.12);
+  }
+}
+
+/* ── 深色模式（手动覆盖） ── */
+:global([data-theme="dark"]) .item:hover {
+  background: rgba(22, 119, 255, 0.08);
+}
+:global([data-theme="dark"]) .iconMonitor { background: rgba(22, 119, 255, 0.15); }
+:global([data-theme="dark"]) .iconSchedule { background: rgba(82, 196, 26, 0.15); }
+:global([data-theme="dark"]) .iconFlag { background: rgba(114, 46, 209, 0.15); }
+:global([data-theme="dark"]) .iconAlert { background: rgba(255, 77, 79, 0.15); }
+:global([data-theme="dark"]) .markAll:hover {
+  background: rgba(22, 119, 255, 0.12);
+}

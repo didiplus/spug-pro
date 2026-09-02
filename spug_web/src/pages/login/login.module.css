@@ -1,125 +1,223 @@
-/* login.module.css - 重新设计，Ant Design 风格 */
+/* login.module.css - 基于 design-tokens.css 令牌体系重构
+ * 视觉层次：背景层 → 卡片层 → 内容层；支持深色模式与响应式。
+ */
 
+/* ───────── 页面容器 ───────── */
 .container {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #f0f2f5;
+  padding: var(--space-6) var(--space-4);
+  background-color: var(--color-bg);
   background-image: url("./bg.svg");
   background-repeat: no-repeat;
-  background-position: center 110px;
+  background-position: center var(--space-10);
   background-size: 100%;
-  /* 如果背景图影响卡片清晰度，可降低透明度，但此处保留原样 */
+  overflow: hidden;
 }
 
-/* 卡片容器 */
+/* 深色模式下弱化浅色背景图，叠加渐变保证对比度 */
+.container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-bg) 85%
+  );
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+
+:global([data-theme="dark"]) .container::before,
+:global(.spug-dark) .container::before {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .container::before {
+    opacity: 1;
+  }
+}
+
+/* ───────── 登录卡片 ───────── */
 .card {
-  width: 400px;
-  padding: 48px 40px 40px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s;
+  position: relative;
+  z-index: 1;
+  width: var(--login-card-width);
+  max-width: 100%;
+  padding: var(--login-card-padding) var(--space-10) var(--space-10);
+  background: var(--login-card-bg);
+  border: 1px solid var(--login-card-border);
+  border-radius: var(--login-card-radius);
+  box-shadow: var(--login-card-shadow);
+  transition: box-shadow var(--duration-normal) var(--ease-standard),
+              transform var(--duration-normal) var(--ease-standard);
+  animation: cardEnter var(--duration-slow) var(--ease-standard) both;
 }
 
-/* 头部 logo 和标题 */
+.card:hover {
+  box-shadow: var(--login-card-shadow-hover);
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ───────── 头部 ───────── */
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--space-8);
 }
 
 .logo {
   height: 40px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.85);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--login-card-text);
   line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .desc {
-  margin-top: 8px;
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
-/* Tabs 切换 */
+/* ───────── Tabs ───────── */
 .tabs {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .tabs :global(.ant-tabs-nav) {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .tabs :global(.ant-tabs-tab) {
-  font-size: 16px;
-  padding: 8px 0;
+  font-size: var(--font-size-base);
+  padding: var(--space-2) 0;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
-/* 表单表单项 */
+/* ───────── 表单 ───────── */
 .formItem {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-/* 输入框前缀图标 */
 .icon {
-  color: rgba(0, 0, 0, 0.25);
-  font-size: 16px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
-/* 登录按钮 */
+/* 输入框聚焦时前缀图标跟随主色 */
+.formItem :global(.ant-input-affix-wrapper-focused .anticon),
+.formItem :global(.ant-input-affix-wrapper:focus-within .anticon) {
+  color: var(--color-primary);
+}
+
+/* ───────── 登录按钮 ───────── */
 .button {
-  margin-top: 8px;
-  height: 44px;
-  font-size: 16px;
-  border-radius: 6px;
+  width: 100%;
+  margin-top: var(--space-2);
+  height: var(--login-button-height);
+  font-size: var(--login-button-font);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--login-button-radius);
+  letter-spacing: 0.02em;
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
-/* 验证码区域 */
+.button:active {
+  transform: translateY(1px);
+}
+
+/* ───────── 验证码区域 ───────── */
 .captchaWrapper {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .captchaWrapper > :first-child {
   flex: 1;
+  min-width: 0;
 }
 
 .captchaBtn {
-  height: 40px;
-  padding: 0 16px;
+  height: var(--login-input-height);
+  padding: 0 var(--space-4);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* 页脚 */
+/* ───────── 页脚 ───────── */
 .footer {
-  margin-top: 40px;
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-10);
   text-align: center;
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
+  color: var(--login-footer-text);
+  font-size: var(--font-size-sm);
 }
 
 .footerLinks {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .footerLinks a {
-  margin: 0 16px;
-  color: rgba(0, 0, 0, 0.45);
-  transition: color 0.3s;
+  margin: 0 var(--space-4);
+  color: var(--color-link);
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
 .footerLinks a:hover {
-  color: #1890ff;
+  color: var(--color-link-hover);
 }
 
-/* 安全警告弹窗定位（保持原逻辑） */
+/* ───────── 安全警告弹窗 ───────── */
 .tips {
   top: 230px;
+}
+
+/* ───────── 响应式 ───────── */
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-10) var(--space-6) var(--space-8);
+    box-shadow: var(--shadow-sm);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .footerLinks a {
+    margin: 0 var(--space-3);
+  }
+}
+
+/* 尊重减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .button,
+  .footerLinks a,
+  .icon {
+    animation: none;
+    transition: none;
+  }
 }

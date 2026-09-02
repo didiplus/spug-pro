@@ -123,7 +123,7 @@ export default observer(function SlowQuery() {
       )}
 
       {data && data.metrics && (
-        <div style={{ background: '#fafafa', padding: 12, borderRadius: 6 }}>
+        <div style={{ background: 'var(--color-gray-50)', padding: 12, borderRadius: 'var(--radius-md)' }}>
           <MetricCards metrics={data.metrics} />
         </div>
       )}

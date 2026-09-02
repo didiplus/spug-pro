@@ -1,0 +1,109 @@
+/* TaskForm 组件令牌 — 巡检任务表单 */
+
+/* ── 分区标题 ── */
+.section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.sectionIcon {
+  color: var(--color-primary);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.sectionBlock {
+  margin-bottom: var(--space-6);
+}
+
+.sectionBlock:last-child {
+  margin-bottom: 0;
+}
+
+/* ── 巡检项 Transfer ── */
+.transfer {
+  width: 100%;
+}
+
+.transfer :global(.ant-transfer-list) {
+  width: calc(50% - var(--space-2));
+  height: 300px;
+}
+
+.transferItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.transferTag {
+  margin: 0;
+  font-size: 11px;
+  line-height: 18px;
+  flex-shrink: 0;
+}
+
+/* ── 通知方式 ── */
+.notifyModes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.notifyMode {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.notifyMode:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.notifyModeActive {
+  border-color: var(--color-primary);
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── 主机选择器包装 ── */
+.hostSelector {
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-gray-50);
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .notifyModeActive {
+    background: rgba(22, 119, 255, 0.12);
+  }
+  :global(:root:not([data-theme="light"])) .hostSelector {
+    background: var(--color-gray-900);
+  }
+}
+
+:global([data-theme="dark"]) .notifyModeActive {
+  background: rgba(22, 119, 255, 0.12);
+}
+:global([data-theme="dark"]) .hostSelector {
+  background: var(--color-gray-900);
+}

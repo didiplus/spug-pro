@@ -111,12 +111,12 @@ function OutView() {
   return (
     <div className={style.output}>
       <div className={style.side}>
-        <Flex align="center" gap={8} style={{ padding: '12px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        <Flex align="center" gap={8} style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-border-secondary)' }}>
 
           <Tag color="blue" style={{ marginLeft: 'auto' }}>{total} 台主机</Tag>
         </Flex>
 
-        <Flex gap={8} style={{ padding: '12px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        <Flex gap={8} style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-border-secondary)' }}>
           <Tag
             color="processing"
             icon={<ClockCircleOutlined />}
@@ -152,14 +152,14 @@ function OutView() {
             >
               <Flex align="center" gap={8}>
                 {item.status === -2 ? (
-                  <LoadingOutlined style={{ color: '#1677ff' }} />
+                  <LoadingOutlined style={{ color: 'var(--color-primary)' }} />
                 ) : item.status === 0 ? (
-                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                  <CheckCircleOutlined style={{ color: 'var(--color-green-600)' }} />
                 ) : (
-                  <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+                  <ExclamationCircleOutlined style={{ color: 'var(--color-red-600)' }} />
                 )}
                 <Text ellipsis style={{ flex: 1, fontSize: 13 }}>{item.title}</Text>
-                {key !== current && <RightOutlined style={{ color: '#d9d9d9', fontSize: 10 }} />}
+                {key !== current && <RightOutlined style={{ color: 'var(--color-gray-400)', fontSize: 10 }} />}
               </Flex>
             </div>
           ))}
@@ -179,7 +179,7 @@ function OutView() {
             <Text strong style={{ fontSize: 14 }}>{currentItem?.title}</Text>
           </Flex>
           <Tooltip title="打开终端">
-            <Button type="text" icon={<CodeOutlined />} onClick={() => openTerminal(current)} style={{ color: '#1677ff' }} />
+            <Button type="text" icon={<CodeOutlined />} onClick={() => openTerminal(current)} style={{ color: 'var(--color-primary)' }} />
           </Tooltip>
         </Flex>
         <div className={style.termContainer}>

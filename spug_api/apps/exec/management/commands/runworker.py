@@ -64,7 +64,7 @@ class Worker:
                         PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
         while True:
             try:
-                key, job = self.rds.blpop(
+                result = self.rds.blpop(
                     [EXEC_WORKER_KEY, SCHEDULE_WORKER_KEY, MONITOR_WORKER_KEY,
                      PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY],
                     timeout=30
@@ -78,9 +78,11 @@ class Worker:
                     logging.error(f"Reconnect failed: {reconnect_error}")
                     time.sleep(5)
                 continue
-            
-            if key is None:
+
+            if result is None:
                 continue
+
+            key, job = result
             
             key = key.decode()
             if key == SCHEDULE_WORKER_KEY:

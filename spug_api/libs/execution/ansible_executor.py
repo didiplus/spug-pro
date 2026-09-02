@@ -54,6 +54,14 @@ class AnsibleExecutor(BaseExecutor):
         self._custom_inventory = None
         self._vault_password_file = None
         self.stats = {}
+        self.last_error = ''
+
+    @staticmethod
+    def _normalize_output(text: str) -> str:
+        if not text:
+            return text
+        return text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\r\n')
+
 
     def set_inventory(self, inventory: dict):
         """设置自定义多主机 Inventory，用于 Playbook 执行"""
@@ -73,6 +81,7 @@ class AnsibleExecutor(BaseExecutor):
             'ansible_timeout': self._connect_timeout,
             'ansible_ssh_common_args': '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null',
         }
+
         if self._password:
             host_vars['ansible_password'] = self._password
         if self._pkey:
@@ -143,26 +152,202 @@ class AnsibleExecutor(BaseExecutor):
         elif event_type == 'runner_on_ok':
             stdout = res.get('stdout', '')
             if stdout:
-                return 0, stdout + '\r\n'
+                return 0, self._normalize_output(stdout) + '\r\n'
             return 0, None
         elif event_type == 'runner_on_failed':
             exit_code = res.get('rc', 1)
             stdout = res.get('stdout', '')
             stderr = res.get('stderr', '')
+            msg = res.get('msg', '')
+            self.last_error = msg or ''
+            if not self.last_error:
+                self.last_error = str(res)
+            logger.warning(f'Ansible runner_on_failed: host={event_data.get("host","")}, msg={msg}, rc={exit_code}')
             parts = []
+            if msg and msg not in (stdout, stderr):
+                parts.append(f'\x1b[31m{self._normalize_output(msg)}\x1b[0m\r\n')
             if stdout:
-                parts.append(stdout + '\r\n')
+                parts.append(self._normalize_output(stdout) + '\r\n')
             if stderr:
-                parts.append(f'\x1b[31m{stderr}\x1b[0m\r\n')
+                parts.append(f'\x1b[31m{self._normalize_output(stderr)}\x1b[0m\r\n')
             return exit_code, ''.join(parts) if parts else None
         elif event_type == 'runner_on_unreachable':
-            return 130, f'\r\n\x1b[31m### 主机不可达: {event_data.get("host", "")}\x1b[0m\r\n'
+            msg = event_data.get('msg', '') or res.get('msg', '') or ''
+            if not msg:
+                msg = str(event_data)
+            self.last_error = msg
+            logger.warning(f'Ansible runner_on_unreachable: host={event_data.get("host","")}, msg={msg}')
+            return 130, f'\r\n\x1b[31m### 主机不可达: {event_data.get("host", "")}\r\n{self._normalize_output(msg)}\x1b[0m\r\n'
         elif event_type == 'verbose':
             verbose_msg = event_data.get('verbose', '')
             if verbose_msg:
-                return -1, f'\x1b[33m{verbose_msg}\x1b[0m\r\n'
+                if 'python' in verbose_msg.lower() and ('3.9' in verbose_msg or '3.10' in verbose_msg or '3.11' in verbose_msg):
+                    self.last_error = verbose_msg
+                    logger.warning(f'Ansible verbose (python version): {verbose_msg[:200]}')
+                return -1, f'\x1b[33m{self._normalize_output(verbose_msg)}\x1b[0m\r\n'
             return -1, None
         return -1, None
+
+    def _build_batch_playbook(self, command: str, environment: Optional[Dict] = None) -> list:
+        """构建批量执行 playbook，per-host 环境变量通过 inventory 的 host_vars 注入"""
+        env_vars = {}
+        if self._default_env:
+            env_vars.update(self._default_env)
+        if environment:
+            env_vars.update(environment)
+
+        env_prefix = ''
+        for k, v in env_vars.items():
+            k = k.replace('-', '_')
+            if isinstance(v, str):
+                v = v.replace('"', '\\"')
+            env_prefix += f'export {k}="{v}"; '
+
+        full_command = env_prefix + command if env_prefix else command
+
+        return [{
+            'hosts': 'all',
+            'gather_facts': False,
+            'tasks': [
+                {
+                    'shell': full_command,
+                    'register': 'result',
+                    'environment': {
+                        'SPUG_HOST_ID': '{{ spug_host_id }}',
+                        'SPUG_HOST_NAME': '{{ spug_host_name }}',
+                        'SPUG_HOST_HOSTNAME': '{{ spug_host_hostname }}',
+                        'SPUG_SSH_PORT': '{{ spug_ssh_port }}',
+                        'SPUG_SSH_USERNAME': '{{ spug_ssh_username }}',
+                    },
+                },
+            ]
+        }]
+
+    def _process_batch_event(self, event: dict) -> Tuple[str, int, Optional[str]]:
+        """处理批量事件，返回 (host_name, exit_code, output_line)"""
+        event_data = event.get('event_data', {})
+        host_name = event_data.get('host', '')
+        code, line = self._process_event(event)
+        return host_name, code, line
+
+    def exec_command_with_stream_batch(self, hosts: list, command: str,
+                                       environment: Optional[Dict] = None
+                                       ) -> Generator[Tuple[str, int, str], None, None]:
+        """
+        批量流式执行，一次 ansible_runner.run() 管理多台主机
+        hosts: [{'id': 1, 'name': 'web1', 'hostname': '1.2.3.4', 'port': 22, 'username': 'root', 'pkey': '...'}, ...]
+        yield: (host_name, exit_code, line); exit_code=-1 表示中间行
+        """
+        if not HAS_ANSIBLE_RUNNER:
+            for h in hosts:
+                yield h.get('name', h['hostname']), 131, '\r\n\x1b[31m### ansible-runner 未安装，请执行 pip install ansible-runner 后重试\x1b[0m\r\n'
+            return
+
+        err = _check_ansible_cli()
+        if err:
+            for h in hosts:
+                yield h.get('name', h['hostname']), 127, f'\r\n\x1b[31m### {err}\x1b[0m\r\n'
+            return
+
+        _auto_cleanup = False
+        if self._tmpdir is None:
+            self.__enter__()
+            _auto_cleanup = True
+
+        # 构建多主机 inventory，每台主机注入 spug_* 变量
+        all_hosts = {}
+        for h in hosts:
+            name = h.get('name', h['hostname'])
+            hv = {
+                'ansible_host': h['hostname'],
+                'ansible_port': h.get('port', 22),
+                'ansible_user': h.get('username', 'root'),
+                'ansible_timeout': self._connect_timeout,
+                'ansible_ssh_common_args': '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null',
+                'spug_host_id': str(h.get('id', '')),
+                'spug_host_name': h.get('name', ''),
+                'spug_host_hostname': h['hostname'],
+                'spug_ssh_port': str(h.get('port', 22)),
+                'spug_ssh_username': h.get('username', 'root'),
+            }
+            if h.get('pkey'):
+                pkey_path = os.path.join(self._tmpdir, f'id_rsa_{name}')
+                with open(pkey_path, 'w') as f:
+                    f.write(h['pkey'])
+                os.chmod(pkey_path, 0o600)
+                hv['ansible_ssh_private_key_file'] = pkey_path
+            if h.get('password'):
+                hv['ansible_password'] = h['password']
+            all_hosts[name] = hv
+        inventory = {'all': {'hosts': all_hosts}}
+
+        playbook = self._build_batch_playbook(command, environment)
+        envvars = self._build_envvars()
+        envvars['ANSIBLE_FORKS'] = str(max(5, len(hosts)))
+
+        logger.info(f'Ansible batch stream: {len(hosts)} hosts, forks={envvars["ANSIBLE_FORKS"]}')
+
+        event_queue: queue.Queue = queue.Queue()
+        final_rc = [None]
+        final_error = [None]
+
+        def event_handler(event):
+            event_queue.put(event)
+
+        def run_in_thread():
+            try:
+                result = ansible_runner.run(
+                    private_data_dir=self._tmpdir,
+                    inventory=inventory,
+                    playbook=playbook,
+                    envvars=envvars,
+                    event_handler=event_handler,
+                )
+                final_rc[0] = result.rc if result.rc is not None else 1
+                logger.info(f'Ansible batch finished: rc={final_rc[0]}, status={result.status}')
+            except Exception as e:
+                logger.error(f'Ansible batch run thread error: {e}', exc_info=True)
+                final_error[0] = e
+            finally:
+                event_queue.put(_SENTINEL)
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+
+        while True:
+            try:
+                item = event_queue.get(timeout=0.5)
+            except queue.Empty:
+                if not thread.is_alive():
+                    while not event_queue.empty():
+                        item = event_queue.get_nowait()
+                        if item is _SENTINEL:
+                            continue
+                        host_name, code, line = self._process_batch_event(item)
+                        if line:
+                            yield host_name, code, line
+                    break
+                continue
+
+            if item is _SENTINEL:
+                if final_error[0] is not None:
+                    yield '', 131, f'\r\n\x1b[31m### Ansible 批量执行失败: {final_error[0]}\x1b[0m\r\n'
+                continue
+
+            try:
+                host_name, code, line = self._process_batch_event(item)
+                if line:
+                    yield host_name, code, line
+            except Exception as e:
+                logger.error(f'Batch event process error: {e}', exc_info=True)
+
+        try:
+            thread.join(timeout=5)
+        except Exception:
+            pass
+
+        if _auto_cleanup:
+            self.__exit__(None, None, None)
 
     def exec_command(self, command: str, environment: Optional[Dict] = None) -> Tuple[int, str]:
         if not HAS_ANSIBLE_RUNNER:
@@ -198,19 +383,28 @@ class AnsibleExecutor(BaseExecutor):
                 if event_type == 'runner_on_ok':
                     output = res.get('stdout', '')
                 elif event_type == 'runner_on_failed':
+                    self.last_error = res.get('msg', '') or ''
+                    if not self.last_error:
+                        self.last_error = str(res)
                     output = res.get('stdout', '') + res.get('stderr', '')
                 elif event_type == 'runner_on_unreachable':
+                    msg = event_data.get('msg', '') or res.get('msg', '') or ''
+                    if not msg:
+                        msg = str(event_data)
+                    self.last_error = msg
                     output = f"主机不可达: {event_data.get('host', '')}"
                     exit_code = 130
                 elif event_type == 'verbose':
                     verbose_msg = event_data.get('verbose', '')
                     if verbose_msg:
+                        if 'python' in verbose_msg.lower() and ('3.9' in verbose_msg or '3.10' in verbose_msg or '3.11' in verbose_msg):
+                            self.last_error = verbose_msg
                         output += verbose_msg + '\n'
-
-            return exit_code, output
         except Exception as e:
             logger.error(f'Ansible 执行失败: {e}', exc_info=True)
             return 131, f'Ansible 执行失败: {e}'
+
+        return exit_code, output
 
     def exec_command_with_stream(self, command: str, environment: Optional[Dict] = None) -> Generator[Tuple[int, str], None, None]:
         if not HAS_ANSIBLE_RUNNER:
@@ -314,6 +508,7 @@ class AnsibleExecutor(BaseExecutor):
             yield -1, '\r\n\x1b[31m### Ansible 执行异常终止，未收到结果事件\x1b[0m\r\n'
 
         logger.info(f'Ansible stream done: exit_code={exit_code}')
+
         yield exit_code, ''
 
     def _build_sync_playbook(self, local_path: str, remote_path: str,
@@ -353,18 +548,18 @@ class AnsibleExecutor(BaseExecutor):
             stderr = res.get('stderr', '')
             parts = []
             if msg:
-                parts.append(f'\x1b[31m{msg}\x1b[0m\r\n')
+                parts.append(f'\x1b[31m{self._normalize_output(msg)}\x1b[0m\r\n')
             if stdout:
-                parts.append(stdout + '\r\n')
+                parts.append(self._normalize_output(stdout) + '\r\n')
             if stderr:
-                parts.append(f'\x1b[31m{stderr}\x1b[0m\r\n')
+                parts.append(f'\x1b[31m{self._normalize_output(stderr)}\x1b[0m\r\n')
             return exit_code, ''.join(parts) if parts else None
         elif event_type == 'runner_on_unreachable':
             return 130, f'\r\n\x1b[31m### 主机不可达: {event_data.get("host", "")}\x1b[0m\r\n'
         elif event_type == 'verbose':
             verbose_msg = event_data.get('verbose', '')
             if verbose_msg:
-                return -1, f'\x1b[33m{verbose_msg}\x1b[0m\r\n'
+                return -1, f'\x1b[33m{self._normalize_output(verbose_msg)}\x1b[0m\r\n'
             return -1, None
         return -1, None
 
@@ -524,7 +719,7 @@ class AnsibleExecutor(BaseExecutor):
         if event_type == 'playbook_on_stats':
             stats_data = event_data.get('artifact', {}).get('data', {})
             if stats_data:
-                self.stats = {}
+
                 for h, s in stats_data.items():
                     ok = s.get('ok', {}).get('num_tasks', 0) if isinstance(s.get('ok'), dict) else s.get('ok', 0)
                     changed = s.get('changed', {}).get('num_tasks', 0) if isinstance(s.get('changed'), dict) else s.get('changed', 0)
@@ -542,7 +737,7 @@ class AnsibleExecutor(BaseExecutor):
             code = -1
 
         if stdout:
-            return code, stdout + '\r\n'
+            return code, self._normalize_output(stdout) + '\r\n'
         return code, None
 
 

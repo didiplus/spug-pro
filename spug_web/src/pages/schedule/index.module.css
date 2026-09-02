@@ -1,15 +1,119 @@
+/* Schedule 模块令牌 */
+
+/* ── 步骤条 ── */
 .steps {
-    width: 520px;
-    margin: 0 auto 30px;
+  width: 520px;
+  margin: 0 auto var(--space-8);
 }
 
+/* ── 删除图标 ── */
 .delIcon {
-    font-size: 24px;
-    position: relative;
-    top: 4px;
-    color: #999999;
+  font-size: 20px;
+  position: relative;
+  top: 3px;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
 .delIcon:hover {
-    color: #f5222d;
+  color: var(--color-red-500);
+}
+
+/* ── 表单分区标题 ── */
+.sectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 1.2;
+}
+
+/* ── 编辑器容器 ── */
+.editorWrap {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+  overflow: hidden;
+}
+
+/* ── 步骤导航按钮 ── */
+.stepActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* ── 执行对象项 ── */
+.targetItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.targetSelect {
+  flex: 1;
+}
+
+/* ── 添加执行对象按钮 ── */
+.addTargetBtn {
+  width: 100%;
+}
+
+/* ── 触发器标签页 ── */
+.triggerTabs {
+  min-height: 220px;
+}
+
+/* ── 下次运行时间 ── */
+.nextRunSuccess {
+  font-size: var(--font-size-xs);
+  color: var(--color-green-600);
+}
+
+.nextRunError {
+  font-size: var(--font-size-xs);
+  color: var(--color-red-600);
+}
+
+/* ── 数据库备份表单 ── */
+.dbBackupForm {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+}
+
+/* ── 通知配置 ── */
+.notifyExtra {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .delIcon {
+    color: var(--color-gray-600);
+  }
+  :global(:root:not([data-theme="light"])) .editorWrap {
+    border-color: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .dbBackupForm {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-800);
+  }
+}
+
+:global([data-theme="dark"]) .delIcon {
+  color: var(--color-gray-600);
+}
+:global([data-theme="dark"]) .editorWrap {
+  border-color: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .dbBackupForm {
+  background: var(--color-gray-900);
+  border-color: var(--color-gray-800);
 }

@@ -84,7 +84,7 @@ function GenericTable({ config, type }) {
           render: (v) => {
             if (v === undefined || v === null) return '-';
             const num = Number(v);
-            const color = num > 5 ? '#ff4d4f' : 'inherit';
+            const color = num > 5 ? 'var(--color-red-600)' : 'inherit';
             return <span style={{ color, fontWeight: num > 5 ? 600 : 400 }}>{v}</span>;
           },
         };
@@ -149,7 +149,7 @@ function BasicTab({ record }) {
         <Space>
           <Text code>{record.host}:{record.port}</Text>
           <Tooltip title="复制地址">
-            <CopyOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} onClick={() => handleCopy(`${record.host}:${record.port}`)} />
+            <CopyOutlined style={{ color: 'var(--color-text-secondary)', cursor: 'pointer' }} onClick={() => handleCopy(`${record.host}:${record.port}`)} />
           </Tooltip>
         </Space>
       </Descriptions.Item>

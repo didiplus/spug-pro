@@ -342,12 +342,12 @@ export default observer(function BackupManager() {
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="成功数" value={successCount} valueStyle={{ color: '#52c41a' }} />
+            <Statistic title="成功数" value={successCount} valueStyle={{ color: 'var(--color-green-600)' }} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="失败数" value={failedCount} valueStyle={{ color: '#ff4d4f' }} />
+            <Statistic title="失败数" value={failedCount} valueStyle={{ color: 'var(--color-red-600)' }} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
@@ -426,7 +426,7 @@ export default observer(function BackupManager() {
       >
         <Flex vertical gap={16}>
           <Flex align="center" gap={8}>
-            <FileZipOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+            <FileZipOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
             <Flex vertical gap={2}>
               <Text strong style={{ fontSize: 13 }}>{downloadState.name}</Text>
               <Text type="secondary" style={{ fontSize: 12 }}>

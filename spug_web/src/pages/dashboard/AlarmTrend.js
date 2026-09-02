@@ -7,22 +7,20 @@ import React, { useState, useEffect } from 'react';
 import { Card, Cascader, Empty } from 'antd';
 import { Chart, Geom, Axis, Tooltip } from 'bizcharts';
 import { http } from 'libs';
+import useChartTheme from './useChartTheme';
+import 'styles/tokens.css';
+import './tokens.css';
 
 const cardStyle = {
-  borderRadius: 12,
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-  border: '1px solid #f0f0f0',
-  marginBottom: 24,
+  borderRadius: 'var(--chart-card-radius)',
+  boxShadow: 'var(--chart-card-shadow)',
+  border: '1px solid var(--chart-card-border)',
+  marginBottom: 'var(--space-6)',
 };
 
 const cascaderStyle = {
   width: 260,
-  borderRadius: 6,
-};
-
-const chartConfig = {
-  padding: [20, 20, 40, 50],
-  forceFit: true,
+  borderRadius: 'var(--radius-md)',
 };
 
 export default function AlarmTrend() {
@@ -30,6 +28,7 @@ export default function AlarmTrend() {
   const [options, setOptions] = useState([]);
   const [params, setParams] = useState({});
   const [res, setRes] = useState([]);
+  const theme = useChartTheme();
 
   useEffect(() => {
     setLoading(true);
@@ -68,7 +67,7 @@ export default function AlarmTrend() {
   return (
     <Card
       loading={loading}
-      title={<span style={{ fontWeight: 500, fontSize: 16, color: '#262626' }}>报警趋势</span>}
+      title={<span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-base)', color: 'var(--chart-card-title-color)' }}>报警趋势</span>}
       extra={
         <Cascader
           changeOnSelect
@@ -81,8 +80,8 @@ export default function AlarmTrend() {
       }
       style={cardStyle}
       styles={{
-        header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
-        body: { padding: '16px 24px 24px' },
+        header: { borderBottom: '1px solid var(--chart-card-header-border)', padding: 'var(--space-4) var(--space-6)' },
+        body: { padding: 'var(--space-4) var(--space-6) var(--space-6)' },
       }}
     >
       {res.length === 0 ? (
@@ -93,26 +92,27 @@ export default function AlarmTrend() {
         <Chart
           height={300}
           data={res}
-          padding={chartConfig.padding}
+          padding={[20, 20, 40, 50]}
           scale={{ value: { alias: '报警次数', min: 0 } }}
-          forceFit={chartConfig.forceFit}
+          forceFit
         >
           <Axis
             name="date"
-            label={{ fontSize: 12, textAlign: 'center' }}
-            tickLine={{ lineWidth: 1, stroke: '#e8e8e8' }}
+            label={{ fontSize: 12, textAlign: 'center', fill: theme.axis }}
+            tickLine={{ lineWidth: 1, stroke: theme.tick }}
           />
           <Axis
             name="value"
-            label={{ fontSize: 12 }}
-            grid={{ lineStyle: { stroke: '#f0f0f0', lineDash: [4, 4] } }}
+            label={{ fontSize: 12, fill: theme.axis }}
+            grid={{ lineStyle: { stroke: theme.grid, lineDash: [4, 4] } }}
           />
           <Tooltip
             crosshairs={{ type: 'y' }}
             containerStyle={{
-              background: 'rgba(255,255,255,0.95)',
-              borderRadius: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              background: theme.tooltipBg,
+              color: theme.tooltipText,
+              borderRadius: 'var(--radius-md)',
+              boxShadow: theme.tooltipShadow,
             }}
           />
           <Geom
@@ -120,15 +120,15 @@ export default function AlarmTrend() {
             position="date*value"
             size={2.5}
             shape="smooth"
-            color="#1890ff"
+            color={theme.line}
           />
           <Geom
             type="point"
             position="date*value"
             size={4}
             shape="circle"
-            color="#1890ff"
-            style={{ stroke: '#fff', lineWidth: 1 }}
+            color={theme.line}
+            style={{ stroke: theme.tooltipBg, lineWidth: 1 }}
           />
         </Chart>
       )}

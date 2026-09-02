@@ -1,0 +1,185 @@
+/* Playbook 模块令牌 */
+
+/* ── 状态标签 ── */
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+.statusActive {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.statusInactive {
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+}
+
+.statusRunning {
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.statusSuccess {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.statusFailed {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+.statusCanceled {
+  background: var(--color-gray-100);
+  color: var(--color-text-tertiary);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusRunning .statusDot {
+  animation: pbPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pbPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── 标签 ── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+  line-height: 1.4;
+}
+
+/* ── 耗时 ── */
+.duration {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.durationFast {
+  color: var(--color-green-600);
+}
+
+.durationSlow {
+  color: var(--color-orange-600);
+}
+
+/* ── 名称单元格 ── */
+.nameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nameDesc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ── 表单分区 ── */
+.sectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.sectionDesc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.editorWrap {
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border-secondary);
+}
+
+/* ── 输出页 ── */
+.outputHeader {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.outputBody {
+  flex: 1;
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .statusActive {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statusFailed {
+    background: rgba(255, 77, 79, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statusRunning {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statusInactive {
+    background: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .statusCanceled {
+    background: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .tag {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .editorWrap {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-800);
+  }
+}
+
+:global([data-theme="dark"]) .statusActive {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .statusFailed {
+  background: rgba(255, 77, 79, 0.15);
+}
+:global([data-theme="dark"]) .statusRunning {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .statusInactive {
+  background: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .statusCanceled {
+  background: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .tag {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .editorWrap {
+  background: var(--color-gray-900);
+  border-color: var(--color-gray-800);
+}

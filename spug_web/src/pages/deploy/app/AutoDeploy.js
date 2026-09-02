@@ -80,7 +80,7 @@ export default observer(function AutoDeploy() {
               </Select>
             </Form.Item>
             <Form.Item style={{display: 'inline-block', width: 82, textAlign: 'center', marginBottom: 0}}>
-              {fetching ? <LoadingOutlined style={{fontSize: 18, color: '#1890ff'}}/> :
+              {fetching ? <LoadingOutlined style={{fontSize: 18, color: 'var(--color-primary)'}}/> :
                 <Button type="link" icon={<SyncOutlined/>} disabled={fetching || tagMode}
                         onClick={fetchVersions}>刷新</Button>
               }
@@ -96,7 +96,7 @@ export default observer(function AutoDeploy() {
         )}
         {type === 'branch' && !branch ? (
           <Form.Item label="Webhook URL">
-            <div style={{color: '#ff4d4f'}}>请指定分支名称。</div>
+            <div style={{color: 'var(--color-red-600)'}}>请指定分支名称。</div>
           </Form.Item>
         ) : (
           <Form.Item label="Webhook URL" extra="点击复制链接，目前支持Gitee、Github、Gitlab、Gogs、Coding和Codeup(阿里云)。">
@@ -112,7 +112,7 @@ export default observer(function AutoDeploy() {
           </Form.Item>
         ) : (
           <Form.Item label="Secret Token" tooltip="调用该Webhook接口的访问凭据，在Gitee中为WebHook密码，Gogs中为密钥文本。">
-            <div style={{color: '#ff4d4f'}}>请在系统管理/系统设置/开放服务设置中设置。</div>
+            <div style={{color: 'var(--color-red-600)'}}>请在系统管理/系统设置/开放服务设置中设置。</div>
           </Form.Item>
         )}
       </Form>

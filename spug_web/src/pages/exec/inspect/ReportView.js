@@ -50,7 +50,7 @@ export default observer(function () {
   const errorCount = results.filter(r => r.status === 'error').length;
   const pending = results.filter(r => r.status === 'pending' || r.status === 'running').length;
   const passRate = total > 0 ? Math.round(success / total * 1000) / 10 : 0;
-  const passColor = passRate === 100 ? '#52c41a' : (passRate >= 60 ? '#faad14' : '#ff4d4f');
+  const passColor = passRate === 100 ? 'var(--color-green-600)' : (passRate >= 60 ? 'var(--color-gold-500)' : 'var(--color-red-600)');
   const isNormal = warning === 0 && errorCount === 0;
 
   const hostMap = {};
@@ -87,17 +87,17 @@ export default observer(function () {
       }
       styles={{body: {maxHeight: '70vh', overflow: 'auto'}}}>
       {loading ? (
-        <div style={{padding: 40, textAlign: 'center', color: '#8c8c8c'}}>加载中...</div>
+        <div style={{padding: 40, textAlign: 'center', color: 'var(--color-text-secondary)'}}>加载中...</div>
       ) : results.length === 0 ? (
         <Empty description="暂无巡检结果"/>
       ) : (
         <>
           <Row gutter={12} style={{marginBottom: 16}}>
             <Col span={4}><Card size="small"><Statistic title="全部" value={total}/></Card></Col>
-            <Col span={5}><Card size="small"><Statistic title="正常" value={success} valueStyle={{color: '#52c41a'}}/></Card></Col>
-            <Col span={5}><Card size="small"><Statistic title="告警" value={warning} valueStyle={{color: '#faad14'}}/></Card></Col>
-            <Col span={5}><Card size="small"><Statistic title="失败" value={errorCount} valueStyle={{color: '#ff4d4f'}}/></Card></Col>
-            <Col span={5}><Card size="small"><Statistic title="待执行" value={pending} valueStyle={{color: '#8c8c8c'}}/></Card></Col>
+            <Col span={5}><Card size="small"><Statistic title="正常" value={success} valueStyle={{color: 'var(--color-green-600)'}}/></Card></Col>
+            <Col span={5}><Card size="small"><Statistic title="告警" value={warning} valueStyle={{color: 'var(--color-gold-500)'}}/></Card></Col>
+            <Col span={5}><Card size="small"><Statistic title="失败" value={errorCount} valueStyle={{color: 'var(--color-red-600)'}}/></Card></Col>
+            <Col span={5}><Card size="small"><Statistic title="待执行" value={pending} valueStyle={{color: 'var(--color-text-secondary)'}}/></Card></Col>
           </Row>
 
           <div style={{marginBottom: 16}}>
@@ -125,7 +125,7 @@ export default observer(function () {
               title={
                 <Space>
                   <span style={{fontWeight: 600}}>{host.name}</span>
-                  <span style={{fontSize: 12, color: '#8c8c8c'}}>{host.hPassRate}%</span>
+                  <span style={{fontSize: 12, color: 'var(--color-text-secondary)'}}>{host.hPassRate}%</span>
                   <Tag color="success">正常 {host.hSuccess}</Tag>
                   {host.hWarning > 0 && <Tag color="warning">告警 {host.hWarning}</Tag>}
                   {host.hError > 0 && <Tag color="error">失败 {host.hError}</Tag>}

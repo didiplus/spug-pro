@@ -98,6 +98,7 @@ def database_check(addr, config):
         cfg = json.loads(config) if isinstance(config, str) else (config or {})
         db_type = cfg.get('db_type', 'mysql')
         port = cfg.get('port', 3306)
+        port = int(port) if str(port).strip().isdigit() else 3306
         username = cfg.get('username', '')
         password = cfg.get('password', '')
         sql = cfg.get('sql', 'SELECT 1')

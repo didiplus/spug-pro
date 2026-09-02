@@ -6,6 +6,7 @@ import { CheckCircleOutlined, FileTextOutlined, CodeOutlined } from '@ant-design
 import { ACEditor } from 'components';
 import { http } from 'libs';
 import S from './store';
+import styles from './playbook.module.css';
 
 const { Text } = Typography;
 
@@ -113,21 +114,21 @@ export default observer(function () {
       </Form>
 
       <Divider orientation="left" style={{margin: '8px 0 12px'}}>
-        <Space><FileTextOutlined/><Text strong>Playbook 内容</Text></Space>
+        <span className={styles.sectionTitle}><FileTextOutlined/> Playbook 内容</span>
       </Divider>
       <Flex justify="space-between" align="center" style={{marginBottom: 8}}>
-        <Text type="secondary" style={{fontSize: 13}}>YAML 格式，定义 Ansible Playbook 的执行内容</Text>
+        <span className={styles.sectionDesc}>YAML 格式，定义 Ansible Playbook 的执行内容</span>
         <Button size="small" icon={<CheckCircleOutlined/>} loading={validating} onClick={handleValidate}>YAML 语法校验</Button>
       </Flex>
-      <div style={{background: '#f5f5f5', borderRadius: 6, padding: 4}}>
+      <div className={styles.editorWrap}>
         <ACEditor mode="yaml" value={content} onChange={setContent} height="280px" width="100%"/>
       </div>
 
       <Divider orientation="left" style={{margin: '16px 0 12px'}}>
-        <Space><CodeOutlined/><Text strong>额外变量</Text></Space>
+        <span className={styles.sectionTitle}><CodeOutlined/> 额外变量</span>
       </Divider>
-      <Text type="secondary" style={{fontSize: 13, display: 'block', marginBottom: 8}}>JSON 格式，执行时作为 extra_vars 传入</Text>
-      <div style={{background: '#f5f5f5', borderRadius: 6, padding: 4}}>
+      <span className={styles.sectionDesc}>JSON 格式，执行时作为 extra_vars 传入</span>
+      <div className={styles.editorWrap}>
         <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="100px" width="100%"/>
       </div>
     </Modal>

@@ -36,7 +36,7 @@ export default function (props) {
     <Form labelCol={{span: 8}} wrapperCol={{span: 14}} className={styles.batchSync} style={props.style}>
       {Object.entries(hosts).map(([key, item]) => (
         <Form.Item key={key} label={item.name} extra={item.message}>
-          {item.status === 'ok' && <span style={{color: "#52c41a"}}>成功</span>}
+          {item.status === 'ok' && <span style={{color: 'var(--color-green-600)'}}>成功</span>}
           {item.status === 'fail' && <span style={{color: "red"}}>失败</span>}
           {item.status === undefined && <LoadingOutlined/>}
         </Form.Item>

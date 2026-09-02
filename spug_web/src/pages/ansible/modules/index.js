@@ -129,7 +129,7 @@ function ModuleDoc({name, doc}) {
           <Text strong>参数</Text>
           <div style={{marginTop: 8}}>
             {Object.entries(docData.options).map(([key, opt]) => (
-              <div key={key} style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+              <div key={key} style={{padding: '8px 0', borderBottom: '1px solid var(--color-border-secondary)'}}>
                 <Flex align="center" gap={8}>
                   <Text strong style={{color: '#2563fc'}}>{key}</Text>
                   {opt.required && <Tag color="red">required</Tag>}

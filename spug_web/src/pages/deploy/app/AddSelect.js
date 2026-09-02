@@ -58,7 +58,7 @@ class AddSelect extends React.Component {
           styles={{body: {display: 'flex'}}}
           onClick={this.switchExt1}>
           <div style={{marginRight: 16}}>
-            <OrderedListOutlined style={{fontSize: 36, color: '#1890ff'}} />
+            <OrderedListOutlined style={{fontSize: 36, color: 'var(--color-primary)'}} />
           </div>
           <div>
             <div className={styles.cardTitle}>常规发布</div>
@@ -72,7 +72,7 @@ class AddSelect extends React.Component {
           styles={{body: {display: 'flex'}}}
           onClick={this.switchExt2}>
           <div style={{marginRight: 16}}>
-            <BuildOutlined style={{fontSize: 36, color: '#1890ff'}} />
+            <BuildOutlined style={{fontSize: 36, color: 'var(--color-primary)'}} />
           </div>
           <div>
             <div className={styles.cardTitle}>自定义发布</div>

@@ -12,8 +12,8 @@ import store from './store';
 
 export default observer(function () {
   return (
-    <AuthDiv auth="system.account.view">
-      <Breadcrumb items={['首页', '系统管理', '账户管理']} />
+    <AuthDiv auth="system.login.view">
+      <Breadcrumb items={['首页', '系统管理', '登录日志']} />
       <SearchForm>
         <SearchForm.Item span={8} title="账户名称">
           <Input allowClear value={store.f_name} onChange={e => store.f_name = e.target.value} placeholder="请输入"/>

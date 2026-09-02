@@ -96,7 +96,7 @@ export default observer(function MenuManage() {
             <Input
               allowClear
               placeholder="搜索名称或权限标识"
-              prefix={<SearchOutlined style={{ color: '#bfbfbf' }}/>}
+              prefix={<SearchOutlined style={{ color: 'var(--color-text-tertiary)' }}/>}
               style={{ width: 240 }}
               onChange={e => setKeyword(e.target.value)}
             />

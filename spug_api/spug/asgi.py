@@ -2,14 +2,26 @@
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
 """
-ASGI entrypoint. Configures Django and then runs the application
-defined in the ASGI_APPLICATION setting.
+ASGI config for spug project.
+
+Exposes both the HTTP application and the websocket routes defined in
+consumer.routing, so `daphne spug.asgi:application` serves websockets.
 """
 
 import os
-import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "spug.settings")
-django.setup()
 
-from spug.routing import application
+from django.core.asgi import get_asgi_application
+
+# get_asgi_application() calls django.setup(); it must run before importing
+# anything that touches models (consumer.routing imports consumers/models).
+django_asgi_app = get_asgi_application()
+
+from channels.routing import ProtocolTypeRouter  # noqa: E402
+from consumer import routing  # noqa: E402
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_app,
+    "websocket": routing.ws_router,
+})

@@ -1,9 +1,11 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Tag, Radio, Button, Modal, Descriptions, Typography, Input, Tabs, Tooltip } from 'antd';
+import { Tag, Radio, Button, Modal, Descriptions, Typography, Tabs, Tooltip } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
-import { TableCard, ACEditor, SearchForm } from 'components';
+import { TableCard, ACEditor } from 'components';
 import store from './store';
+import 'styles/tokens.css';
+import './tokens.css';
 
 const { Text } = Typography;
 
@@ -40,7 +42,9 @@ class ComTable extends React.Component {
   };
 
   componentDidMount() {
-    store.fetchRecords();
+    if (this.props.autoFetch !== false) {
+      store.fetchRecords();
+    }
   }
 
   showDetail = (record) => {
@@ -49,9 +53,9 @@ class ComTable extends React.Component {
 
   renderCostTime = (ms) => {
     const val = ms || 0;
-    let color = '#52c41a';
-    if (val > 3000) color = '#ff4d4f';
-    else if (val > 1000) color = '#fa8c16';
+    let color = 'var(--log-cost-fast)';
+    if (val > 3000) color = 'var(--log-cost-error)';
+    else if (val > 1000) color = 'var(--log-cost-slow)';
     return <Text style={{ color }}>{val} ms</Text>;
   };
 
@@ -62,7 +66,7 @@ class ComTable extends React.Component {
     },
     {
       title: '用户', width: 100, dataIndex: 'username',
-      render: v => <Text strong>{v}</Text>,
+      render: v => <Text >{v}</Text>,
     },
     {
       title: '模块', width: 120, dataIndex: 'module',
@@ -75,7 +79,7 @@ class ComTable extends React.Component {
     },
     {
       title: '请求路径', dataIndex: 'uri', ellipsis: true,
-      render: v => v ? <Tooltip title={v}><Text style={{ fontSize: 13 }}>{v}</Text></Tooltip> : '-',
+      render: v => v ? <Tooltip title={v}><Text style={{ fontSize: 'var(--log-uri-font-size)' }}>{v}</Text></Tooltip> : '-',
     },
     {
       title: 'IP', width: 140, dataIndex: 'client_ip',
@@ -147,14 +151,14 @@ class ComTable extends React.Component {
           width={900}
           footer={null}
           onCancel={() => this.setState({ visible: false })}
-          styles={{ body: { padding: '16px 24px 24px' } }}
+          styles={{ body: { padding: 'var(--space-4) var(--space-6) var(--space-6)' } }}
         >
           <Descriptions
             size="small"
             column={2}
             bordered
-            labelStyle={{ width: 100, fontWeight: 500, background: '#fafafa' }}
-            contentStyle={{ background: '#ffffff' }}
+            labelStyle={{ width: 100, fontWeight: 'var(--font-weight-medium)', background: 'var(--log-desc-label-bg)' }}
+            contentStyle={{ background: 'var(--log-desc-content-bg)' }}
           >
             <Descriptions.Item label="用户">{current.username}</Descriptions.Item>
             <Descriptions.Item label="状态码">{current.response_status}</Descriptions.Item>
@@ -165,7 +169,7 @@ class ComTable extends React.Component {
             <Descriptions.Item label="模块">{current.module || '-'}</Descriptions.Item>
             <Descriptions.Item label="客户端 IP">{current.client_ip || '-'}</Descriptions.Item>
             <Descriptions.Item label="请求地址" span={2}>
-              <Text copyable style={{ fontSize: 13 }}>{current.uri || current.url}</Text>
+              <Text copyable style={{ fontSize: 'var(--log-uri-font-size)' }}>{current.uri || current.url}</Text>
             </Descriptions.Item>
             {current.error_message && (
               <Descriptions.Item label="错误信息" span={2}>
@@ -175,13 +179,13 @@ class ComTable extends React.Component {
           </Descriptions>
 
           <Tabs
-            style={{ marginTop: 16 }}
+            style={{ marginTop: 'var(--space-4)' }}
             items={[
               {
                 key: 'request',
                 label: '请求参数',
                 children: (
-                  <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 4 }}>
+                  <div style={{ background: 'var(--log-editor-bg)', borderRadius: 'var(--log-editor-radius)', padding: 'var(--space-1)' }}>
                     <ACEditor
                       mode="json"
                       value={this.formatJson(current.request_params)}
@@ -196,7 +200,7 @@ class ComTable extends React.Component {
                 key: 'response',
                 label: '响应结果',
                 children: (
-                  <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 4 }}>
+                  <div style={{ background: 'var(--log-editor-bg)', borderRadius: 'var(--log-editor-radius)', padding: 'var(--space-1)' }}>
                     <ACEditor
                       mode="json"
                       value={this.formatJson(current.response_data)}

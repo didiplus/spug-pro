@@ -36,11 +36,13 @@ export default observer(function () {
           </Form.Item>
         </Form>
         <Form.Item wrapperCol={{ span: 14, offset: 6 }}>
-          <Button type="primary" onClick={() => {
-            store.targets = ['local'];
-            store.page += 1;
-          }}>下一步</Button>
-          <Button style={{ marginLeft: 20 }} onClick={() => store.page -= 1}>上一步</Button>
+          <div className={styles.stepActions}>
+            <Button type="primary" onClick={() => {
+              store.targets = ['local'];
+              store.page += 1;
+            }}>下一步</Button>
+            <Button onClick={() => store.page -= 1}>上一步</Button>
+          </div>
         </Form.Item>
       </React.Fragment>
     );
@@ -51,13 +53,13 @@ export default observer(function () {
       <Form labelCol={{span: 7}} wrapperCol={{span: 14}} style={{minHeight: 350}}>
         <Form.Item required label="执行对象">
           {store.targets.map((id, index) => (
-            <React.Fragment key={index}>
+            <div key={index} className={styles.targetItem}>
               <Select
                 value={id}
                 showSearch
                 placeholder="请选择"
                 optionFilterProp="children"
-                style={{width: '80%', marginRight: 10, marginBottom: 12}}
+                className={styles.targetSelect}
                 filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
                 onChange={v => store.editTarget(index, v)}>
                 <Select.Option value="local" disabled={store.targets.includes('local')}>本机</Select.Option>
@@ -70,19 +72,21 @@ export default observer(function () {
               {store.targets.length > 1 && (
                 <MinusCircleOutlined className={styles.delIcon} onClick={() => store.delTarget(index)}/>
               )}
-            </React.Fragment>
+            </div>
           ))}
         </Form.Item>
         <Form.Item wrapperCol={{span: 14, offset: 6}}>
           <HostSelector value={store.targets.filter(x => x !== 'local')} onChange={handleChange}>
-            <Button type="dashed" style={{width: '80%'}}><PlusOutlined/>添加执行对象</Button>
+            <Button type="dashed" className={styles.addTargetBtn}><PlusOutlined/>添加执行对象</Button>
           </HostSelector>
         </Form.Item>
       </Form>
       <Form.Item wrapperCol={{span: 14, offset: 6}}>
-        <Button disabled={store.targets.filter(x => x).length === 0} type="primary"
-                onClick={() => store.page += 1}>下一步</Button>
-        <Button style={{marginLeft: 20}} onClick={() => store.page -= 1}>上一步</Button>
+        <div className={styles.stepActions}>
+          <Button disabled={store.targets.filter(x => x).length === 0} type="primary"
+                  onClick={() => store.page += 1}>下一步</Button>
+          <Button onClick={() => store.page -= 1}>上一步</Button>
+        </div>
       </Form.Item>
     </React.Fragment>
   )

@@ -5,6 +5,17 @@ from django.db import models
 from libs import ModelMixin, human_datetime
 from apps.account.models import User
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_json_loads(value, default):
+    try:
+        return json.loads(value) if value else default
+    except (json.JSONDecodeError, TypeError) as e:
+        logger.warning(f'JSON 解析失败: {e}, value={value!r:.100}')
+        return default
 
 
 class Playbook(models.Model, ModelMixin):
@@ -26,7 +37,7 @@ class Playbook(models.Model, ModelMixin):
 
     def to_view(self):
         tmp = self.to_dict()
-        tmp["extra_vars"] = json.loads(self.extra_vars) if self.extra_vars else {}
+        tmp["extra_vars"] = _safe_json_loads(self.extra_vars, {})
         return tmp
 
     class Meta:
@@ -57,9 +68,9 @@ class PlaybookRun(models.Model, ModelMixin):
 
     def to_view(self):
         tmp = self.to_dict()
-        tmp["extra_vars"] = json.loads(self.extra_vars) if self.extra_vars else {}
-        tmp["stats"] = json.loads(self.stats) if self.stats else {}
-        tmp["host_ids"] = json.loads(self.host_ids) if self.host_ids else []
+        tmp["extra_vars"] = _safe_json_loads(self.extra_vars, {})
+        tmp["stats"] = _safe_json_loads(self.stats, {})
+        tmp["host_ids"] = _safe_json_loads(self.host_ids, [])
         return tmp
 
     class Meta:

@@ -1,0 +1,37 @@
+/* operotionlog-tokens.css - 操作日志组件级令牌
+ * 公共令牌见 src/styles/tokens.css
+ */
+
+:root {
+  /* 耗时颜色 */
+  --log-cost-fast:   var(--color-green-500);
+  --log-cost-slow:   var(--color-orange-500);
+  --log-cost-error:  var(--color-red-500);
+
+  /* 详情弹窗 Descriptions */
+  --log-desc-label-bg:    var(--color-gray-50);
+  --log-desc-content-bg:  var(--color-card);
+
+  /* 代码编辑器容器 */
+  --log-editor-bg:      var(--color-gray-100);
+  --log-editor-radius:  var(--radius-md);
+
+  /* 请求路径字号 */
+  --log-uri-font-size:  13px;
+}
+
+/* 深色模式 - 跟随系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --log-desc-label-bg:    var(--color-gray-900);
+    --log-desc-content-bg:  transparent;
+    --log-editor-bg:      var(--color-gray-900);
+  }
+}
+
+/* 深色模式 - 手动覆盖 */
+[data-theme="dark"] {
+  --log-desc-label-bg:    var(--color-gray-900);
+  --log-desc-content-bg:  transparent;
+  --log-editor-bg:      var(--color-gray-900);
+}

@@ -75,7 +75,7 @@ class Index extends React.Component {
     const isApp = store.type === 'app';
     return (
       <AuthDiv auth={`config.${store.type}.view_config`}>
-        <Breadcrumb items={['配置中心', {title: isApp ? '应用配置' : '服务配置', onClick: () => history.goBack()}, store.obj.name]} extra={<Alert message="4.0将移除公共/私有配置概念，所有配置将被视为公共配置。" banner/>} />
+        <Breadcrumb items={['配置中心', {title: isApp ? '应用配置' : '服务配置', onClick: () => history.goBack()}, store.obj.name || '']} extra={<Alert message="4.0将移除公共/私有配置概念，所有配置将被视为公共配置。" banner/>} />
         <div className={styles.container}>
           <div className={styles.left}>
             <div style={{display: 'flex', alignItems: 'center', padding: '0 0 10px 10px'}}>
@@ -108,7 +108,7 @@ class Index extends React.Component {
               </Form.Item>
               <Space style={{flex: 1, justifyContent: 'flex-end'}}>
                 <AuthButton
-                  auth="config.app.edit_config|config.service.edit_config"
+                  auth="config.app.edit_config|config.src.edit_config"
                   disabled={view !== '1'}
                   type="primary"
                   icon={<PlusOutlined/>}

@@ -206,7 +206,7 @@ export default observer(function SqlTerminal() {
       styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column' } }}
       title={
         <Flex align="center" gap={8}>
-          <ConsoleSqlOutlined style={{ color: '#1677ff' }} />
+          <ConsoleSqlOutlined style={{ color: 'var(--color-primary)' }} />
           <span>SQL 终端</span>
           <Tag color="blue">{record.name}</Tag>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.host}:{record.port}</Text>
@@ -217,7 +217,7 @@ export default observer(function SqlTerminal() {
         <div className={styles.sqlEditorSection}>
           <div className={styles.sqlBar}>
             <Flex align="center" gap={8}>
-              <DatabaseOutlined style={{ color: '#1677ff' }} />
+              <DatabaseOutlined style={{ color: 'var(--color-primary)' }} />
               <Text strong style={{ fontSize: 13 }}>查询编辑器</Text>
               {dbOptions.length > 0 && (
                 <>
@@ -275,7 +275,7 @@ export default observer(function SqlTerminal() {
         </div>
 
         {showHistory && (
-          <div style={{ borderBottom: '1px solid #f0f0f0', maxHeight: 300, overflow: 'auto', padding: '8px 16px' }}>
+          <div style={{ borderBottom: '1px solid var(--color-border-secondary)', maxHeight: 300, overflow: 'auto', padding: '8px 16px' }}>
             <SqlHistoryPanel key={historyKey} instanceId={record.id} onUseSql={handleUseHistory} />
           </div>
         )}
@@ -283,7 +283,7 @@ export default observer(function SqlTerminal() {
         <div className={styles.sqlResultSection}>
           <div className={styles.sqlBar}>
             <Flex align="center" gap={8}>
-              <ThunderboltOutlined style={{ color: '#1677ff' }} />
+              <ThunderboltOutlined style={{ color: 'var(--color-primary)' }} />
               <Text strong style={{ fontSize: 13 }}>执行结果</Text>
             </Flex>
             <Space size={8}>
@@ -336,8 +336,8 @@ export default observer(function SqlTerminal() {
 
             {result && result.columns.length === 0 && !error && (
               <Flex vertical align="center" justify="center" style={{ padding: '60px 0' }}>
-                <CheckCircleOutlined style={{ fontSize: 32, color: '#52c41a' }} />
-                <Text style={{ marginTop: 8, color: '#52c41a', fontWeight: 500 }}>执行成功</Text>
+                <CheckCircleOutlined style={{ fontSize: 32, color: 'var(--color-green-600)' }} />
+                <Text style={{ marginTop: 8, color: 'var(--color-green-600)', fontWeight: 500 }}>执行成功</Text>
                 {result.affected !== undefined && (
                   <Text type="secondary" style={{ marginTop: 4 }}>影响 {result.affected} 行</Text>
                 )}
@@ -346,9 +346,9 @@ export default observer(function SqlTerminal() {
 
             {!executing && !error && !result && (
               <Flex vertical align="center" justify="center" style={{ padding: '100px 0' }}>
-                <ConsoleSqlOutlined style={{ fontSize: 40, color: '#d9d9d9' }} />
+                <ConsoleSqlOutlined style={{ fontSize: 40, color: 'var(--color-text-tertiary)' }} />
                 <Text type="secondary" style={{ marginTop: 8 }}>输入 SQL 并执行查看结果</Text>
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, color: '#d9d9d9' }}>支持 SELECT / INSERT / UPDATE / DELETE 等语句</Text>
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, color: 'var(--color-text-tertiary)' }}>支持 SELECT / INSERT / UPDATE / DELETE 等语句</Text>
               </Flex>
             )}
           </div>

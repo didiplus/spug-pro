@@ -56,8 +56,8 @@ export default observer(function DatabaseDashboard() {
                             <Statistic
                                 title="在线实例"
                                 value={store.online || 0}
-                                prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                                valueStyle={{ color: '#52c41a' }}
+                                prefix={<CheckCircleOutlined style={{ color: 'var(--color-green-600)' }} />}
+                                valueStyle={{ color: 'var(--color-green-600)' }}
                             />
                         </Card>
                     </Col>

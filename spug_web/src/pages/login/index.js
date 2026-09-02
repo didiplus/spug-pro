@@ -8,6 +8,8 @@ import { message } from 'libs/message';
 import { Form, Input, Button, Tabs, Modal } from 'antd';
 import { UserOutlined, LockOutlined, CopyrightOutlined, GithubOutlined, MailOutlined } from '@ant-design/icons';
 import styles from './login.module.css';
+import 'styles/tokens.css';
+import './tokens.css';
 import history from 'libs/history';
 import { http, updatePermissions } from 'libs';
 import logo from 'layout/logo-spug-txt.png';
@@ -97,10 +99,10 @@ export default function () {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      <main className={styles.card} aria-labelledby="login-title">
         <div className={styles.header}>
-          <img className={styles.logo} src={logo} alt="logo" />
-          <div className={styles.title}>Spug 运维平台</div>
+          <img className={styles.logo} src={logo} alt="Spug Pro 运维平台" />
+          <div id="login-title" className={styles.title}>Spug Pro 运维平台</div>
           <div className={styles.desc}>灵活、强大、易用的开源运维平台</div>
         </div>
 
@@ -114,21 +116,22 @@ export default function () {
           ]}
         />
 
-        <Form form={form}>
+        <Form form={form} onFinish={handleSubmit}>
           <Form.Item name="username" className={styles.formItem}>
             <Input
               size="large"
-              autoComplete="off"
+              autoComplete="username"
               placeholder="请输入账户"
+              aria-label="账户"
               prefix={<UserOutlined className={styles.icon} />}
             />
           </Form.Item>
           <Form.Item name="password" className={styles.formItem}>
             <Input.Password
               size="large"
-              autoComplete="off"
+              autoComplete="current-password"
               placeholder="请输入密码"
-              onPressEnter={handleSubmit}
+              aria-label="密码"
               prefix={<LockOutlined className={styles.icon} />}
             />
           </Form.Item>
@@ -138,8 +141,9 @@ export default function () {
                 <Form.Item noStyle name="captcha">
                   <Input
                     size="large"
-                    autoComplete="off"
+                    autoComplete="one-time-code"
                     placeholder="请输入验证码"
+                    aria-label="验证码"
                     prefix={<MailOutlined className={styles.icon} />}
                   />
                 </Form.Item>
@@ -172,12 +176,13 @@ export default function () {
         >
           登录
         </Button>
-      </div>
+      </main>
 
-      <div className={styles.footer}>
+      <footer className={styles.footer}>
         <div className={styles.footerLinks}>
           <a href="https://spug.cc" target="_blank" rel="noopener noreferrer">官网</a>
-          <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer"
+            aria-label="GitHub 仓库">
             <GithubOutlined />
           </a>
           <a href="https://ops.spug.cc/docs/about-spug/" target="_blank" rel="noopener noreferrer">文档</a>
@@ -185,7 +190,7 @@ export default function () {
         <div>
           Copyright <CopyrightOutlined /> {new Date().getFullYear()} By OpenSpug
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

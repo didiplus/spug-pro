@@ -10,24 +10,18 @@ import {
 import { http } from 'libs';
 import store from '../store';
 import { DB_TYPES } from '../dbTypes';
+import { DB_ROLE_CONFIG, DB_ROLE_HEX, EDGE_STATUS_CONFIG, DB_TYPE_HEX } from 'styles/statusPresets';
 
 const { Text } = Typography;
 
-const TYPE_COLORS = Object.fromEntries(Object.entries(DB_TYPES).map(([k, v]) => [k, v.hexColor]));
+const TYPE_COLORS = DB_TYPE_HEX;
 
-const ROLE_CONFIG = {
-  master: { label: '主库', color: '#1677ff', bg: '#e6f4ff', border: '#91caff' },
-  slave: { label: '从库', color: '#52c41a', bg: '#f6ffed', border: '#b7eb8f' },
-  replica: { label: '副本', color: '#52c41a', bg: '#f6ffed', border: '#b7eb8f' },
-  standalone: { label: '独立', color: '#8c8c8c', bg: '#fafafa', border: '#d9d9d9' },
-};
+const ROLE_CONFIG = DB_ROLE_CONFIG;
+const ROLE_HEX = DB_ROLE_HEX;
 
-const EDGE_STATUS = {
-  running: { color: '#52c41a', label: '正常' },
-  stopped: { color: '#ff4d4f', label: '停止' },
-  error: { color: '#ff4d4f', label: '错误' },
-  unknown: { color: '#d9d9d9', label: '未知' },
-};
+const EDGE_STATUS = Object.fromEntries(
+  Object.entries(EDGE_STATUS_CONFIG).map(([k, v]) => [k, { color: v.hex, label: v.label }])
+);
 
 const NODE_W = 220;
 const NODE_H = 90;
@@ -166,6 +160,7 @@ function computeGroups(nodes, edges, positions, clusters) {
 function TopologyNode({ node, pos, onClick }) {
   const typeColor = TYPE_COLORS[node.type] || '#8c8c8c';
   const roleCfg = ROLE_CONFIG[node.role] || ROLE_CONFIG.standalone;
+  const roleHex = ROLE_HEX[node.role] || ROLE_HEX.standalone;
   const isOnline = node.status === 0;
   const isExternal = node.external;
   const repl = node.replication;
@@ -178,7 +173,7 @@ function TopologyNode({ node, pos, onClick }) {
         strokeWidth={2} strokeDasharray={isExternal ? '6,3' : 'none'} filter="url(#shadow)" />
       {node.role === 'master' && (
         <React.Fragment>
-          <rect x={NODE_W - 58} y={0} width={58} height={22} rx={8} fill={roleCfg.color} />
+          <rect x={NODE_W - 58} y={0} width={58} height={22} rx={8} fill={roleHex} />
           <text x={NODE_W - 29} y={14} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={10} fontWeight={600}>MASTER</text>
         </React.Fragment>
       )}
@@ -186,19 +181,19 @@ function TopologyNode({ node, pos, onClick }) {
         <div xmlns="http://www.w3.org/1999/xhtml" style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
             <DatabaseOutlined style={{ color: typeColor, fontSize: 14 }} />
-            <span style={{ fontWeight: 600, fontSize: 13, color: '#262626', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</span>
-            {node.role !== 'master' && <Tag color={roleCfg.color} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', margin: 0 }}>{roleCfg.label}</Tag>}
+            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</span>
+            {node.role !== 'master' && <Tag color={roleHex} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', margin: 0 }}>{roleCfg.label}</Tag>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Tag color={isOnline ? 'success' : 'error'} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', margin: 0 }}>{isOnline ? '在线' : '离线'}</Tag>
-            <span style={{ fontSize: 11, color: '#8c8c8c' }}>{node.host}:{node.port}</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{node.host}:{node.port}</span>
           </div>
-          {node.version && <div style={{ fontSize: 10, color: '#bfbfbf', marginTop: 1 }}>{node.type.toUpperCase()} {node.version}</div>}
+          {node.version && <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 1 }}>{node.type.toUpperCase()} {node.version}</div>}
           {repl && node.role === 'slave' && repl.delay !== undefined && repl.delay !== null && (
-            <div style={{ fontSize: 10, color: repl.delay > 10 ? '#ff4d4f' : '#52c41a', marginTop: 1 }}>延迟: {repl.delay}s</div>
+            <div style={{ fontSize: 10, color: repl.delay > 10 ? 'var(--color-red-600)' : 'var(--color-green-600)', marginTop: 1 }}>延迟: {repl.delay}s</div>
           )}
           {repl && node.role === 'master' && repl.slave_count > 0 && (
-            <div style={{ fontSize: 10, color: '#8c8c8c', marginTop: 1 }}>{repl.slave_count} 个从库</div>
+            <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 1 }}>{repl.slave_count} 个从库</div>
           )}
         </div>
       </foreignObject>
@@ -352,7 +347,7 @@ export default observer(function TopologyView() {
         </Flex>
       </Flex>
 
-      <div ref={containerRef} style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'auto', background: '#fafafa', minHeight: 400 }}>
+      <div ref={containerRef} style={{ border: '1px solid var(--color-border-secondary)', borderRadius: 'var(--radius-lg)', overflow: 'auto', background: 'var(--color-gray-50)', minHeight: 400 }}>
         <svg width={Math.max(svgW, 600)} height={Math.max(svgH, 400)} style={{ display: 'block' }}>
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -372,23 +367,23 @@ export default observer(function TopologyView() {
 
       <Flex justify="center" gap={24} style={{ padding: '8px 0' }}>
         <Flex align="center" gap={6}>
-          <div style={{ width: 24, height: 2, background: '#52c41a' }} />
+          <div style={{ width: 24, height: 2, background: 'var(--color-green-600)' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>复制正常</Text>
         </Flex>
         <Flex align="center" gap={6}>
-          <div style={{ width: 24, height: 0, borderTop: '2px dashed #ff4d4f' }} />
+          <div style={{ width: 24, height: 0, borderTop: '2px dashed var(--color-red-600)' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>复制停止</Text>
         </Flex>
         <Flex align="center" gap={6}>
-          <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px dashed #1677ff', opacity: 0.5 }} />
+          <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px dashed var(--color-primary)', opacity: 0.5 }} />
           <Text type="secondary" style={{ fontSize: 12 }}>主备集群</Text>
         </Flex>
         <Flex align="center" gap={6}>
-          <div style={{ width: 14, height: 14, borderRadius: 3, background: '#e6f4ff', border: '1.5px solid #91caff' }} />
+          <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--color-blue-50)', border: '1.5px solid var(--color-blue-200)' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>主库</Text>
         </Flex>
         <Flex align="center" gap={6}>
-          <div style={{ width: 14, height: 14, borderRadius: 3, background: '#f6ffed', border: '1.5px solid #b7eb8f' }} />
+          <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(82, 196, 26, 0.1)', border: '1.5px solid rgba(82, 196, 26, 0.3)' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>从库</Text>
         </Flex>
       </Flex>

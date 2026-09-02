@@ -5,6 +5,7 @@ import {Form, Tabs, DatePicker, InputNumber, Input, Button} from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { http } from 'libs';
 import store from './store';
+import styles from './index.module.css';
 import dayjs from 'dayjs';
 import lds from 'lodash';
 
@@ -72,9 +73,9 @@ export default observer(function () {
           .then(res => {
             if (fetchId !== lastFetchId) return;
             if (res.success) {
-              setNextRunTime(<span style={{fontSize: 12, color: '#52c41a'}}>{res.msg}</span>)
+              setNextRunTime(<span className={styles.nextRunSuccess}>{res.msg}</span>)
             } else {
-              setNextRunTime(<span style={{fontSize: 12, color: '#ff4d4f'}}>{res.msg}</span>)
+              setNextRunTime(<span className={styles.nextRunError}>{res.msg}</span>)
             }
           })
       } else {
@@ -86,7 +87,7 @@ export default observer(function () {
   return (
     <Form layout="vertical" wrapperCol={{span: 14, offset: 6}}>
       <Form.Item>
-        <Tabs activeKey={trigger} onChange={setTrigger} tabPosition="left" style={{minHeight: 200}} items={[
+        <Tabs activeKey={trigger} onChange={setTrigger} tabPosition="left" className={styles.triggerTabs} items={[
           {key: 'interval', label: '普通间隔', children: (
             <Form.Item required label="间隔时间(秒)" extra="每隔指定n秒执行一次。">
               <InputNumber
@@ -138,8 +139,10 @@ export default observer(function () {
         ]} />
       </Form.Item>
       <Form.Item wrapperCol={{span: 14, offset: 6}}>
-        <Button type="primary" loading={loading} disabled={!args[trigger]} onClick={handleSubmit}>提交</Button>
-        <Button style={{marginLeft: 20}} onClick={() => store.page -= 1}>上一步</Button>
+        <div className={styles.stepActions}>
+          <Button type="primary" loading={loading} disabled={!args[trigger]} onClick={handleSubmit}>提交</Button>
+          <Button onClick={() => store.page -= 1}>上一步</Button>
+        </div>
       </Form.Item>
     </Form>
   )

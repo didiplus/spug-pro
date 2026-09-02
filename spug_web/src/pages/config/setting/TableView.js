@@ -24,7 +24,7 @@ class TableView extends React.Component {
     key: 'key',
     render: info => {
       let prefix = (store.type === 'app' && info.is_public === false) ? this.lockIcon : null;
-      let content = info.desc ? <span style={{color: '#1890ff'}}>{info.key}</span> : info.key;
+      let content = info.desc ? <span style={{color: 'var(--color-primary)'}}>{info.key}</span> : info.key;
       return <React.Fragment>
         {prefix}
         <Tooltip title={info.desc}>{content}</Tooltip>

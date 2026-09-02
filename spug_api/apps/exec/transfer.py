@@ -15,6 +15,7 @@ from libs.execution.factory import ExecutorFactory
 from concurrent import futures
 from threading import Thread
 import subprocess
+import tempfile
 import uuid
 import json
 import time
@@ -40,10 +41,12 @@ class TransferView(View):
             if not has_host_perm(request.user, form.host_ids):
                 return json_response(error='无权访问主机，请联系管理员')
             host_id = None
+            src_path = None
             token = uuid.uuid4().hex
             base_dir = os.path.join(settings.TRANSFER_DIR, token)
             if form.host:
                 host_id, path = json.loads(form.host)
+                src_path = path
                 if not path.strip('/'):
                     return json_response(error='请输入正确的数据源路径')
                 host = Host.objects.get(pk=host_id)
@@ -82,10 +85,13 @@ class TransferView(View):
             Transfer.objects.create(
                 user=request.user,
                 digest=token,
-                host_id=host_id,
+                src_host_id=host_id,
+                src_path=src_path,
+                src_type='remote' if host_id else 'upload',
                 src_dir=base_dir,
                 dst_dir=form.dst_dir,
                 host_ids=json.dumps(form.host_ids),
+                total=len(form.host_ids),
             )
             return json_response(token)
         return json_response(error=error)
@@ -118,7 +124,7 @@ def _dispatch_sync(task):
                     t.token,
                     json.dumps({'key': t.key, 'status': -1, 'data': f'\x1b[31mException: {exc}\x1b[0m'})
                 )
-    if task.host_id:
+    if task.src_host_id:
         # 使用 subprocess.run 替代 shell=True，避免命令注入
         try:
             subprocess.run(['umount', '-f', task.src_dir], check=False)
@@ -141,7 +147,7 @@ def _do_sync(rds, task, host):
         pkey=host.private_key,
     )
 
-    archive = bool(task.host_id)
+    archive = bool(task.src_host_id)
     flag = time.time()
     status = -1
 

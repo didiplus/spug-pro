@@ -1,0 +1,50 @@
+/* StatisticCard.module.css - 统计卡片样式
+ * 颜色通过 --item-color 变量注入（每卡片不同主题色）
+ */
+
+.card {
+  border-radius: var(--stat-card-radius);
+  border-color: var(--stat-card-border);
+  box-shadow: var(--stat-card-shadow);
+  transition: box-shadow var(--duration-normal) var(--ease-standard),
+              transform var(--duration-normal) var(--ease-standard);
+  cursor: pointer;
+  height: 100%;
+}
+
+.card:hover {
+  box-shadow: var(--stat-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.icon {
+  font-size: var(--stat-icon-size);
+  color: var(--item-color, var(--color-primary));
+  line-height: 1;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  color: var(--stat-title-color);
+}
+
+.suffix {
+  font-size: var(--font-size-sm);
+  color: var(--stat-title-color);
+}
+
+
+.valueLink {
+  color: inherit;
+}

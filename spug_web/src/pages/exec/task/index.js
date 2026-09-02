@@ -94,7 +94,7 @@ function TaskIndex() {
               </Radio.Group>
               <Flex gap={8}>
                 <Tooltip title="使用全局变量？">
-                  <a href="https://ops.spug.cc/docs/batch-exec" target="_blank" rel="noopener noreferrer" style={{ color: '#8c8c8c', fontSize: 12 }}>
+                  <a href="https://ops.spug.cc/docs/batch-exec" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>
                     <BulbOutlined /> 变量
                   </a>
                 </Tooltip>
@@ -112,7 +112,7 @@ function TaskIndex() {
             <Flex align="center" gap={8}>
               <Text strong>执行记录</Text>
               <Tooltip title="多次相同的执行记录将会合并展示，每天自动清理，保留最近30条记录。">
-                <QuestionCircleOutlined style={{ color: '#bfbfbf' }} />
+                <QuestionCircleOutlined style={{ color: 'var(--color-text-tertiary)' }} />
               </Tooltip>
             </Flex>
             <Tag color="blue">{histories.length} 条</Tag>

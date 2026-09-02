@@ -61,7 +61,7 @@ class InventoryIndex extends React.Component {
         <style>{`.ant-tree-treenode:hover .tree-actions{opacity:1!important}`}</style>
         <Breadcrumb items={['首页', 'Ansible', 'Inventory 管理']}/>
         <Flex gap={16} style={{height: 'calc(100vh - 120px)'}}>
-          <div style={{width: 300, background: '#fff', borderRadius: 8, padding: 16, border: '1px solid #f0f0f0', overflow: 'auto'}}>
+          <div style={{width: 300, background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', padding: 16, border: '1px solid var(--color-border-secondary)', overflow: 'auto'}}>
             <Flex align="center" justify="space-between" style={{marginBottom: 12}}>
               <Text strong>分组列表</Text>
               {hasPermission('ansible.inventory.edit') && (
@@ -85,8 +85,8 @@ class InventoryIndex extends React.Component {
                   <Flex align="center" justify="space-between" style={{width: '100%'}}>
                     <Flex align="center" gap={6} style={{flex: 1, minWidth: 0}}>
                       {node.nodeType === 'host'
-                        ? <DesktopOutlined style={{color: '#52c41a', flexShrink: 0}}/>
-                        : <FolderOutlined style={{color: '#1677ff', flexShrink: 0}}/>}
+                        ? <DesktopOutlined style={{color: 'var(--color-green-600)', flexShrink: 0}}/>
+                        : <FolderOutlined style={{color: 'var(--color-primary)', flexShrink: 0}}/>}
                       <Text ellipsis style={{flex: 1}}>{node.title}</Text>
                     </Flex>
                     {node.nodeType !== 'host' && hasPermission('ansible.inventory.edit') && (
@@ -107,7 +107,7 @@ class InventoryIndex extends React.Component {
               />
             </Spin>
           </div>
-          <div style={{flex: 1, background: '#fff', borderRadius: 8, padding: 20, border: '1px solid #f0f0f0', overflow: 'auto'}}>
+          <div style={{flex: 1, background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', padding: 20, border: '1px solid var(--color-border-secondary)', overflow: 'auto'}}>
             {store.selectedType === 'host' ? this.renderHostPanel() : this.renderGroupPanel()}
           </div>
         </Flex>
@@ -158,7 +158,7 @@ class GroupPanel extends React.Component {
       <div>
         <Flex align="center" justify="space-between" style={{marginBottom: 16}}>
           <Space align="center">
-            <FolderOutlined style={{color: '#1677ff', fontSize: 18}}/>
+            <FolderOutlined style={{color: 'var(--color-primary)', fontSize: 18}}/>
             <Text strong style={{fontSize: 16}}>{group.name}</Text>
           </Space>
           <Tag color="blue">{this.state.hostIds.length} 台主机</Tag>
@@ -202,7 +202,7 @@ class HostPanel extends React.Component {
       <div>
         <Flex align="center" justify="space-between" style={{marginBottom: 16}}>
           <Space align="center">
-            <DesktopOutlined style={{color: '#52c41a', fontSize: 18}}/>
+            <DesktopOutlined style={{color: 'var(--color-green-600)', fontSize: 18}}/>
             <Text strong style={{fontSize: 16}}>{host.name}</Text>
             <Text type="secondary">({host.hostname})</Text>
           </Space>
@@ -220,7 +220,7 @@ class HostPanel extends React.Component {
               render={v => <Typography.Text code style={{fontSize: 13}}>{v}</Typography.Text>}/>
             <Table.Column title="值" dataIndex="value" ellipsis
               render={(v, record) => record.is_vault
-                ? <Space><KeyOutlined style={{color: '#fa8c16'}}/><Text type="secondary">******</Text></Space>
+                ? <Space><KeyOutlined style={{color: 'var(--color-orange-600)'}}/><Text type="secondary">******</Text></Space>
                 : (v || <Text type="secondary">-</Text>)}/>
             <Table.Column title="类型" dataIndex="value_type" width={90} align="center"
               render={v => v ? <Tag color="blue" style={{margin: 0}}>{v}</Tag> : '-'}/>

@@ -8,7 +8,7 @@ import store from './store';
 export default observer(function () {
   return (
     <AuthDiv auth="system.log.view">
-      <Breadcrumb items={['首页', '系统管理', '账户管理']} />
+      <Breadcrumb items={['首页', '系统管理', '操作日志']} />
       <SearchForm>
         <SearchForm.Item span={6} title="账户名称">
           <Input

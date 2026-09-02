@@ -7,6 +7,7 @@ import HostSelector from 'pages/host/Selector';
 import { ACEditor } from 'components';
 import { http } from 'libs';
 import S from './store';
+import styles from './playbook.module.css';
 
 export default observer(function () {
   const [form] = Form.useForm();
@@ -72,8 +73,10 @@ export default observer(function () {
         </Form.Item>
       </Form>
       <Divider style={{margin: '8px 0'}} orientation="left">额外变量</Divider>
-      <span style={{fontSize: 13, color: '#8c8c8c', display: 'block', marginBottom: 8}}>JSON 格式，覆盖 Playbook 默认变量</span>
-      <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="120px" width="100%"/>
+      <span className={styles.sectionDesc}>JSON 格式，覆盖 Playbook 默认变量</span>
+      <div className={styles.editorWrap}>
+        <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="120px" width="100%"/>
+      </div>
     </Modal>
   )
 })

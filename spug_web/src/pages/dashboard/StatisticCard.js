@@ -12,6 +12,9 @@ import {
   MonitorOutlined,
 } from '@ant-design/icons';
 import { http } from 'libs';
+import styles from './StatisticCard.module.css';
+import 'styles/tokens.css';
+import './tokens.css';
 
 export default class StatisticCard extends React.Component {
   constructor(props) {
@@ -29,46 +32,13 @@ export default class StatisticCard extends React.Component {
       .finally(() => this.setState({ loading: false }));
   }
 
-  // 统计项配置
   get items() {
     const { res } = this.state;
     return [
-      {
-        key: 'app',
-        title: '应用',
-        value: res.app,
-        suffix: '个',
-        link: '/deploy/app',
-        icon: <AppstoreOutlined />,
-        color: '#1890ff',
-      },
-      {
-        key: 'host',
-        title: '主机',
-        value: res.host,
-        suffix: '台',
-        link: '/host',
-        icon: <ClusterOutlined />,
-        color: '#52c41a',
-      },
-      {
-        key: 'task',
-        title: '任务',
-        value: res.task,
-        suffix: '个',
-        link: '/schedule',
-        icon: <ScheduleOutlined />,
-        color: '#fa8c16',
-      },
-      {
-        key: 'detection',
-        title: '监控',
-        value: res.detection,
-        suffix: '项',
-        link: '/monitor',
-        icon: <MonitorOutlined />,
-        color: '#722ed1',
-      },
+      { key: 'app', title: '应用', value: res.app, suffix: '个', link: '/deploy/app', icon: <AppstoreOutlined />, color: 'var(--stat-color-app)' },
+      { key: 'host', title: '主机', value: res.host, suffix: '台', link: '/host', icon: <ClusterOutlined />, color: 'var(--stat-color-host)' },
+      { key: 'task', title: '任务', value: res.task, suffix: '个', link: '/schedule', icon: <ScheduleOutlined />, color: 'var(--stat-color-task)' },
+      { key: 'detection', title: '监控', value: res.detection, suffix: '项', link: '/monitor', icon: <MonitorOutlined />, color: 'var(--stat-color-detection)' },
     ];
   }
 
@@ -76,60 +46,27 @@ export default class StatisticCard extends React.Component {
     const { loading } = this.state;
 
     return (
-      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 'var(--space-5)' }}>
         {this.items.map((item) => (
           <Col xs={12} sm={12} md={6} key={item.key}>
             <Card
               loading={loading}
-  
-              className="statistic-card"
-              style={{
-                borderRadius: 8,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                height: '100%',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow =
-                  '0 4px 16px rgba(0,0,0,0.12)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow =
-                  '0 2px 8px rgba(0,0,0,0.06)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              className={styles.card}
+              style={{ '--item-color': item.color }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    fontSize: 32,
-                    color: item.color,
-                    lineHeight: 1,
-                  }}
-                >
-                  {item.icon}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+              <div className={styles.inner}>
+                <div className={styles.icon}>{item.icon}</div>
+                <div className={styles.content}>
                   <Statistic
-                    title={
-                      <span style={{ fontSize: 14, color: '#8c8c8c' }}>
-                        {item.title}
-                      </span>
-                    }
+                    title={<span className={styles.title}>{item.title}</span>}
                     value={item.value ?? 0}
-                    suffix={
-                      <span style={{ fontSize: 14, color: '#8c8c8c' }}>
-                        {item.suffix}
-                      </span>
-                    }
+                    suffix={<span className={styles.suffix}>{item.suffix}</span>}
                     valueStyle={{
-                      fontSize: 28,
-                      fontWeight: 500,
-                      color: item.color,
+                      fontSize: 'var(--stat-value-size)',
+                      fontWeight: 'var(--font-weight-medium)',
+                      color: 'var(--item-color)',
                     }}
-                    formatter={(v) => <a href={item.link}>{v}</a>}
+                    formatter={(v) => <a href={item.link} className={styles.valueLink}>{v}</a>}
                   />
                 </div>
               </div>

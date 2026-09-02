@@ -6,31 +6,70 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    background-color: #fafafa;
+    background-color: #f7f8fa;
     position: relative;
+    border-right: 1px solid #f0f0f0;
 
     .split {
       position: absolute;
-      width: 8px;
+      width: 6px;
       height: 100vh;
-      right: -4px;
+      right: -3px;
       cursor: ew-resize;
+      z-index: 10;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: rgba(37, 99, 252, 0.15);
+      }
     }
 
     .logo {
-      height: 42px;
+      height: 48px;
       display: flex;
       justify-content: center;
       align-items: center;
       background-color: #2563fc;
+      flex-shrink: 0;
 
       img {
-        height: 28px;
+        height: 26px;
       }
     }
 
     .hosts {
-      box-shadow: 2px 2px 2px #e0e0e0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      .searchBar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 12px 12px 8px;
+        flex-shrink: 0;
+
+        :global(.ant-input-affix-wrapper) {
+          flex: 1;
+        }
+
+        :global(.ant-btn-text) {
+          color: #595959;
+          &:hover {
+            color: #2563fc;
+          }
+        }
+      }
+
+      .treeSpin {
+        flex: 1;
+        overflow: hidden;
+
+        :global(.ant-spin-container) {
+          height: 100%;
+        }
+      }
 
       :global(.ant-tree-node-content-wrapper) {
         overflow: hidden;
@@ -39,14 +78,10 @@
       }
 
       :global(.ant-tree) {
-        background-color: #fafafa;
-        height: calc(100vh - 98px);
+        background-color: transparent;
+        height: 100%;
         overflow: auto;
-      }
-
-      .search {
-        margin: 12px 10px;
-        width: calc(100% - 60px);
+        padding: 4px 0;
       }
     }
   }

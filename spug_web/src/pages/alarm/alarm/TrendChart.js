@@ -44,14 +44,14 @@ export default observer(function () {
         />
       }
       style={{marginBottom: 16, borderRadius: 8}}
-      styles={{header: {borderBottom: '1px solid #f0f0f0'}}}
+      styles={{header: {borderBottom: '1px solid var(--color-border-secondary)'}}}
     >
       <Row gutter={16} style={{marginBottom: 16}}>
         <Col span={6}>
-          <Statistic title="总报警次数" value={data?.total_alerts || 0} valueStyle={{color: '#fa541c'}}/>
+          <Statistic title="总报警次数" value={data?.total_alerts || 0} valueStyle={{color: 'var(--color-orange-600)'}}/>
         </Col>
         <Col span={6}>
-          <Statistic title="总恢复次数" value={data?.total_recoveries || 0} valueStyle={{color: '#52c41a'}}/>
+          <Statistic title="总恢复次数" value={data?.total_recoveries || 0} valueStyle={{color: 'var(--color-green-600)'}}/>
         </Col>
         <Col span={6}>
           <Statistic title="平均恢复时间" value={formatDuration(data?.mttr_seconds || 0)}/>
@@ -60,7 +60,7 @@ export default observer(function () {
           <Statistic
             title="当前活跃告警"
             value={(data?.total_alerts || 0) - (data?.total_recoveries || 0)}
-            valueStyle={{color: ((data?.total_alerts || 0) - (data?.total_recoveries || 0)) > 0 ? '#fa541c' : '#52c41a'}}
+            valueStyle={{color: ((data?.total_alerts || 0) - (data?.total_recoveries || 0)) > 0 ? 'var(--color-orange-600)' : 'var(--color-green-600)'}}
           />
         </Col>
       </Row>
@@ -88,7 +88,7 @@ export default observer(function () {
               <Axis
                 name="count"
                 label={{fontSize: 12}}
-                grid={{lineStyle: {stroke: '#f0f0f0', lineDash: [4, 4]}}}
+                grid={{lineStyle: {stroke: 'var(--color-border-secondary)', lineDash: [4, 4]}}}
               />
               <Legend position="top" offsetY={-5}/>
               <Tooltip

@@ -30,6 +30,7 @@ export default observer(function () {
         ansible_role_dir: store.settings.ansible_role_dir || '/data/roles',
         ansible_module_timeout: store.settings.ansible_module_timeout ?? 300,
         ansible_callback_whitelist: store.settings.ansible_callback_whitelist || '',
+
       });
     }
   }, [execEngine]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -179,6 +180,7 @@ export default observer(function () {
                 placeholder="profile_tasks, timer"
               />
             </Form.Item>
+
             <Form.Item>
               <Button type="primary" loading={saving} onClick={saveAnsibleConfig}>
                 保存 Ansible 配置

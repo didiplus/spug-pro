@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react';
-import { Form, Input, Select, Button, Radio, App, Space } from 'antd';
+import { Form, Input, Select, Button, Radio, App, Space, Divider } from 'antd';
 import { ExclamationCircleOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { LinkButton, ACEditor } from 'components';
 import TemplateSelector from '../exec/task/TemplateSelector';
 import { cleanCommand, http } from 'libs';
 import store from './store';
+import styles from './index.module.css';
 
 export default observer(function () {
   const [form] = Form.useForm();
@@ -157,6 +158,7 @@ export default observer(function () {
 
   return (
     <Form form={form} initialValues={store.record} labelCol={{ span: 6 }} wrapperCol={{ span: 14 }}>
+      <div className={styles.sectionTitle}>基本信息</div>
       <Form.Item required label="任务类型" style={{ marginBottom: 0 }}>
         <Form.Item name="type" style={{ display: 'inline-block', width: '80%' }}>
           <Select placeholder="请选择任务类型">
@@ -172,6 +174,10 @@ export default observer(function () {
       <Form.Item required name="name" label="任务名称">
         <Input placeholder="请输入任务名称" />
       </Form.Item>
+
+      <Divider style={{ margin: '8px 0' }} />
+
+      <div className={styles.sectionTitle}>任务内容</div>
       <Form.Item required label="任务内容" extra={!isDbBackup && <LinkButton onClick={() => setShowTmp(true)}>从模板添加</LinkButton>}>
         <Form.Item noStyle name="interpreter">
           <Radio.Group buttonStyle="solid" style={{ marginBottom: 12 }}>
@@ -181,93 +187,101 @@ export default observer(function () {
           </Radio.Group>
         </Form.Item>
         {isDbBackup ? (
-          <Form style={{width: '100%'}}>
-            <Form.Item label="数据库实例">
-              <Select
-                placeholder="请选择数据库实例"
-                showSearch
-                optionFilterProp="label"
-                value={dbBackupConfig.instance_id}
-                onChange={(v) => {
-                  setDbBackupConfig({ instance_id: v, database: '', mode: dbBackupConfig.mode || 'full' });
-                  setDbList([]);
-                  if (v) {
-                    setDbListLoading(true);
-                    http.get(`/api/db/instances/${v}/`)
-                      .then((res) => {
-                        const rows = res?.live?.databases?.rows || [];
-                        setDbList(rows.map((r) => r.name));
-                      })
-                      .catch(() => setDbList([]))
-                      .finally(() => setDbListLoading(false));
-                  }
-                }}
-              >
-                {store.dbInstances.map((item) => (
-                  <Select.Option key={item.id} value={item.id} label={`${item.name} (${item.host}:${item.port})`}>
-                    {item.name} ({item.host}:{item.port})
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item label="备份范围">
-              <Select
-                placeholder="全部数据库"
-                allowClear
-                loading={dbListLoading}
-                value={dbBackupConfig.database}
-                onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, database: v || '' })}
-                options={[{ label: '全部数据库', value: '' }, ...dbList.map(name => ({ label: name, value: name }))]}
-              />
-            </Form.Item>
-            <Form.Item label="备份类型">
-              <Select
-                value={dbBackupConfig.mode || 'full'}
-                onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, mode: v })}
-              >
-                <Select.Option value="full">全量备份</Select.Option>
-                <Select.Option value="incremental">增量备份</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item label="备注">
-              <Input.TextArea
-                rows={2}
-                placeholder="可选，最多200字"
-                maxLength={200}
-                value={dbBackupConfig.remark}
-                onChange={(e) => setDbBackupConfig({ ...dbBackupConfig, remark: e.target.value })}
-              />
-            </Form.Item>
-            <Form.Item label="远程存储" tooltip="选择后将备份文件上传到远程存储">
-              <Select
-                placeholder="仅本地存储"
-                allowClear
-                value={dbBackupConfig.storage_config_id}
-                onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, storage_config_id: v })}
-                options={storageConfigs
-                  .filter(c => c.enabled)
-                  .map(c => ({ label: `${c.name} (${c.bucket})`, value: c.id }))}
-              />
-            </Form.Item>
-          </Form>
+          <div className={styles.dbBackupForm}>
+            <Form layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+              <Form.Item label="数据库实例">
+                <Select
+                  placeholder="请选择数据库实例"
+                  showSearch
+                  optionFilterProp="label"
+                  value={dbBackupConfig.instance_id}
+                  onChange={(v) => {
+                    setDbBackupConfig({ instance_id: v, database: '', mode: dbBackupConfig.mode || 'full' });
+                    setDbList([]);
+                    if (v) {
+                      setDbListLoading(true);
+                      http.get(`/api/db/instances/${v}/`)
+                        .then((res) => {
+                          const rows = res?.live?.databases?.rows || [];
+                          setDbList(rows.map((r) => r.name));
+                        })
+                        .catch(() => setDbList([]))
+                        .finally(() => setDbListLoading(false));
+                    }
+                  }}
+                >
+                  {store.dbInstances.map((item) => (
+                    <Select.Option key={item.id} value={item.id} label={`${item.name} (${item.host}:${item.port})`}>
+                      {item.name} ({item.host}:{item.port})
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item label="备份范围">
+                <Select
+                  placeholder="全部数据库"
+                  allowClear
+                  loading={dbListLoading}
+                  value={dbBackupConfig.database}
+                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, database: v || '' })}
+                  options={[{ label: '全部数据库', value: '' }, ...dbList.map(name => ({ label: name, value: name }))]}
+                />
+              </Form.Item>
+              <Form.Item label="备份类型">
+                <Select
+                  value={dbBackupConfig.mode || 'full'}
+                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, mode: v })}
+                >
+                  <Select.Option value="full">全量备份</Select.Option>
+                  <Select.Option value="incremental">增量备份</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item label="远程存储" tooltip="选择后将备份文件上传到远程存储">
+                <Select
+                  placeholder="仅本地存储"
+                  allowClear
+                  value={dbBackupConfig.storage_config_id}
+                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, storage_config_id: v })}
+                  options={storageConfigs
+                    .filter(c => c.enabled)
+                    .map(c => ({ label: `${c.name} (${c.bucket})`, value: c.id }))}
+                />
+              </Form.Item>
+              <Form.Item label="备注">
+                <Input.TextArea
+                  rows={2}
+                  placeholder="可选，最多200字"
+                  maxLength={200}
+                  value={dbBackupConfig.remark}
+                  onChange={(e) => setDbBackupConfig({ ...dbBackupConfig, remark: e.target.value })}
+                />
+              </Form.Item>
+            </Form>
+          </div>
         ) : (
           <Form.Item noStyle shouldUpdate>
             {({ getFieldValue }) => (
-              <ACEditor
-                mode={getFieldValue('interpreter')}
-                value={command}
-                width="100%"
-                height="150px"
-                onChange={setCommand}
-              />
+              <div className={styles.editorWrap}>
+                <ACEditor
+                  mode={getFieldValue('interpreter')}
+                  value={command}
+                  width="100%"
+                  height="150px"
+                  onChange={setCommand}
+                />
+              </div>
             )}
           </Form.Item>
         )}
       </Form.Item>
+
+      <Divider style={{ margin: '8px 0' }} />
+
+      <div className={styles.sectionTitle}>通知与备注</div>
       <Form.Item
         label="失败通知"
         extra={(
-          <span>
+          <span className={styles.notifyExtra}>
             任务执行失败告警通知，
             <a target="_blank" rel="noopener noreferrer" href="https://ops.spug.cc/docs/use-problem#use-dd">
               钉钉收不到通知？
@@ -313,7 +327,7 @@ export default observer(function () {
         </Space.Compact>
       </Form.Item>
       <Form.Item name="desc" label="备注信息">
-        <Input.TextArea placeholder="请输入模板备注信息" />
+        <Input.TextArea placeholder="请输入任务备注信息" />
       </Form.Item>
       <Form.Item shouldUpdate wrapperCol={{ span: 14, offset: 6 }}>
         {() => <Button disabled={canNext()} type="primary" onClick={handleNext}>下一步</Button>}

@@ -1,0 +1,62 @@
+/* dashboard-tokens.css - 仪表盘组件级令牌
+ * 公共令牌（primitive/semantic/dark mode）见 src/styles/tokens.css
+ */
+
+:root {
+  /* 统计卡片 */
+  --stat-card-bg:          var(--color-card);
+  --stat-card-border:      var(--color-border-secondary);
+  --stat-card-shadow:      var(--shadow-sm);
+  --stat-card-shadow-hover: var(--shadow-md);
+  --stat-card-radius:      var(--radius-lg);
+  --stat-icon-size:        32px;
+  --stat-value-size:       28px;
+  --stat-title-color:      var(--color-text-secondary);
+
+  /* 统计项配色（应用/主机/任务/监控） */
+  --stat-color-app:        var(--color-blue-500);
+  --stat-color-host:       var(--color-green-500);
+  --stat-color-task:       var(--color-orange-500);
+  --stat-color-detection:  var(--color-purple-500);
+
+  /* 图表卡片 */
+  --chart-card-bg:         var(--color-card);
+  --chart-card-border:     var(--color-border-secondary);
+  --chart-card-shadow:     var(--shadow-sm);
+  --chart-card-radius:     var(--radius-xl);
+  --chart-card-title-color: var(--color-card-text);
+  --chart-card-header-border: var(--color-border-secondary);
+
+  /* 图表配色 */
+  --chart-axis-color:      var(--color-text-tertiary);
+  --chart-grid-color:      var(--color-border-secondary);
+  --chart-tick-color:      var(--color-border);
+  --chart-line-color:      var(--color-primary);
+  --chart-tooltip-bg:      var(--color-card);
+  --chart-tooltip-text:    var(--color-card-text);
+  --chart-tooltip-shadow:  var(--shadow-lg);
+
+  /* 时间范围切换按钮 */
+  --range-btn-color:       var(--color-text-secondary);
+  --range-btn-active-color: var(--color-primary);
+}
+
+/* 深色模式 - 跟随系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stat-color-app:        var(--color-blue-400);
+    --stat-color-host:       var(--color-green-500);
+    --stat-color-task:       var(--color-orange-500);
+    --stat-color-detection:  var(--color-purple-500);
+    --chart-line-color:      var(--color-blue-400);
+  }
+}
+
+/* 深色模式 - 手动覆盖 */
+[data-theme="dark"] {
+  --stat-color-app:        var(--color-blue-400);
+  --stat-color-host:       var(--color-green-500);
+  --stat-color-task:       var(--color-orange-500);
+  --stat-color-detection:  var(--color-purple-500);
+  --chart-line-color:      var(--color-blue-400);
+}

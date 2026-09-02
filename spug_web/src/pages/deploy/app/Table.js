@@ -93,8 +93,8 @@ function ComTable() {
         dataSource={record['deploys']}
         pagination={false}>
         <Table.Column width={80} title="模式" dataIndex="extend" render={value => value === '1' ?
-          <OrderedListOutlined style={{ fontSize: 20, color: '#1890ff' }} /> :
-          <BuildOutlined style={{ fontSize: 20, color: '#1890ff' }} />} />
+          <OrderedListOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} /> :
+          <BuildOutlined style={{ fontSize: 20, color: 'var(--color-primary)' }} />} />
         <Table.Column title="发布环境" dataIndex="env_id" render={value => lds.get(envStore.idMap, `${value}.name`)} />
         <Table.Column title="关联主机" dataIndex="host_ids" render={value => `${value.length} 台`} />
         <Table.Column title="发布审核" dataIndex="is_audit"
@@ -144,11 +144,11 @@ function ComTable() {
         <div>
           <UpSquareOutlined
             onClick={e => handleSort(e, info, 'up')}
-            style={{ cursor: 'pointer', color: '#1890ff' }} />
+            style={{ cursor: 'pointer', color: 'var(--color-primary)' }} />
           <Divider type="vertical" />
           <DownSquareOutlined
             onClick={e => handleSort(e, info, 'down')}
-            style={{ cursor: 'pointer', color: '#1890ff' }} />
+            style={{ cursor: 'pointer', color: 'var(--color-primary)' }} />
         </div>
       )} />
       <Table.Column title="应用名称" dataIndex="name" />

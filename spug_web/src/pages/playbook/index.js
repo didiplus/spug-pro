@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Input, Modal, Table, Tag, Drawer, Select, Space, Tooltip, Button, Typography } from 'antd';
+import { Input, Modal, Table, Drawer, Select, Space, Tooltip, Button, Typography } from 'antd';
 import { PlusOutlined, ThunderboltOutlined, HistoryOutlined, EyeOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';
@@ -9,6 +9,16 @@ import ComForm from './Form';
 import RunForm from './RunForm';
 import Output from './Output';
 import store from './store';
+import styles from './playbook.module.css';
+
+const { Text } = Typography;
+
+const HISTORY_STATUS_MAP = {
+  running: { cls: styles.statusRunning, text: '执行中', dot: true },
+  success: { cls: styles.statusSuccess, text: '成功', dot: false },
+  failed: { cls: styles.statusFailed, text: '失败', dot: false },
+  canceled: { cls: styles.statusCanceled, text: '已取消', dot: false },
+};
 
 @observer
 class PlaybookIndex extends React.Component {
@@ -39,24 +49,32 @@ class PlaybookIndex extends React.Component {
   };
 
   renderTags = (tags) => {
-    if (!tags) return <Typography.Text type="secondary">-</Typography.Text>;
+    if (!tags) return <Text type="secondary">-</Text>;
     const list = tags.split(',').filter(Boolean);
     return (
       <Space size={4} wrap>
-        {list.map(t => <Tag key={t} color="blue" style={{margin: 0}}>{t.trim()}</Tag>)}
+        {list.map(t => <span key={t} className={styles.tag}>{t.trim()}</span>)}
       </Space>
     );
   };
 
   renderHistoryStatus = (v) => {
-    const map = {
-      running: {color: 'processing', text: '执行中'},
-      success: {color: 'success', text: '成功'},
-      failed: {color: 'error', text: '失败'},
-      canceled: {color: 'default', text: '已取消'},
-    };
-    const cfg = map[v] || {color: 'default', text: v};
-    return <Tag color={cfg.color} style={{margin: 0}}>{cfg.text}</Tag>;
+    const cfg = HISTORY_STATUS_MAP[v] || { cls: styles.statusCanceled, text: v, dot: false };
+    return (
+      <span className={`${styles.statusTag} ${cfg.cls}`}>
+        {cfg.dot && <span className={styles.statusDot} style={{ background: 'currentColor' }}/>}
+        {cfg.text}
+      </span>
+    );
+  };
+
+  renderDuration = (v) => {
+    const text = v > 60 ? `${Math.floor(v / 60)}m${v % 60}s` : `${v}s`;
+    return (
+      <span className={`${styles.duration} ${v > 60 ? styles.durationSlow : styles.durationFast}`}>
+        {text}
+      </span>
+    );
   };
 
   render() {
@@ -100,12 +118,10 @@ class PlaybookIndex extends React.Component {
             dataIndex="name"
             width={200}
             render={(name, record) => (
-              <Space direction="vertical" size={0}>
-                <Typography.Text strong>{name}</Typography.Text>
-                {record.desc && (
-                  <Typography.Text type="secondary" style={{fontSize: 12}}>{record.desc}</Typography.Text>
-                )}
-              </Space>
+              <div className={styles.nameCell}>
+                <Text strong>{name}</Text>
+                {record.desc && <span className={styles.nameDesc}>{record.desc}</span>}
+              </div>
             )}/>
           <Table.Column title="标签" dataIndex="tags" width={160} render={this.renderTags}/>
           <Table.Column
@@ -113,17 +129,21 @@ class PlaybookIndex extends React.Component {
             dataIndex="is_active"
             width={80}
             align="center"
-            render={v => <Tag color={v ? 'success' : 'default'} style={{margin: 0}}>{v ? '启用' : '停用'}</Tag>}/>
+            render={v => (
+              <span className={`${styles.statusTag} ${v ? styles.statusActive : styles.statusInactive}`}>
+                {v ? '启用' : '停用'}
+              </span>
+            )}/>
           <Table.Column
             title="创建时间"
             dataIndex="created_at"
             width={170}
-            render={v => v ? <Typography.Text>{v}</Typography.Text> : <Typography.Text type="secondary">-</Typography.Text>}/>
+            render={v => v ? <Text>{v}</Text> : <Text type="secondary">-</Text>}/>
           <Table.Column
             title="更新时间"
             dataIndex="updated_at"
             width={170}
-            render={v => v ? <Typography.Text>{v}</Typography.Text> : <Typography.Text type="secondary">-</Typography.Text>}/>
+            render={v => v ? <Text>{v}</Text> : <Text type="secondary">-</Text>}/>
           {hasPermission('playbook.run|playbook.edit|playbook.del') && (
             <Table.Column title="操作" width={200} render={info => (
               <Action>
@@ -162,15 +182,11 @@ class PlaybookIndex extends React.Component {
               dataIndex="duration"
               width={90}
               align="center"
-              render={v => (
-                <Typography.Text style={{color: v > 60 ? '#fa8c16' : '#52c41a'}}>
-                  {v > 60 ? `${Math.floor(v / 60)}m${v % 60}s` : `${v}s`}
-                </Typography.Text>
-              )}/>
+              render={this.renderDuration}/>
             <Table.Column title="Token" dataIndex="token" ellipsis width={180}
-              render={v => <Typography.Text code style={{fontSize: 12}}>{v}</Typography.Text>}/>
+              render={v => <Text code style={{fontSize: 12}}>{v}</Text>}/>
             <Table.Column title="执行时间" dataIndex="created_at" width={170}
-              render={v => v || <Typography.Text type="secondary">-</Typography.Text>}/>
+              render={v => v || <Text type="secondary">-</Text>}/>
             <Table.Column
               title="操作"
               width={90}

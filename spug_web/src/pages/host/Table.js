@@ -50,7 +50,7 @@ function ComTable() {
     if (days > 30) {
       return <span>剩余 <b style={{ color: '#389e0d' }}>{days}</b> 天</span>
     } else if (days > 7) {
-      return <span>剩余 <b style={{ color: '#faad14' }}>{days}</b> 天</span>
+      return <span>剩余 <b style={{ color: 'var(--color-gold-500)' }}>{days}</b> 天</span>
     } else if (days >= 0) {
       return <span>剩余 <b style={{ color: '#d9363e' }}>{days}</b> 天</span>
     } else {
@@ -71,7 +71,7 @@ function ComTable() {
         <AuthFragment auth="host.host.add">
           <Dropdown menu={{
             onClick: handleImport, items: [
-              { key: 'form', icon: <FormOutlined style={{ fontSize: 16, marginRight: 4, color: '#1890ff' }} />, label: '新建主机' },
+              { key: 'form', icon: <FormOutlined style={{ fontSize: 16, marginRight: 4, color: 'var(--color-primary)' }} />, label: '新建主机' },
               { key: 'excel', icon: <Avatar shape="square" size={20} src={icons.excel} />, label: 'Excel' },
               { key: 'ali', icon: <Avatar shape="square" size={20} src={icons.alibaba} />, label: '阿里云' },
               { key: 'tencent', icon: <Avatar shape="square" size={20} src={icons.tencent} />, label: '腾讯云' },

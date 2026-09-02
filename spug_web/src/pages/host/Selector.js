@@ -125,7 +125,7 @@ function HostSelector(props) {
               <Alert
                 type="info"
                 className={styles.area}
-                message={<div>已选择 <b style={{fontSize: 18, color: '#1890ff'}}>{props.value.length}</b> 台主机</div>}
+                message={<div>已选择 <b style={{fontSize: 18, color: 'var(--color-primary)'}}>{props.value.length}</b> 台主机</div>}
                 onClick={() => setVisible(true)}/>
             ) : (
               <Button icon={<PlusOutlined/>} onClick={() => setVisible(true)}>
@@ -150,7 +150,7 @@ function HostSelector(props) {
         confirmLoading={loading}
         onCancel={handleClose}>
         <Row>
-          <Col span={6} style={{borderRight: '8px solid #f0f0f0', paddingRight: 12}}>
+          <Col span={6} style={{borderRight: '8px solid var(--color-border-secondary)', paddingRight: 12}}>
             <div className={styles.gTitle}>分组列表</div>
             <Tree.DirectoryTree
               showIcon={false}

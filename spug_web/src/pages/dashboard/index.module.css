@@ -1,30 +1,22 @@
+/* index.module.css - dashboard 共享样式（RequestTop 使用） */
+
 :global(.ant-card-extra) {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }
 
 .spanButton {
   cursor: pointer;
-  margin-right: 24px;
-  color: rgba(0, 0, 0, .65);
+  margin-right: var(--space-6);
+  color: var(--range-btn-color);
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
 .spanButtonActive {
   cursor: pointer;
-  margin-right: 24px;
-  color: #1890ff;
+  margin-right: var(--space-6);
+  color: var(--range-btn-active-color);
 }
 
 .spanButton:hover {
-  color: #1890ff;
-}
-
-.spanText {
-  cursor: pointer;
-  color: #1890ff;
-  padding: 0 4px;
-}
-
-.loginActive {
-  height: 329px;
-  overflow: auto;
+  color: var(--range-btn-active-color);
 }

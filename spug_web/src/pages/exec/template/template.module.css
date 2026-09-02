@@ -1,0 +1,200 @@
+/* Template 模块令牌 */
+
+/* ── 名称单元格 ── */
+.nameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nameText {
+  font-weight: var(--font-weight-medium);
+}
+
+.nameDesc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ── 类型标签 ── */
+.typeTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.typeEmpty {
+  background: var(--color-gray-100);
+  color: var(--color-text-tertiary);
+}
+
+/* ── 语言标签 ── */
+.langTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+.langShell {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.langPython {
+  background: rgba(114, 46, 209, 0.1);
+  color: var(--color-purple-600);
+}
+
+/* ── 表单分区 ── */
+.sectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 1.2;
+}
+
+.editorWrap {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+  overflow: hidden;
+}
+
+/* ── 参数表格 ── */
+.paramAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.addParamBtn {
+  padding: 0;
+  margin-top: var(--space-2);
+}
+
+/* ── 查看弹窗 ── */
+.viewMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.viewMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.viewParams {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.viewParamTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+  line-height: 1.4;
+}
+
+.viewCodeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.viewCodeTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.viewCodeHint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.viewEditorWrap {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+  overflow: hidden;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .typeTag {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .typeEmpty {
+    background: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .langShell {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .langPython {
+    background: rgba(114, 46, 209, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .viewMeta {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .viewParamTag {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .viewEditorWrap {
+    border-color: var(--color-gray-800);
+  }
+}
+
+:global([data-theme="dark"]) .typeTag {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .typeEmpty {
+  background: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .langShell {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .langPython {
+  background: rgba(114, 46, 209, 0.15);
+}
+:global([data-theme="dark"]) .viewMeta {
+  background: var(--color-gray-900);
+  border-color: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .viewParamTag {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .viewEditorWrap {
+  border-color: var(--color-gray-800);
+}

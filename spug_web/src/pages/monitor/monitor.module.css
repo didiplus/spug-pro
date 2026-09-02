@@ -1,0 +1,148 @@
+/* Monitor 模块令牌 */
+
+/* ── 卡片 ── */
+.card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.cardTitle {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.cardExtra {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ── 状态标签 ── */
+.statusTag {
+  cursor: pointer;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  user-select: none;
+  transition: all var(--duration-normal) var(--ease-standard);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.statusTagActive {
+  font-weight: var(--font-weight-semibold);
+  opacity: 1;
+}
+
+.statusTagInactive {
+  font-weight: var(--font-weight-normal);
+  opacity: 0.65;
+}
+
+/* ── 监控瓦片 ── */
+.tile {
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  cursor: default;
+  transition: all var(--duration-normal) var(--ease-standard);
+  overflow: hidden;
+}
+
+.tile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.tileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.tileName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: var(--space-2);
+}
+
+.tileIcon {
+  font-size: var(--font-size-base);
+  flex-shrink: 0;
+}
+
+.tileFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tileTarget {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: var(--space-2);
+}
+
+.tileStatus {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  flex-shrink: 0;
+}
+
+/* ── 工具栏 ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+/* ── 自动刷新 ── */
+.autoReload {
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: color var(--duration-normal) var(--ease-standard);
+}
+
+.autoReloadActive {
+  color: var(--color-primary);
+}
+
+.autoReloadIdle {
+  color: var(--color-text-secondary);
+}
+
+/* ── 空状态 ── */
+.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-text-tertiary);
+  padding: var(--space-8) 0;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .card {
+    border-color: var(--color-gray-800);
+  }
+}
+
+:global([data-theme="dark"]) .card {
+  border-color: var(--color-gray-800);
+}

@@ -145,7 +145,10 @@ class PlaybookRunView(View):
             Argument('token', help='参数错误')
         ).parse(request.GET)
         if error is None:
-            run = PlaybookRun.objects.filter(token=form.token).first()
+            query = PlaybookRun.objects.filter(token=form.token)
+            if not request.user.is_supper:
+                query = query.filter(user=request.user)
+            run = query.first()
             if not run:
                 return json_response(error='执行记录不存在')
             return json_response(run.to_view())
@@ -162,6 +165,8 @@ class PlaybookHistoryView(View):
         ).parse(request.GET)
         if error is None:
             query = PlaybookRun.objects.select_related('playbook', 'user')
+            if not request.user.is_supper:
+                query = query.filter(user=request.user)
             if form.playbook_id:
                 query = query.filter(playbook_id=form.playbook_id)
             total = query.count()
@@ -181,7 +186,10 @@ class PlaybookStatsView(View):
             Argument('token', help='参数错误')
         ).parse(request.GET)
         if error is None:
-            run = PlaybookRun.objects.filter(token=form.token).first()
+            query = PlaybookRun.objects.filter(token=form.token)
+            if not request.user.is_supper:
+                query = query.filter(user=request.user)
+            run = query.first()
             if not run:
                 return json_response(error='执行记录不存在')
             stats = json.loads(run.stats) if run.stats else {}

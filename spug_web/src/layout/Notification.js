@@ -1,36 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { List, Dropdown, Badge, Button } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Dropdown, Badge, Empty, Spin, Button } from 'antd';
 import { notification } from 'libs/message';
 import {
   NotificationOutlined,
   MonitorOutlined,
   FlagOutlined,
   ScheduleOutlined,
-  AlertOutlined
+  AlertOutlined,
 } from '@ant-design/icons';
 import { http, X_TOKEN } from 'libs';
 import moment from 'moment';
-import styles from './layout.module.less';
+import styles from './Notification.module.css';
 
 let ws = { readyState: 3 };
 let timer;
 
-function Icon(props) {
-  switch (props.type) {
-    case 'monitor':
-      return <MonitorOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
-    case 'schedule':
-      return <ScheduleOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
-    case 'flag':
-      return <FlagOutlined style={{ fontSize: 24, color: '#1890ff' }} />;
-    case 'alert':
-      return <AlertOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />;
-    default:
-      return null;
-  }
+const ICON_MAP = {
+  monitor: { icon: MonitorOutlined, cls: styles.iconMonitor, color: 'var(--color-primary)' },
+  schedule: { icon: ScheduleOutlined, cls: styles.iconSchedule, color: 'var(--color-green-500)' },
+  flag: { icon: FlagOutlined, cls: styles.iconFlag, color: 'var(--color-purple-500)' },
+  alert: { icon: AlertOutlined, cls: styles.iconAlert, color: 'var(--color-red-500)' },
+};
+
+function NotifyIcon({ type }) {
+  const cfg = ICON_MAP[type];
+  if (!cfg) return null;
+  const IconComp = cfg.icon;
+  return (
+    <div className={`${styles.iconWrap} ${cfg.cls}`}>
+      <IconComp style={{ fontSize: 20, color: cfg.color }} />
+    </div>
+  );
 }
 
-export default function () {
+export default function Notification() {
   const [loading, setLoading] = useState(false);
   const [notifies, setNotifies] = useState([]);
   const [reads, setReads] = useState([]);
@@ -73,21 +76,24 @@ export default function () {
         try {
           const { title, content } = JSON.parse(e.data);
           const key = `open${Date.now()}`;
-          const description = <div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>;
-          const actionButton = (
-            <Button key="close-btn" type="primary" size="small" onClick={() => notification.close(key)}>
-              知道了
-            </Button>
-          );
           notification.warning({
             message: title,
-            description,
-            actions: [actionButton],
+            description: <div style={{ whiteSpace: 'pre-wrap' }}>{content}</div>,
+            actions: [
+              <Button
+                key="close-btn"
+                type="primary"
+                size="small"
+                onClick={() => notification.close(key)}
+              >
+                知道了
+              </Button>,
+            ],
             key,
             top: 64,
-            duration: null
+            duration: null,
           });
-        } catch (e) {
+        } catch (err) {
           // ignore parse errors
         }
       }
@@ -95,9 +101,7 @@ export default function () {
   }
 
   function handleVisible(visible) {
-    if (visible) {
-      fetch();
-    }
+    if (visible) fetch();
   }
 
   function handleRead(e, item) {
@@ -116,36 +120,73 @@ export default function () {
   }
 
   const count = notifies.length - reads.length;
+  const unreadCount = count > 0 ? count : 0;
+
+  const panel = useMemo(() => (
+    <div className={styles.panel} role="region" aria-label="消息通知">
+      <div className={styles.header}>
+        <span className={styles.headerTitle}>
+          消息通知{unreadCount > 0 && `（${unreadCount} 条未读）`}
+        </span>
+        {notifies.length > 0 && unreadCount > 0 && (
+          <span
+            className={styles.markAll}
+            onClick={handleReadAll}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleReadAll(); }}
+          >
+            全部已读
+          </span>
+        )}
+      </div>
+      <div className={styles.list}>
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <Spin />
+          </div>
+        ) : notifies.length === 0 ? (
+          <div className={styles.empty}>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无消息" />
+          </div>
+        ) : (
+          notifies.map(item => {
+            const isRead = reads.includes(item.id);
+            return (
+              <div
+                key={item.id}
+                className={`${styles.item} ${isRead ? styles.itemRead : styles.itemUnread}`}
+                onClick={e => handleRead(e, item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter') handleRead(e, item); }}
+              >
+                <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+                  <NotifyIcon type={item.source} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={styles.title}>{item.title}</div>
+                    <div className={styles.content}>{item.content}</div>
+                    <div className={styles.time}>{moment(item.created_at).fromNow()}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  ), [notifies, reads, loading, unreadCount]);
+
   return (
-    <div className={styles.notification}>
-      <Dropdown trigger={['click']} onOpenChange={handleVisible} popupRender={() => (
-        <div className={styles.notify} style={{ background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-          <List
-            loading={loading}
-            style={{ maxHeight: 500, overflow: 'scroll' }}
-            itemLayout="horizontal"
-            dataSource={notifies}
-            renderItem={item => (
-              <List.Item className={styles.item} onClick={e => handleRead(e, item)}>
-                <List.Item.Meta
-                  style={{ opacity: reads.includes(item.id) ? 0.4 : 1 }}
-                  avatar={<Icon type={item.source} />}
-                  title={<span style={{ fontWeight: 400, color: '#404040' }}>{item.title}</span>}
-                  description={[
-                    <div key="1" style={{ fontSize: 12, overflowWrap: 'anywhere' }}>{item.content}</div>,
-                    <div key="2" style={{ fontSize: 12 }}>{moment(item['created_at']).fromNow()}</div>
-                  ]}
-                />
-              </List.Item>
-            )}
-          />
-          {notifies.length !== 0 && (
-            <div className={styles.btn} onClick={handleReadAll}>全部 已读</div>
-          )}
-        </div>
-      )}>
-        <div className={styles.trigger}>
-          <Badge count={count > 0 ? count : 0}>
+    <div>
+      <Dropdown trigger={['click']} onOpenChange={handleVisible} popupRender={() => panel}>
+        <div
+          className={styles.trigger}
+          role="button"
+          aria-label={`消息通知${unreadCount > 0 ? `，${unreadCount} 条未读` : ''}`}
+          tabIndex={0}
+        >
+          <Badge count={unreadCount} offset={[-2, 2]}>
             <NotificationOutlined style={{ fontSize: 16 }} />
           </Badge>
         </div>

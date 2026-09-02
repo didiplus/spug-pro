@@ -66,10 +66,24 @@ class ExecHistory(models.Model, ModelMixin):
 class Transfer(models.Model, ModelMixin):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="执行用户")
     digest = models.CharField(max_length=32, db_index=True, verbose_name="摘要")
-    host_id = models.IntegerField(null=True, verbose_name="目标主机ID")
-    src_dir = models.CharField(max_length=255, verbose_name="源目录")
+    src_dir = models.CharField(max_length=255, default="", verbose_name="本地临时目录")
     dst_dir = models.CharField(max_length=255, verbose_name="目标目录")
     host_ids = models.TextField(verbose_name="目标主机列表")
+    src_host = models.ForeignKey(
+        Host, null=True, on_delete=models.SET_NULL, related_name="src_transfers", verbose_name="源主机"
+    )
+    src_path = models.CharField(max_length=255, null=True, verbose_name="源路径")
+    src_type = models.CharField(
+        max_length=10, default="upload", choices=[("upload", "本地上传"), ("remote", "远端主机")], verbose_name="源类型"
+    )
+    status = models.CharField(
+        max_length=20, default="pending",
+        choices=[("pending", "待执行"), ("running", "执行中"), ("success", "成功"), ("failed", "失败")],
+        verbose_name="执行状态",
+    )
+    total = models.IntegerField(default=0, verbose_name="总主机数")
+    success_count = models.IntegerField(default=0, verbose_name="成功数")
+    failed_count = models.IntegerField(default=0, verbose_name="失败数")
     updated_at = models.CharField(max_length=20, default=human_datetime, verbose_name="更新时间")
 
     def to_view(self):

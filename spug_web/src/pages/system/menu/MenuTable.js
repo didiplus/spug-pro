@@ -32,7 +32,7 @@ export default function MenuTable({
           ) : null}
           <span style={{
             fontWeight: record.parent_id === 0 ? 600 : 400,
-            color: record.menu_type === 'F' ? '#8c8c8c' : '#262626',
+            color: record.menu_type === 'F' ? 'var(--color-text-secondary)' : 'var(--color-text)',
           }}>
             {text}
           </span>
@@ -88,7 +88,7 @@ export default function MenuTable({
       width: 160,
       ellipsis: true,
       render: (v) => v
-        ? <Text style={{ fontSize: 12, color: '#8c8c8c', fontFamily: 'monospace' }}>{v}</Text>
+        ? <Text style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>{v}</Text>
         : <Text type="secondary" style={{ fontSize: 12 }}>-</Text>,
     },
     {

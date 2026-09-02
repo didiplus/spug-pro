@@ -1,5 +1,4 @@
 import React from 'react';
-import { Tag } from 'antd';
 import { FolderOutlined, MenuOutlined, AppstoreOutlined } from '@ant-design/icons';
 
 export const TYPE_CONFIG = {

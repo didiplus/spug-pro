@@ -37,8 +37,8 @@ class ComForm extends React.Component {
         <Spin spinning={this.state.loading}>
           <StatisticsCard loading={this.state.loading}>
             <StatisticsCard.Item title="执行成功" value={<span style={{color: '#3f8600'}}>{success}</span>}/>
-            <StatisticsCard.Item title="执行失败" value={<span style={{color: failure > 0 ? '#cf1322' : '#8c8c8c'}}>{failure}</span>}/>
-            <StatisticsCard.Item bordered={false} title="平均耗时(秒)" value={<span style={{color: '#1677ff'}}>{duration}</span>}/>
+            <StatisticsCard.Item title="执行失败" value={<span style={{color: failure > 0 ? 'var(--color-red-600)' : 'var(--color-text-secondary)'}}>{failure}</span>}/>
+            <StatisticsCard.Item bordered={false} title="平均耗时(秒)" value={<span style={{color: 'var(--color-primary)'}}>{duration}</span>}/>
           </StatisticsCard>
           {outputs && (
             <Tabs
@@ -48,12 +48,12 @@ class ComForm extends React.Component {
               items={outputs.map((item, index) => ({
                 key: `${index}`,
                 label: item.code === 0
-                  ? <span><CheckCircleOutlined style={{color: '#52c41a', marginRight: 4}} />{item.name}</span>
-                  : <span><CloseCircleOutlined style={{color: '#ff4d4f', marginRight: 4}} />{item.name}</span>,
+                  ? <span><CheckCircleOutlined style={{color: 'var(--color-green-600)', marginRight: 4}} />{item.name}</span>
+                  : <span><CloseCircleOutlined style={{color: 'var(--color-red-600)', marginRight: 4}} />{item.name}</span>,
                 children: (
                   <Flex vertical gap={8} style={{padding: '4px 0'}}>
                     <Flex align="center" gap={8}>
-                      <ClockCircleOutlined style={{color: '#8c8c8c'}} />
+                      <ClockCircleOutlined style={{color: 'var(--color-text-secondary)'}} />
                       <Text type="secondary">{run_time}</Text>
                       <Text type="secondary" style={{fontSize: 12}}>({moment(run_time).fromNow()})</Text>
                     </Flex>

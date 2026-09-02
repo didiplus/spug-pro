@@ -10,6 +10,7 @@ import { Descriptions, Spin, Button, Alert } from 'antd';
 import { notification } from 'libs/message';
 import { observer } from 'mobx-react'
 import { http, VERSION } from 'libs';
+import 'styles/tokens.css';
 
 
 @observer
@@ -36,7 +37,7 @@ class About extends React.Component {
             message: `发现新版本 ${res.version}`,
             icon: <SmileTwoTone/>,
             btn: <a target="_blank" rel="noopener noreferrer" href="https://ops.spug.cc/docs/update-version/">如何升级？</a>,
-            description: <pre style={{lineHeight: '30px'}}>{res.content}<br/>{res.extra}</pre>
+            description: <pre style={{lineHeight: 1.8}}>{res.content}<br/>{res.extra}</pre>
           })
         } else if (res.extra) {
           notification.open({
@@ -46,7 +47,7 @@ class About extends React.Component {
             message: `已是最新版本`,
             icon: <SmileTwoTone/>,
             btn: <Button type="link" onClick={() => notification.close('new_version')}>知道了</Button>,
-            description: <pre style={{lineHeight: '30px'}}>{res.extra}</pre>
+            description: <pre style={{lineHeight: 1.8}}>{res.extra}</pre>
           })
         }
       })
@@ -58,7 +59,13 @@ class About extends React.Component {
     return (
       <Spin spinning={fetching}>
         <div className={styles.title}>关于</div>
-        <Descriptions column={1}>
+        <Descriptions
+          column={1}
+          bordered
+          size="small"
+          labelStyle={{ width: 140, fontWeight: 'var(--font-weight-medium)', background: 'var(--color-gray-50)' }}
+          contentStyle={{ background: 'var(--color-card)' }}
+        >
           <Descriptions.Item label="操作系统">{info['system_version']}</Descriptions.Item>
           <Descriptions.Item label="Python版本">{info['python_version']}</Descriptions.Item>
           <Descriptions.Item label="Django版本">{info['django_version']}</Descriptions.Item>
@@ -73,7 +80,7 @@ class About extends React.Component {
           </Descriptions.Item>
         </Descriptions>
         {info['spug_version'] !== VERSION && (
-          <Alert showIcon style={{width: 500}} type="warning" message="Spug API版本与Web版本不匹配，请尝试刷新浏览器后再次查看。"/>
+          <Alert showIcon style={{marginTop: 'var(--space-4)', maxWidth: 500}} type="warning" message="Spug API版本与Web版本不匹配，请尝试刷新浏览器后再次查看。"/>
         )}
       </Spin>
     )

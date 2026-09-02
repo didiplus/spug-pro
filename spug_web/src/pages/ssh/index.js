@@ -221,10 +221,12 @@ function WebSSH(props) {
           <img src={LogoSpugText} alt="logo"/>
         </a>
         <div className={styles.hosts}>
-          <Spin spinning={fetching}>
-            <Input allowClear className={styles.search} prefix={<SearchOutlined style={{color: '#999'}}/>}
-                   placeholder="输入主机名/IP检索" onChange={e => setSearchValue(e.target.value)}/>
-            <Button icon={<SyncOutlined/>} type="link" loading={fetching} onClick={fetchNodes}/>
+          <div className={styles.searchBar}>
+            <Input allowClear prefix={<SearchOutlined style={{color: '#999'}}/>}
+                   placeholder="搜索主机名 / IP" onChange={e => setSearchValue(e.target.value)}/>
+            <Button icon={<SyncOutlined/>} type="text" loading={fetching} onClick={fetchNodes}/>
+          </div>
+          <Spin spinning={fetching} wrapperClassName={styles.treeSpin}>
             {treeData.length > 0 ? (
               <Tree.DirectoryTree
                 defaultExpandAll={treeData.length > 0 && treeData.length < 5}

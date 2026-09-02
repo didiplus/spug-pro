@@ -1,0 +1,299 @@
+/* Items 组件令牌 — 巡检项管理 */
+
+/* ── 统计卡片 ── */
+.statCard {
+  border-radius: var(--radius-lg);
+  transition: box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.statCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.statIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.statIconBlue {
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.statIconGreen {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.statIconRed {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+.statIconPurple {
+  background: rgba(114, 46, 209, 0.1);
+  color: var(--color-purple-600);
+}
+
+/* ── 工具栏 ── */
+.toolbar {
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-lg);
+}
+
+/* ── 表格 ── */
+.table {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+}
+
+/* ── 名称单元格 ── */
+.nameCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── 分类标签 ── */
+.categoryTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+.catSystem {
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.catDisk {
+  background: rgba(19, 194, 194, 0.1);
+  color: #13c2c2;
+}
+
+.catNetwork {
+  background: rgba(114, 46, 209, 0.1);
+  color: var(--color-purple-600);
+}
+
+.catService {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.catMemory {
+  background: rgba(250, 140, 22, 0.1);
+  color: var(--color-orange-600);
+}
+
+.catCustom {
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+}
+
+/* ── 匹配方式标签 ── */
+.matchTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+.matchPass {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.matchFail {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+/* ── 期望结果标签 ── */
+.expectWarning {
+  background: rgba(250, 140, 22, 0.1);
+  color: var(--color-orange-600);
+}
+
+.expectError {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+/* ── 停用标签 ── */
+.inactiveTag {
+  font-size: var(--font-size-xs);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-100);
+  color: var(--color-text-tertiary);
+}
+
+/* ── 表单分区 ── */
+.formSection {
+  margin-bottom: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 1.2;
+}
+
+/* ── 测试结果 ── */
+.testResultTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.testPass {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.testWarning {
+  background: rgba(250, 140, 22, 0.1);
+  color: var(--color-orange-600);
+}
+
+.testFail {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .statIconBlue {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statIconGreen {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statIconRed {
+    background: rgba(255, 77, 79, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statIconPurple {
+    background: rgba(114, 46, 209, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catSystem {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catDisk {
+    background: rgba(19, 194, 194, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catNetwork {
+    background: rgba(114, 46, 209, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catService {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catMemory {
+    background: rgba(250, 140, 22, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .catCustom {
+    background: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .matchPass {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .matchFail {
+    background: rgba(255, 77, 79, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .expectWarning {
+    background: rgba(250, 140, 22, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .expectError {
+    background: rgba(255, 77, 79, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .inactiveTag {
+    background: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .testPass {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .testWarning {
+    background: rgba(250, 140, 22, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .testFail {
+    background: rgba(255, 77, 79, 0.15);
+  }
+}
+
+:global([data-theme="dark"]) .statIconBlue {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .statIconGreen {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .statIconRed {
+  background: rgba(255, 77, 79, 0.15);
+}
+:global([data-theme="dark"]) .statIconPurple {
+  background: rgba(114, 46, 209, 0.15);
+}
+:global([data-theme="dark"]) .catSystem {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .catDisk {
+  background: rgba(19, 194, 194, 0.15);
+}
+:global([data-theme="dark"]) .catNetwork {
+  background: rgba(114, 46, 209, 0.15);
+}
+:global([data-theme="dark"]) .catService {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .catMemory {
+  background: rgba(250, 140, 22, 0.15);
+}
+:global([data-theme="dark"]) .catCustom {
+  background: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .matchPass {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .matchFail {
+  background: rgba(255, 77, 79, 0.15);
+}
+:global([data-theme="dark"]) .expectWarning {
+  background: rgba(250, 140, 22, 0.15);
+}
+:global([data-theme="dark"]) .expectError {
+  background: rgba(255, 77, 79, 0.15);
+}
+:global([data-theme="dark"]) .inactiveTag {
+  background: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .testPass {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .testWarning {
+  background: rgba(250, 140, 22, 0.15);
+}
+:global([data-theme="dark"]) .testFail {
+  background: rgba(255, 77, 79, 0.15);
+}

@@ -153,7 +153,7 @@ export default observer(function () {
             </Input.Group>
           </Form.Item>
           <Form.Item style={{display: 'inline-block', width: 82, textAlign: 'center', marginBottom: 0}}>
-            {fetching ? <LoadingOutlined style={{fontSize: 18, color: '#1890ff'}}/> :
+            {fetching ? <LoadingOutlined style={{fontSize: 18, color: 'var(--color-primary)'}}/> :
               <Button type="link" icon={<SyncOutlined/>} disabled={fetching} onClick={fetchVersions}>刷新</Button>
             }
           </Form.Item>

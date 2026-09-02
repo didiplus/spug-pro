@@ -28,6 +28,7 @@ KEYS_DEFAULT = {
     "ansible_role_dir": "/data/roles",
     "ansible_module_timeout": 300,
     "ansible_callback_whitelist": "",
+
 }
 
 SENSITIVE_KEYS = {

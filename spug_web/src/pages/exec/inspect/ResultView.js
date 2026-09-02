@@ -90,13 +90,13 @@ export default observer(function () {
           <Card><Statistic title="全部" value={counts.total}/></Card>
         </Col>
         <Col span={6}>
-          <Card><Statistic title="正常" value={counts.success} valueStyle={{color: '#52c41a'}}/></Card>
+          <Card><Statistic title="正常" value={counts.success} valueStyle={{color: 'var(--color-green-600)'}}/></Card>
         </Col>
         <Col span={6}>
-          <Card><Statistic title="告警" value={counts.warning} valueStyle={{color: '#faad14'}}/></Card>
+          <Card><Statistic title="告警" value={counts.warning} valueStyle={{color: 'var(--color-gold-500)'}}/></Card>
         </Col>
         <Col span={6}>
-          <Card><Statistic title="失败" value={counts.error} valueStyle={{color: '#ff4d4f'}}/></Card>
+          <Card><Statistic title="失败" value={counts.error} valueStyle={{color: 'var(--color-red-600)'}}/></Card>
         </Col>
       </Row>
       {results.length === 0 ? (

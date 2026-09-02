@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.database",
     "apps.playbook",
     "apps.ansible",
+    "daphne",
     "channels",
 ]
 
@@ -66,7 +67,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "spug.urls"
 WSGI_APPLICATION = "spug.wsgi.application"
-ASGI_APPLICATION = "spug.routing.application"
+ASGI_APPLICATION = "spug.asgi.application"
 
 # Database
 _db_engine = os.getenv('DB_ENGINE', 'sqlite').lower()
@@ -130,11 +131,28 @@ CACHES = {
 
 _channels_host = os.getenv('CHANNELS_REDIS_HOST', _redis_host)
 _channels_port = int(os.getenv('CHANNELS_REDIS_PORT', str(_redis_port)))
+_channels_password = os.getenv('CHANNELS_REDIS_PASSWORD', _redis_password)
+_channels_location = (
+    f"redis://:{_channels_password}@{_channels_host}:{_channels_port}/{_redis_db}"
+    if _channels_password
+    else f"redis://{_channels_host}:{_channels_port}/{_redis_db}"
+)
+# Use a dict for hosts so we can pass ConnectionPool kwargs (timeouts, max connections)
+_channels_host_entry = {
+    "address": _channels_location,
+    # Connection pool and socket options passed through to redis.asyncio.ConnectionPool
+    "max_connections": 100,
+    "socket_timeout": 60,
+    "socket_connect_timeout": 10,
+    # retry_on_timeout isn't a direct ConnectionPool kwarg but redis client will accept it
+    "retry_on_timeout": True,
+}
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(_channels_host, _channels_port)],
+            "hosts": [_channels_host_entry],
             "capacity": 1000,
             "expiry": 120,
         },
@@ -175,7 +193,7 @@ AUTHENTICATION_EXCLUDES = (
     re.compile("/apis/.*"),
 )
 
-SPUG_VERSION = "v3.5.0"
+SPUG_VERSION = "v4.0.0"
 
 # ==============================
 # Security Hardening (生产环境)
@@ -186,7 +204,7 @@ if IS_PROD:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
+
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'

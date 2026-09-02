@@ -91,13 +91,13 @@ export default observer(function () {
           <div style={{display: 'flex', justifyContent: 'space-around'}}>
             <div>成功：{summary.success}</div>
             <div>失败：{summary.fail > 0 ? (
-              <Tooltip style={{color: '#1890ff'}} title={(
+              <Tooltip style={{color: 'var(--color-primary)'}} title={(
                 <div>
                   {summary.skip.map(x => <div key={x}>第 {x} 行，重复的服务器信息</div>)}
                   {summary.repeat.map(x => <div key={x}>第 {x} 行，重复的主机名称</div>)}
                   {summary.invalid.map(x => <div key={x}>第 {x} 行，无效的数据</div>)}
                 </div>
-              )}><span style={{color: '#1890ff'}}>{summary.fail}</span></Tooltip>
+              )}><span style={{color: 'var(--color-primary)'}}>{summary.fail}</span></Tooltip>
             ) : 0}</div>
           </div>
           {Object.keys(hosts).length > 0 && (

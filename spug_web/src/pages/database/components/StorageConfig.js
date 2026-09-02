@@ -105,7 +105,7 @@ export default observer(function StorageConfig() {
       width: 150,
       render: (v, r) => (
         <Flex align="center" gap={8}>
-          <CloudOutlined style={{ color: '#1677ff' }} />
+          <CloudOutlined style={{ color: 'var(--color-primary)' }} />
           <Text strong>{v}</Text>
           {r.is_default && <Badge status="processing" text="默认" />}
         </Flex>

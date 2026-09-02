@@ -95,3 +95,4 @@ dmypy.json
 sync.sh
 spug_web/node_modules/
 spug_api/design
+spug_api/backups

@@ -2,12 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react';
 import { FitAddon } from 'xterm-addon-fit';
 import { Terminal } from 'xterm';
-import { Tag, Typography } from 'antd';
+import { Typography } from 'antd';
 import { X_TOKEN } from 'libs';
 import S from './store';
 import gStore from 'gStore';
+import styles from './playbook.module.css';
 
 const { Text } = Typography;
+
+const STATUS_MAP = {
+  running: { cls: styles.statusRunning, text: '执行中', dot: true },
+  success: { cls: styles.statusSuccess, text: '成功', dot: false },
+  failed: { cls: styles.statusFailed, text: '失败', dot: false },
+};
 
 function OutputView() {
   const el = useRef();
@@ -71,19 +78,23 @@ function OutputView() {
     return () => {
       socket && socket.close();
       window.removeEventListener('resize', resize);
+      term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const cfg = STATUS_MAP[status] || STATUS_MAP.running;
+
   return (
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-      <div style={{padding: '8px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+      <div className={styles.outputHeader}>
         <Text strong>执行详情</Text>
-        <Tag color={status === 'success' ? 'success' : status === 'failed' ? 'error' : 'processing'}>
-          {status === 'running' ? '执行中' : status === 'success' ? '成功' : '失败'}
-        </Tag>
+        <span className={`${styles.statusTag} ${cfg.cls}`}>
+          {cfg.dot && <span className={styles.statusDot} style={{ background: 'currentColor' }}/>}
+          {cfg.text}
+        </span>
       </div>
-      <div style={{flex: 1, padding: 8, overflow: 'hidden'}}>
+      <div className={styles.outputBody}>
         <div ref={el} style={{height: '100%', width: '100%'}}/>
       </div>
     </div>

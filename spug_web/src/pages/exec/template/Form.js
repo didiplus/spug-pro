@@ -5,15 +5,16 @@
  */
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { ExclamationCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
-import {Modal, Form, Input, Select, Button, Radio, Table, Tooltip} from 'antd';
+import {Modal, Form, Input, Select, Button, Radio, Table, Tooltip, Divider, Space} from 'antd';
 import { ACEditor } from 'components';
 import HostSelector from 'pages/host/Selector';
 import Parameter from './Parameter';
 import { http, cleanCommand } from 'libs';
 import lds from 'lodash';
 import S from './store';
+import styles from './template.module.css';
 
 export default observer(function () {
   const [form] = Form.useForm();
@@ -90,6 +91,7 @@ export default observer(function () {
       confirmLoading={loading}
       onOk={handleSubmit}>
       <Form form={form} initialValues={info} labelCol={{span: 6}} wrapperCol={{span: 14}}>
+        <div className={styles.sectionTitle}>基本信息</div>
         <Form.Item required label="模板类型" style={{marginBottom: 0}}>
           <Form.Item name="type" style={{display: 'inline-block', width: 'calc(75%)', marginRight: 8}}>
             <Select placeholder="请选择模板类型">
@@ -111,35 +113,46 @@ export default observer(function () {
             <Radio.Button value="python">Python</Radio.Button>
           </Radio.Group>
         </Form.Item>
-        <Form.Item required label="模板内容" shouldUpdate={(p, c) => p.interpreter !== c.interpreter}>
+        <Form.Item name="desc" label="备注信息">
+          <Input.TextArea placeholder="请输入模板备注信息"/>
+        </Form.Item>
+
+        <Divider style={{margin: '8px 0'}}/>
+
+        <div className={styles.sectionTitle}>模板内容</div>
+        <Form.Item required label="脚本内容" shouldUpdate={(p, c) => p.interpreter !== c.interpreter}>
           {({getFieldValue}) => (
-            <ACEditor
-              mode={getFieldValue('interpreter')}
-              value={body}
-              onChange={val => setBody(val)}
-              height="250px"/>
+            <div className={styles.editorWrap}>
+              <ACEditor
+                mode={getFieldValue('interpreter')}
+                value={body}
+                onChange={val => setBody(val)}
+                height="250px"/>
+            </div>
           )}
         </Form.Item>
+
+        <Divider style={{margin: '8px 0'}}/>
+
+        <div className={styles.sectionTitle}>参数与主机</div>
         <Form.Item label="参数化">
           {parameters.length > 0 && (
             <Table pagination={false} bordered rowKey="id" size="small" dataSource={parameters}>
               <Table.Column title="参数名" dataIndex="name"
                             render={(_, row) => <Tooltip title={row.desc}>{row.name}</Tooltip>}/>
               <Table.Column title="变量名" dataIndex="variable"/>
-              <Table.Column title="操作" width={90} render={(item, _, index) => [
-                <Button key="1" type="link" icon={<EditOutlined/>} onClick={() => setParameter(item)}/>,
-                <Button danger key="2" type="link" icon={<DeleteOutlined/>} onClick={() => delParameter(index)}/>
-              ]}>
-              </Table.Column>
+              <Table.Column title="操作" width={90} render={(item, _, index) => (
+                <Space size={0} className={styles.paramAction}>
+                  <Button type="link" size="small" icon={<EditOutlined/>} onClick={() => setParameter(item)}/>
+                  <Button danger type="link" size="small" icon={<DeleteOutlined/>} onClick={() => delParameter(index)}/>
+                </Space>
+              )}/>
             </Table>
           )}
-          <Button type="link" style={{padding: 0}} onClick={() => setParameter({})}>添加参数</Button>
+          <Button type="link" onClick={() => setParameter({})}>添加参数</Button>
         </Form.Item>
         <Form.Item label="目标主机">
           <HostSelector nullable value={info.host_ids} onChange={ids => info.host_ids = ids}/>
-        </Form.Item>
-        <Form.Item name="desc" label="备注信息">
-          <Input.TextArea placeholder="请输入模板备注信息"/>
         </Form.Item>
       </Form>
       {parameter ? (
