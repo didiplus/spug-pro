@@ -115,3 +115,34 @@ class Group(models.Model, ModelMixin):
     class Meta:
         db_table = "host_groups"
         ordering = ("-sort_id",)
+
+
+class SSHSession(models.Model, ModelMixin):
+    STATUS_CHOICES = (
+        ("active", "活跃"),
+        ("closed", "正常关闭"),
+        ("abnormal", "异常断开"),
+    )
+    token = models.CharField(max_length=32, unique=True, db_index=True, verbose_name="会话令牌")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ssh_sessions", verbose_name="用户")
+    host = models.ForeignKey(Host, on_delete=models.CASCADE, related_name="ssh_sessions", null=True, verbose_name="主机")
+    host_name = models.CharField(max_length=100, verbose_name="主机名称")
+    host_hostname = models.CharField(max_length=50, verbose_name="主机地址")
+    client_ip = models.CharField(max_length=50, verbose_name="客户端IP")
+    cols = models.IntegerField(default=80, verbose_name="终端列数")
+    rows = models.IntegerField(default=24, verbose_name="终端行数")
+    start_time = models.CharField(max_length=20, default=human_datetime, verbose_name="开始时间")
+    end_time = models.CharField(max_length=20, null=True, verbose_name="结束时间")
+    duration = models.IntegerField(default=0, verbose_name="耗时(秒)")
+    status = models.CharField(max_length=20, default="active", choices=STATUS_CHOICES, verbose_name="状态")
+    file_path = models.CharField(max_length=255, null=True, verbose_name="录制文件路径")
+    file_size = models.IntegerField(default=0, verbose_name="文件大小")
+
+    def to_view(self):
+        tmp = self.to_dict(excludes=("file_path",))
+        tmp["user_name"] = self.user.username if self.user else "-"
+        return tmp
+
+    class Meta:
+        db_table = "ssh_sessions"
+        ordering = ("-id",)

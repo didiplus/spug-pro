@@ -5,10 +5,11 @@ from django.views.generic import View
 from django_redis import get_redis_connection
 from django.conf import settings
 from libs import json_response, JsonParser, Argument, human_datetime, auth
-from apps.playbook.models import Playbook, PlaybookRun, Role
+from apps.playbook.models import Playbook, PlaybookRun, PlaybookVersion, Role
 from apps.playbook.security import validate_playbook_content, filter_extra_vars, sanitize_playbook_roles
 from apps.host.models import Host
 from apps.account.utils import has_host_perm
+import difflib
 import yaml
 import uuid
 import json
@@ -46,6 +47,17 @@ class PlaybookView(View):
             filtered = filter_extra_vars(extra_vars_dict)
             form.extra_vars = json.dumps(filtered)
             if form.id:
+                pb = Playbook.objects.filter(pk=form.id).first()
+                if pb and pb.content != form.content:
+                    latest_ver = PlaybookVersion.objects.filter(playbook_id=form.id).order_by('-version').first()
+                    next_ver = (latest_ver.version + 1) if latest_ver else 1
+                    PlaybookVersion.objects.create(
+                        playbook_id=form.id,
+                        version=next_ver,
+                        content=pb.content,
+                        extra_vars=pb.extra_vars,
+                        created_by=pb.updated_by or pb.created_by,
+                    )
                 form.updated_at = human_datetime()
                 form.updated_by = request.user
                 Playbook.objects.filter(pk=form.pop('id')).update(**form)
@@ -203,3 +215,95 @@ class PlaybookStatsView(View):
                 'hosts': hosts,
             })
         return json_response(error=error)
+
+
+class PlaybookVersionView(View):
+    @auth('playbook.view|playbook.run')
+    def get(self, request):
+        form, error = JsonParser(
+            Argument('playbook_id', type=int, help='请指定 Playbook'),
+        ).parse(request.GET)
+        if error:
+            return json_response(error=error)
+        versions = PlaybookVersion.objects.filter(playbook_id=form.playbook_id).order_by('-version')
+        return json_response([v.to_view() for v in versions])
+
+
+class PlaybookVersionDetailView(View):
+    @auth('playbook.view|playbook.run')
+    def get(self, request, version_id):
+        version = PlaybookVersion.objects.filter(pk=version_id).first()
+        if not version:
+            return json_response(error='版本不存在')
+        return json_response({
+            'id': version.id,
+            'version': version.version,
+            'content': version.content,
+            'extra_vars': json.loads(version.extra_vars) if version.extra_vars else {},
+            'change_desc': version.change_desc,
+            'created_at': version.created_at,
+            'created_by_name': version.created_by.username if version.created_by else None,
+        })
+
+
+class PlaybookRollbackView(View):
+    @auth('playbook.edit')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('playbook_id', type=int, help='请指定 Playbook'),
+            Argument('version_id', type=int, help='请指定回滚版本'),
+        ).parse(request.body)
+        if error:
+            return json_response(error=error)
+        version = PlaybookVersion.objects.filter(pk=form.version_id, playbook_id=form.playbook_id).first()
+        if not version:
+            return json_response(error='版本不存在')
+        pb = Playbook.objects.filter(pk=form.playbook_id).first()
+        if not pb:
+            return json_response(error='Playbook 不存在')
+        latest_ver = PlaybookVersion.objects.filter(playbook_id=form.playbook_id).order_by('-version').first()
+        next_ver = (latest_ver.version + 1) if latest_ver else 1
+        PlaybookVersion.objects.create(
+            playbook_id=form.playbook_id,
+            version=next_ver,
+            content=pb.content,
+            extra_vars=pb.extra_vars,
+            change_desc=f'回滚至版本 {version.version}',
+            created_by=request.user,
+        )
+        Playbook.objects.filter(pk=form.playbook_id).update(
+            content=version.content,
+            extra_vars=version.extra_vars,
+            updated_at=human_datetime(),
+            updated_by=request.user,
+        )
+        return json_response(data={'message': f'已回滚至版本 {version.version}'})
+
+
+class PlaybookDiffView(View):
+    @auth('playbook.view|playbook.run')
+    def get(self, request):
+        form, error = JsonParser(
+            Argument('playbook_id', type=int, help='请指定 Playbook'),
+            Argument('version_id', type=int, required=False),
+        ).parse(request.GET)
+        if error:
+            return json_response(error=error)
+        pb = Playbook.objects.filter(pk=form.playbook_id).first()
+        if not pb:
+            return json_response(error='Playbook 不存在')
+        current_content = pb.content.splitlines(keepends=True)
+        if form.version_id:
+            version = PlaybookVersion.objects.filter(pk=form.version_id).first()
+            if not version:
+                return json_response(error='版本不存在')
+            old_content = version.content.splitlines(keepends=True)
+            old_label = f'版本 {version.version} ({version.created_at})'
+        else:
+            latest = PlaybookVersion.objects.filter(playbook_id=form.playbook_id).order_by('-version').first()
+            if not latest:
+                return json_response(error='暂无历史版本')
+            old_content = latest.content.splitlines(keepends=True)
+            old_label = f'版本 {latest.version} ({latest.created_at})'
+        diff = list(difflib.unified_diff(old_content, current_content, fromfile=old_label, tofile='当前版本', lineterm=''))
+        return json_response({'diff': '\n'.join(diff)})

@@ -44,6 +44,7 @@ export const ComponentRegistry = {
   'pages/config/app': withSuspense(lazy(() => import('./pages/config/app'))),
   'pages/config/setting': withSuspense(lazy(() => import('./pages/config/setting'))),
   'pages/monitor': withSuspense(lazy(() => import('./pages/monitor'))),
+  'pages/monitor/dashboard': withSuspense(lazy(() => import('./pages/monitor/dashboard'))),
   'pages/alarm/alarm': withSuspense(lazy(() => import('./pages/alarm/alarm'))),
   'pages/alarm/group': withSuspense(lazy(() => import('./pages/alarm/group'))),
   'pages/alarm/contact': withSuspense(lazy(() => import('./pages/alarm/contact'))),
@@ -59,6 +60,7 @@ export const ComponentRegistry = {
   'pages/system/login': withSuspense(lazy(() => import('./pages/system/login'))),
   'pages/system/operotionlog': withSuspense(lazy(() => import('./pages/system/operotionlog'))),
   'pages/system/menu': withSuspense(lazy(() => import('./pages/system/menu'))),
+  'pages/system/ssh_audit': withSuspense(lazy(() => import('./pages/system/ssh_audit'))),
   'pages/welcome/index': withSuspense(lazy(() => import('./pages/welcome/index'))),
   'pages/welcome/info': withSuspense(lazy(() => import('./pages/welcome/info'))),
 };

@@ -92,3 +92,25 @@ class Role(models.Model, ModelMixin):
     class Meta:
         db_table = "ansible_role"
         ordering = ("-id",)
+
+
+class PlaybookVersion(models.Model, ModelMixin):
+    """Playbook 版本历史"""
+    playbook = models.ForeignKey(Playbook, on_delete=models.CASCADE, related_name="versions", verbose_name="Playbook")
+    version = models.IntegerField(verbose_name="版本号")
+    content = models.TextField(verbose_name="Playbook内容")
+    extra_vars = models.TextField(default="{}", verbose_name="额外变量")
+    change_desc = models.CharField(max_length=255, null=True, verbose_name="变更说明")
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
+
+    def to_view(self):
+        tmp = self.to_dict(excludes=("content", "extra_vars"))
+        tmp["extra_vars"] = _safe_json_loads(self.extra_vars, {})
+        tmp["content_length"] = len(self.content) if self.content else 0
+        tmp["created_by_name"] = self.created_by.username if self.created_by else None
+        return tmp
+
+    class Meta:
+        db_table = "playbook_version"
+        ordering = ("-version",)

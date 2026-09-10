@@ -125,7 +125,7 @@ class StorageConfig(models.Model, ModelMixin):
     region = models.CharField(max_length=50, null=True, blank=True, verbose_name="区域")
     bucket = models.CharField(max_length=100, verbose_name="Bucket")
     prefix = models.CharField(max_length=255, null=True, blank=True, verbose_name="路径前缀")
-    access_key = models.CharField(max_length=255, verbose_name="AccessKey")
+    access_key = EncryptedTextField(verbose_name="AccessKey")
     secret_key = EncryptedTextField(verbose_name="SecretKey")
     extra = models.TextField(default="{}", verbose_name="扩展配置")
     is_default = models.BooleanField(default=False, verbose_name="默认存储")

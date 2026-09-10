@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
 import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select, Typography, Space, Flex } from 'antd';
-import { CheckCircleOutlined, FileTextOutlined, CodeOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, FileTextOutlined, CodeOutlined, HistoryOutlined } from '@ant-design/icons';
 import { ACEditor } from 'components';
 import { http } from 'libs';
 import S from './store';
 import styles from './playbook.module.css';
+import VersionHistory from './VersionHistory';
 
 const { Text } = Typography;
 
@@ -19,6 +20,7 @@ export default observer(function () {
     S.record.extra_vars ? JSON.stringify(S.record.extra_vars, null, 2) : '{}'
   );
   const [groups, setGroups] = useState([]);
+  const [versionVisible, setVersionVisible] = useState(false);
 
   useEffect(() => {
     http.get('/api/ansible/inventory/').then(setGroups);
@@ -61,7 +63,14 @@ export default observer(function () {
       open
       width={1000}
       maskClosable={false}
-      title={isEdit ? '编辑 Playbook' : '新建 Playbook'}
+      title={
+        <Space>
+          <span>{isEdit ? '编辑 Playbook' : '新建 Playbook'}</span>
+          {isEdit && (
+            <Button size="small" icon={<HistoryOutlined/>} onClick={() => setVersionVisible(true)}>版本历史</Button>
+          )}
+        </Space>
+      }
       onCancel={() => S.formVisible = false}
       confirmLoading={loading}
       onOk={handleSubmit}>
@@ -131,6 +140,17 @@ export default observer(function () {
       <div className={styles.editorWrap}>
         <ACEditor mode="json" value={extraVars} onChange={setExtraVars} height="100px" width="100%"/>
       </div>
+      {versionVisible && (
+        <VersionHistory
+          playbookId={S.record.id}
+          onClose={() => setVersionVisible(false)}
+          onRollback={() => {
+            setVersionVisible(false);
+            S.formVisible = false;
+            S.fetchRecords();
+          }}
+        />
+      )}
     </Modal>
   )
 })

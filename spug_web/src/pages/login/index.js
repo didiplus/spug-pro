@@ -116,7 +116,7 @@ export default function () {
           ]}
         />
 
-        <Form form={form} onFinish={handleSubmit}>
+        <Form form={form} onFinish={handleSubmit} requiredMark={false}>
           <Form.Item name="username" className={styles.formItem}>
             <Input
               size="large"
@@ -133,6 +133,7 @@ export default function () {
               placeholder="请输入密码"
               aria-label="密码"
               prefix={<LockOutlined className={styles.icon} />}
+              onPressEnter={handleSubmit}
             />
           </Form.Item>
           {codeVisible && (
@@ -164,18 +165,19 @@ export default function () {
               </div>
             </Form.Item>
           )}
+          <Form.Item className={styles.submitItem}>
+            <Button
+              block
+              size="large"
+              type="primary"
+              htmlType="submit"
+              className={styles.button}
+              loading={loading}
+            >
+              登录
+            </Button>
+          </Form.Item>
         </Form>
-
-        <Button
-          block
-          size="large"
-          type="primary"
-          className={styles.button}
-          loading={loading}
-          onClick={handleSubmit}
-        >
-          登录
-        </Button>
       </main>
 
       <footer className={styles.footer}>

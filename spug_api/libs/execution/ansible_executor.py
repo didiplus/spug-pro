@@ -886,6 +886,127 @@ class AnsibleExecutor(BaseExecutor):
             playbook_content, extra_vars, tags, skip_tags, check_mode, forks, timeout
         )
 
+    def exec_playbook_batch(self, playbook_content: str, extra_vars: dict = None,
+                            tags: list = None, skip_tags: list = None,
+                            check_mode: bool = False, forks: int = 0,
+                            timeout: int = 0
+                            ) -> Generator[Tuple[str, int, str], None, None]:
+        """
+        批量执行 Playbook，追踪 per-host 状态
+        yield: (host_name, exit_code, output_line); exit_code=-1 表示中间行
+        最终 per-host 状态存入 self.stats
+        """
+        if not HAS_ANSIBLE_RUNNER:
+            yield '', 131, '\r\n\x1b[31m### ansible-runner 未安装，请执行 pip install ansible-runner 后重试\x1b[0m\r\n'
+            return
+
+        err = _check_ansible_cli()
+        if err:
+            yield '', 127, f'\r\n\x1b[31m### {err}\x1b[0m\r\n'
+            return
+
+        _auto_cleanup = False
+        if self._tmpdir is None:
+            self.__enter__()
+            _auto_cleanup = True
+
+        inventory = self._build_inventory()
+        envvars = self._build_envvars()
+
+        playbook_path = os.path.join(self._tmpdir, 'project', 'playbook.yml')
+        with open(playbook_path, 'w') as f:
+            f.write(playbook_content)
+
+        runner_kwargs = {
+            'private_data_dir': self._tmpdir,
+            'inventory': inventory,
+            'playbook': playbook_path,
+            'envvars': envvars,
+        }
+        if extra_vars:
+            runner_kwargs['extravars'] = extra_vars
+        if tags:
+            runner_kwargs['tags'] = ','.join(tags) if isinstance(tags, list) else tags
+        if skip_tags:
+            runner_kwargs['skip_tags'] = ','.join(skip_tags) if isinstance(skip_tags, list) else skip_tags
+        if check_mode:
+            runner_kwargs['cmdline'] = {'check': True}
+        if forks and forks > 0:
+            envvars['ANSIBLE_FORKS'] = str(forks)
+        if self._vault_password_file:
+            envvars['ANSIBLE_VAULT_PASSWORD_FILE'] = self._vault_password_file
+        if timeout and timeout > 0:
+            runner_kwargs['timeout'] = timeout
+
+        event_queue: queue.Queue = queue.Queue()
+        final_rc = [None]
+        final_error = [None]
+
+        def event_handler(event):
+            event_queue.put(event)
+
+        def run_in_thread():
+            try:
+                result = ansible_runner.run(
+                    event_handler=event_handler,
+                    **runner_kwargs
+                )
+                final_rc[0] = result.rc if result.rc is not None else 1
+                logger.info(f'Playbook batch finished: rc={final_rc[0]}, status={result.status}')
+            except Exception as e:
+                logger.error(f'Playbook batch run thread error: {e}', exc_info=True)
+                final_error[0] = e
+            finally:
+                event_queue.put(_SENTINEL)
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+
+        while True:
+            try:
+                item = event_queue.get(timeout=0.5)
+            except queue.Empty:
+                if not thread.is_alive():
+                    while not event_queue.empty():
+                        item = event_queue.get_nowait()
+                        if item is _SENTINEL:
+                            continue
+                        host, code, line = self._process_playbook_event_with_host(item)
+                        if line:
+                            yield host, code, line
+                    break
+                continue
+
+            if item is _SENTINEL:
+                if final_error[0] is not None:
+                    yield '', 131, f'\r\n\x1b[31m### Playbook 批量执行失败: {final_error[0]}\x1b[0m\r\n'
+                continue
+
+            try:
+                host, code, line = self._process_playbook_event_with_host(item)
+                if line:
+                    yield host, code, line
+            except Exception as e:
+                logger.error(f'Playbook batch event process error: {e}', exc_info=True)
+
+        try:
+            thread.join(timeout=5)
+        except Exception:
+            pass
+
+        if final_rc[0] is not None:
+            yield '', final_rc[0], ''
+
+        if _auto_cleanup:
+            self.__exit__(None, None, None)
+
+    def _process_playbook_event_with_host(self, event: dict) -> Tuple[str, int, Optional[str]]:
+        """处理 Playbook 事件，返回 (host_name, exit_code, output_line)"""
+        event_data = event.get('event_data', {})
+        host_name = event_data.get('host', '')
+        code, line = self._process_playbook_event(event)
+        return host_name, code, line
+
     def exec_role(self, role_name: str, tasks: list = None,
                   extra_vars: dict = None) -> Generator[Tuple[int, str], None, None]:
         """

@@ -108,17 +108,33 @@
 
 .tabs :global(.ant-tabs-nav) {
   margin-bottom: var(--space-4);
+  justify-content: center;
+}
+
+.tabs :global(.ant-tabs-nav::before) {
+  border-bottom: none !important;
 }
 
 .tabs :global(.ant-tabs-tab) {
   font-size: var(--font-size-base);
-  padding: var(--space-2) 0;
-  transition: color var(--duration-fast) var(--ease-standard);
+  padding: var(--space-2) var(--space-4);
+  transition: color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+  border-radius: var(--radius-md);
+}
+
+.tabs :global(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  font-weight: var(--font-weight-medium);
 }
 
 /* ───────── 表单 ───────── */
 .formItem {
   margin-bottom: var(--space-6);
+}
+
+.submitItem {
+  margin-bottom: 0;
+  margin-top: var(--space-2);
 }
 
 .icon {
@@ -133,20 +149,38 @@
   color: var(--color-primary);
 }
 
+/* 输入框聚焦增强：边框 + 轻廓 + 微光晕 */
+.formItem :global(.ant-input-affix-wrapper-focused),
+.formItem :global(.ant-input-affix-wrapper:focus-within) {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+/* 输入框过渡动效 */
+.formItem :global(.ant-input-affix-wrapper) {
+  transition: box-shadow var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+
 /* ───────── 登录按钮 ───────── */
 .button {
   width: 100%;
-  margin-top: var(--space-2);
   height: var(--login-button-height);
   font-size: var(--login-button-font);
   font-weight: var(--font-weight-medium);
   border-radius: var(--login-button-radius);
   letter-spacing: 0.02em;
-  transition: transform var(--duration-fast) var(--ease-standard);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 28%, transparent);
+  transition: transform var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.button:hover {
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--color-primary) 36%, transparent);
 }
 
 .button:active {
   transform: translateY(1px);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 24%, transparent);
 }
 
 /* ───────── 验证码区域 ───────── */

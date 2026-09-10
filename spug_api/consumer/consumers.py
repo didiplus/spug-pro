@@ -4,13 +4,15 @@
 from django.conf import settings
 from django_redis import get_redis_connection
 from asgiref.sync import async_to_sync
-from apps.host.models import Host
+from apps.host.models import Host, SSHSession
 from consumer.utils import BaseConsumer
 from apps.account.utils import has_host_perm
-from libs.utils import str_decode
+from libs.utils import str_decode, get_request_real_ip
 from threading import Thread
 import time
 import json
+import uuid
+import os
 
 
 class ComConsumer(BaseConsumer):
@@ -57,7 +59,21 @@ class SSHConsumer(BaseConsumer):
         self.chan = None
         self.ssh = None
         self._closed = False
+        self._session = None
+        self._recording_file = None
+        self._session_start = 0
         super().connect()
+
+    def _write_record(self, event_type, data):
+        if not self._recording_file:
+            return
+        try:
+            elapsed = round(time.time() - self._session_start, 3)
+            line = json.dumps([elapsed, event_type, data])
+            self._recording_file.write(line + '\n')
+            self._recording_file.flush()
+        except Exception:
+            pass
 
     def loop_read(self):
         is_ready, data = False, b""
@@ -87,18 +103,19 @@ class SSHConsumer(BaseConsumer):
                 self.send(text_data="\033[2J\033[3J\033[1;1H")
                 is_ready = True
             self.send(text_data=text)
+            self._write_record('o', text)
             data = b""
 
     def receive(self, text_data=None, bytes_data=None):
         data = text_data or bytes_data
         if data and self.chan:
             data = json.loads(data)
-            # print('write: {!r}'.format(data))
             resize = data.get("resize")
             if resize and len(resize) == 2:
                 self.chan.resize_pty(*resize)
             else:
                 self.chan.send(data["data"])
+                self._write_record('i', data["data"])
 
     def disconnect(self, code):
         self._closed = True
@@ -110,6 +127,27 @@ class SSHConsumer(BaseConsumer):
         if self.ssh:
             try:
                 self.ssh.close()
+            except Exception:
+                pass
+        if self._recording_file:
+            try:
+                self._recording_file.close()
+            except Exception:
+                pass
+        if self._session:
+            try:
+                from django.db import close_old_connections
+                close_old_connections()
+                duration = int(time.time() - self._session_start)
+                file_size = 0
+                if self._session.file_path and os.path.exists(self._session.file_path):
+                    file_size = os.path.getsize(self._session.file_path)
+                SSHSession.objects.filter(pk=self._session.pk).update(
+                    end_time=__import__('libs').human_datetime(),
+                    duration=duration,
+                    status='closed' if duration > 0 else 'abnormal',
+                    file_size=file_size,
+                )
             except Exception:
                 pass
 
@@ -127,9 +165,51 @@ class SSHConsumer(BaseConsumer):
 
             self.chan = self.ssh.invoke_shell(term="xterm")
             self.chan.transport.set_keepalive(30)
+
+            self._start_recording(host)
             Thread(target=self.loop_read, daemon=True).start()
         else:
             self.close_with_message("你当前无权限操作该主机，请联系管理员授权。")
+
+    def _start_recording(self, host):
+        try:
+            session_dir = settings.SSH_SESSION_DIR
+            os.makedirs(session_dir, exist_ok=True)
+            token = uuid.uuid4().hex
+            file_path = os.path.join(session_dir, f"{token}.cast")
+
+            client_ip = get_request_real_ip(dict(
+                (k.decode() if isinstance(k, bytes) else k,
+                 v.decode() if isinstance(v, bytes) else v)
+                for k, v in self.scope.get("headers", [])
+            ))
+
+            self._session = SSHSession.objects.create(
+                token=token,
+                user=self.user,
+                host=host,
+                host_name=host.name,
+                host_hostname=host.hostname,
+                client_ip=client_ip or '',
+                file_path=file_path,
+            )
+
+            self._recording_file = open(file_path, 'w', encoding='utf-8')
+            self._session_start = time.time()
+
+            header = json.dumps({
+                "version": 2,
+                "width": 80,
+                "height": 24,
+                "timestamp": int(self._session_start),
+                "env": {"SHELL": "/bin/bash", "TERM": "xterm"},
+                "title": f"{self.user.username}@{host.name}",
+            })
+            self._recording_file.write(header + '\n')
+            self._recording_file.flush()
+        except Exception:
+            self._session = None
+            self._recording_file = None
 
 
 class NotifyConsumer(BaseConsumer):

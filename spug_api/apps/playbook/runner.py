@@ -11,6 +11,7 @@ from apps.playbook.security import validate_playbook_content, filter_extra_vars,
 from apps.host.models import Host
 from apps.ansible.models import HostVariable, InventoryGroup, VaultSecret
 from apps.setting.utils import AppSetting
+from apps.exec.executors import _is_python_version_error
 
 import shutil
 import json
@@ -118,7 +119,6 @@ def build_dynamic_inventory(host_ids: list, group_id: int = None) -> dict:
                 inventory['all']['hosts'][hname][vs.key] = plain
         except Exception as e:
             logger.warning(f'Vault 注入失败 {vs.key}: {e}')
-
     return inventory
 
 
@@ -243,6 +243,10 @@ def run_playbook(data: dict) -> None:
 
         send({'status': 'running', 'message': '\x1b[36m### 开始执行 Playbook...\x1b[0m\r\n'})
 
+        host_name_map = {h.name: h for h in hosts}
+        host_output_parts = {h.name: [] for h in hosts}
+        host_status = {h.name: -1 for h in hosts}
+
         executor = AnsibleExecutor(hosts[0].hostname, hosts[0].port or 22, hosts[0].username)
         with executor:
             _write_pkey_files(inventory, hosts, executor._tmpdir)
@@ -271,7 +275,7 @@ def run_playbook(data: dict) -> None:
             timeout = playbook.timeout or 0
 
             final_code = -1
-            for code, output in executor.exec_playbook(
+            for host_name, code, output in executor.exec_playbook_batch(
                 pb_content,
                 extra_vars=extra_vars,
                 tags=tags_list,
@@ -282,15 +286,39 @@ def run_playbook(data: dict) -> None:
             ):
                 if output:
                     send({'status': 'running', 'message': output})
-                if code != -1:
+                    if host_name and host_name in host_output_parts:
+                        host_output_parts[host_name].append(output)
+                if code != -1 and code != '':
+                    if host_name and host_name in host_status:
+                        host_status[host_name] = code
                     final_code = code
+
+            initial_stats = dict(executor.stats or {})
+
+            retry_hosts = _detect_python_version_failures(host_status, host_output_parts, executor.last_error)
+            if retry_hosts:
+                send({'status': 'running', 'message': f'\r\n\x1b[33m### 检测到 {len(retry_hosts)} 台主机 Python 版本不满足要求，尝试降级重试...\x1b[0m\r\n'})
+                retry_stats = _retry_playbook_with_python_override(
+                    executor, retry_hosts, host_name_map, pb_content,
+                    extra_vars, tags_list, skip_tags_list, check_mode, forks, timeout, send
+                )
+                initial_stats.update(retry_stats)
+                for hname in retry_hosts:
+                    if hname in retry_stats:
+                        s = retry_stats[hname]
+                        if s.get('failures', 0) == 0 and s.get('unreachable', 0) == 0:
+                            host_status[hname] = 0
 
         duration = int(time.time() - start_time)
         human_time = human_seconds_time(duration)
         send({'status': 'running', 'message': f'\r\n\x1b[36m** 执行结束，总耗时：{human_time} **\x1b[0m'})
 
-        stats = executor.stats or {}
-        status = 'success' if final_code == 0 else 'failed'
+        stats = initial_stats
+        success_count = sum(1 for c in host_status.values() if c == 0)
+        failed_count = len(host_status) - success_count
+        status = 'success' if final_code == 0 and failed_count == 0 else 'failed'
+        if failed_count > 0 and success_count > 0:
+            send({'status': 'running', 'message': f'\r\n\x1b[33m### 部分主机执行失败：成功 {success_count} 台，失败 {failed_count} 台\x1b[0m\r\n'})
         _update_run_status(run_id, status, duration, stats)
         send({'status': status, 'code': final_code, 'duration': duration, 'stats': stats})
         rds.expire(f'spug:pb:log:{token}', 14 * 24 * 60 * 60)
@@ -316,4 +344,65 @@ def _update_run_status(run_id: int, status: str, duration: int, stats: dict = No
         PlaybookRun.objects.filter(pk=run_id).update(**updates)
     except Exception as e:
         logger.error(f'更新执行记录失败: {e}')
+
+
+def _detect_python_version_failures(host_status: dict, host_output_parts: dict, ansible_last_error: str) -> list:
+    """检测因 Python 版本不满足要求而失败的主机，返回需要重试的主机名列表"""
+    has_global_py_error = _is_python_version_error(ansible_last_error)
+    retry_hosts = []
+    for hname, code in host_status.items():
+        if code == 0 or code == -1:
+            continue
+        host_output = ''.join(host_output_parts.get(hname, []))
+        if _is_python_version_error(host_output) or has_global_py_error:
+            retry_hosts.append(hname)
+    return retry_hosts
+
+
+def _retry_playbook_with_python_override(
+    executor, retry_host_names: list, host_name_map: dict,
+    pb_content: str, extra_vars: dict, tags_list, skip_tags_list,
+    check_mode: bool, forks: int, timeout: int, send
+) -> dict:
+    """
+    对 Python 版本失败的主机重试，设置 ansible_python_interpreter=auto
+    返回重试后的 per-host stats
+    """
+    retry_hosts = [host_name_map[name] for name in retry_host_names if name in host_name_map]
+    if not retry_hosts:
+        return {}
+
+    retry_inventory = build_dynamic_inventory([h.id for h in retry_hosts], None)
+    for hname in retry_host_names:
+        if hname in retry_inventory.get('all', {}).get('hosts', {}):
+            retry_inventory['all']['hosts'][hname]['ansible_python_interpreter'] = 'auto'
+
+    _write_pkey_files(retry_inventory, retry_hosts, executor._tmpdir)
+    executor.set_inventory(retry_inventory)
+    executor.stats = {}
+
+    send({'status': 'running', 'message': f'\x1b[33m### 降级重试主机: {", ".join(retry_host_names)}\x1b[0m\r\n'})
+
+    retry_code = -1
+    for host_name, code, output in executor.exec_playbook_batch(
+        pb_content,
+        extra_vars=extra_vars,
+        tags=tags_list,
+        skip_tags=skip_tags_list,
+        check_mode=check_mode,
+        forks=forks,
+        timeout=timeout,
+    ):
+        if output:
+            send({'status': 'running', 'message': output})
+        if code != -1 and code != '':
+            retry_code = code
+
+    retry_stats = dict(executor.stats or {})
+    if retry_code == 0:
+        send({'status': 'running', 'message': '\x1b[32m### 降级重试完成\x1b[0m\r\n'})
+    else:
+        send({'status': 'running', 'message': '\x1b[31m### 降级重试仍失败，请检查目标主机 Python 环境\x1b[0m\r\n'})
+
+    return retry_stats
 
