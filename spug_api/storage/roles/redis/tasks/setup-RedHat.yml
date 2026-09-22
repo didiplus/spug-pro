@@ -1,0 +1,16 @@
+---
+- name: Install EPEL repository (RHEL/CentOS)
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_distribution_major_version|int < 9
+  ignore_errors: yes
+
+- name: Install redis package
+  package:
+    name: "{{ redis_package_name }}"
+    state: present
+  register: redis_pkg_install
+  until: redis_pkg_install is success
+  retries: 3
+  delay: 5

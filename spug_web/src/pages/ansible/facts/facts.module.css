@@ -1,0 +1,111 @@
+/* Facts 模块样式 */
+
+/* ── 概览卡片 ── */
+.overviewRow {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.overviewCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-container, #fff);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.overviewIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.overviewIconBlue {
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.overviewIconGreen {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.overviewIconOrange {
+  background: rgba(250, 140, 22, 0.1);
+  color: var(--color-orange-600);
+}
+
+.overviewInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.overviewValue {
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+}
+
+.overviewLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ── 详情弹窗 ── */
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.detailSection {
+  margin-bottom: var(--space-4);
+}
+
+.detailSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 18px;
+}
+
+.factsJson {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  max-height: 500px;
+  overflow: auto;
+  font-size: 12px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .overviewCard {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
+}
+
+:global([data-theme="dark"]) .overviewCard {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
+}

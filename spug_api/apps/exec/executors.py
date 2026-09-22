@@ -3,8 +3,9 @@
 # Released under the AGPL-3.0 License.
 from django_redis import get_redis_connection
 from libs.utils import human_seconds_time
-from libs.execution.factory import ExecutorFactory
-import threading
+from libs.execution.factory import ExecutorFactory, ENGINE_ANSIBLE
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import socket
 import json
 import re
@@ -41,6 +42,13 @@ _PYTHON_VERSION_ERROR_MARKERS = (
     'no python interpreter',
 )
 
+_PARAMIKO_FALLBACK_HINT = (
+    '\r\n\x1b[33m### 检测到目标机 Python 版本不满足 ansible-core 要求，'
+    '自动降级到 Paramiko 引擎重试...\x1b[0m\r\n'
+)
+_EXECUTING_HINT = '\r\n\x1b[36m### Executing ...\x1b[0m\r\n'
+_BATCH_PARALLEL_MAX = 20
+
 
 def _is_python_version_error(output):
     if not output:
@@ -49,21 +57,47 @@ def _is_python_version_error(output):
     return any(m.lower() in output_lower for m in _PYTHON_VERSION_ERROR_MARKERS)
 
 
+def build_command(command, interpreter):
+    """根据解释器类型包装命令，python 解释器自动探测 python3"""
+    if interpreter == 'python':
+        attach = 'INTERPRETER=python\ncommand -v python3 &> /dev/null && INTERPRETER=python3'
+        return f'{attach}\n$INTERPRETER << EOF\n# -*- coding: UTF-8 -*-\n{command}\nEOF'
+    return command
+
+
+def build_host_env(host, interpreter, params=None):
+    """构建单主机环境变量，包含 SPUG_* 标识与用户自定义参数"""
+    env = dict(
+        SPUG_HOST_ID=str(host['id']),
+        SPUG_HOST_NAME=host.get('name', ''),
+        SPUG_HOST_HOSTNAME=host['hostname'],
+        SPUG_SSH_PORT=str(host.get('port', 22)),
+        SPUG_SSH_USERNAME=host.get('username', 'root'),
+        SPUG_INTERPRETER=interpreter,
+    )
+    if isinstance(params, dict):
+        env.update({f'_SPUG_{k}': str(v) for k, v in params.items()})
+    return env
+
 
 def exec_worker_handler(job):
     data = json.loads(job)
-    if data.get('batch'):
+    if data.get('hosts'):
         BatchJob(**data).run()
     else:
         Job(**data).run()
 
 
 class BatchJob:
-    """Ansible 批量执行 Job，一次 ansible_runner.run() 管理多台主机"""
+    """批量执行 Job，根据系统配置选择执行引擎
+
+    - ansible: 一次 ansible_runner.run() 管理多台主机，因 Python 版本失败的主机降级 Paramiko
+    - paramiko: 线程池并行多台 ParamikoExecutor 单独执行
+    """
 
     def __init__(self, token, command, interpreter, hosts, params=None, term=None, **kwargs):
         self.token = token
-        self.command = command
+        self.command = build_command(command, interpreter)
         self.interpreter = interpreter
         self.hosts = hosts
         self.params = params or {}
@@ -72,62 +106,116 @@ class BatchJob:
         self._host_map = {h['hostname']: h['id'] for h in hosts}
         self._status = {}
         self._output_parts = {h['id']: [] for h in hosts}
-        self._command = None
-        self._env = None
         self._start_time = 0
 
-    def _send(self, message):
+    def _publish(self, message):
         self.rds.publish(self.token, json.dumps(message))
 
-    def send(self, key, data):
+    def send(self, host_id, data):
         try:
-            self._send({'key': key, 'data': data})
+            self._publish({'key': host_id, 'data': data})
         except Exception:
             pass
-        if key in self._output_parts:
-            self._output_parts[key].append(data)
+        self._output_parts[host_id].append(data)
 
-    def send_status(self, key, code):
+    def send_status(self, host_id, code):
         try:
-            self._send({'key': key, 'status': code})
+            self._publish({'key': host_id, 'status': code})
         except Exception:
             pass
 
-    def _handle_command(self, command, interpreter):
-        if interpreter == 'python':
-            attach = 'INTERPRETER=python\ncommand -v python3 &> /dev/null && INTERPRETER=python3'
-            return f'{attach}\n$INTERPRETER << EOF\n# -*- coding: UTF-8 -*-\n{command}\nEOF'
-        return command
+    def run(self):
+        self._start_time = time.time()
+        for h in self.hosts:
+            self.send(h['id'], _EXECUTING_HINT)
 
-    def _retry_with_paramiko(self, host):
-        """对单台主机用 Paramiko 引擎重试"""
-        host_id = host['id']
-        self.send(host_id, '\r\n\x1b[33m### 检测到目标机 Python 版本不满足 ansible-core 要求，自动降级到 Paramiko 引擎重试...\x1b[0m\r\n')
-        logger.warning(f'批量执行降级 Paramiko: host={host["hostname"]}')
+        engine = ExecutorFactory.get_engine_name()
+        logger.info(f'BatchJob 启动: {len(self.hosts)} 台主机, 引擎={engine}')
+        if engine == ENGINE_ANSIBLE:
+            self._run_ansible_batch()
+        else:
+            self._run_paramiko_parallel()
 
-        from libs.execution.paramiko_executor import ParamikoExecutor
-        host_env = dict(self._env)
-        host_env.update({
-            'SPUG_HOST_ID': str(host['id']),
-            'SPUG_HOST_NAME': host.get('name', ''),
-            'SPUG_HOST_HOSTNAME': host['hostname'],
-            'SPUG_SSH_PORT': str(host.get('port', 22)),
-            'SPUG_SSH_USERNAME': host.get('username', 'root'),
-        })
-        fallback = ParamikoExecutor(
-            host['hostname'], host.get('port', 22),
-            host.get('username', 'root'), host.get('pkey'),
-            term=self.term
-        )
-        code = -1
+        self._finalize()
+
+    def _run_ansible_batch(self):
+        """Ansible 批量执行：一次 ansible_runner.run() 管理多台主机"""
+        from libs.execution.ansible_executor import AnsibleExecutor
+
+        ansible_hosts = [{
+            'id': h['id'],
+            'name': h['hostname'],
+            'hostname': h['hostname'],
+            'port': h.get('port', 22),
+            'username': h.get('username', 'root'),
+            'pkey': h.get('pkey'),
+        } for h in self.hosts]
+        env = {'SPUG_INTERPRETER': self.interpreter}
+        if isinstance(self.params, dict):
+            env.update({f'_SPUG_{k}': str(v) for k, v in self.params.items()})
+
+        ansible_last_error = ''
         try:
-            with fallback:
-                for code, out in fallback.exec_command_with_stream(self._command, host_env):
-                    self.send(host_id, out)
+            executor = AnsibleExecutor(
+                hostname='', port=22, username='root', pkey=None,
+                default_env={}, connect_timeout=10, term=self.term
+            )
+            with executor:
+                for host_name, code, line in executor.exec_command_with_stream_batch(
+                    ansible_hosts, self.command, env
+                ):
+                    host_id = self._host_map.get(host_name)
+                    if host_id is None:
+                        continue
+                    if line:
+                        self.send(host_id, line)
+                    if code not in (-1, ''):
+                        self._status[host_id] = code
+            ansible_last_error = executor.last_error
         except Exception as e:
-            code = 131
-            self.send(host_id, f'\r\n\x1b[31m### Exception {e}\x1b[0m')
-        self._status[host_id] = code
+            logger.error(f'BatchJob ansible 执行失败: {e}', exc_info=True)
+            for h in self.hosts:
+                if h['id'] not in self._status:
+                    self.send(h['id'], f'\r\n\x1b[31m### Exception {e}\x1b[0m')
+                    self._status[h['id']] = 131
+
+        self._retry_failed_hosts(ansible_last_error)
+
+    def _run_paramiko_parallel(self):
+        """Paramiko 引擎：线程池并行执行多台主机"""
+        from libs.execution.paramiko_executor import ParamikoExecutor
+
+        def _exec_one(host):
+            host_id = host['id']
+            env = build_host_env(host, self.interpreter, self.params)
+            code = -1
+            try:
+                executor = ParamikoExecutor(
+                    host['hostname'], host.get('port', 22),
+                    host.get('username', 'root'), host.get('pkey'),
+                    term=self.term
+                )
+                with executor:
+                    for code, out in executor.exec_command_with_stream(self.command, env):
+                        if out:
+                            self.send(host_id, out)
+            except socket.timeout:
+                code = 130
+                self.send(host_id, '\r\n\x1b[31m### Time out\x1b[0m')
+            except Exception as e:
+                code = 131
+                self.send(host_id, f'\r\n\x1b[31m### Exception {e}\x1b[0m')
+                logger.error(f'BatchJob paramiko 主机 {host["hostname"]} 执行失败: {e}', exc_info=True)
+            self._status[host_id] = code
+
+        max_workers = min(len(self.hosts), _BATCH_PARALLEL_MAX)
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = [pool.submit(_exec_one, h) for h in self.hosts]
+            for f in as_completed(futures):
+                try:
+                    f.result()
+                except Exception as e:
+                    logger.error(f'BatchJob paramiko 线程异常: {e}', exc_info=True)
 
     def _retry_failed_hosts(self, ansible_last_error):
         """检测因 Python 版本失败的主机，降级 Paramiko 重试"""
@@ -148,56 +236,33 @@ class BatchJob:
 
         logger.warning(f'批量执行降级: {len(retry_hosts)}/{len(self.hosts)} 台主机 Python 版本不满足，降级 Paramiko')
         for h in retry_hosts:
-            self._retry_with_paramiko(h)
+            self._retry_one_with_paramiko(h)
 
-    def run(self):
-        from libs.execution.ansible_executor import AnsibleExecutor
+    def _retry_one_with_paramiko(self, host):
+        """对单台主机用 Paramiko 引擎重试"""
+        from libs.execution.paramiko_executor import ParamikoExecutor
 
-        self._start_time = time.time()
-        self._command = self._handle_command(self.command, self.interpreter)
-        self._env = {'SPUG_INTERPRETER': self.interpreter}
-        if isinstance(self.params, dict):
-            self._env.update({f'_SPUG_{k}': str(v) for k, v in self.params.items()})
+        host_id = host['id']
+        self.send(host_id, _PARAMIKO_FALLBACK_HINT)
+        logger.warning(f'批量执行降级 Paramiko: host={host["hostname"]}')
 
-        for h in self.hosts:
-            self.send(h['id'], '\r\n\x1b[36m### Executing ...\x1b[0m\r\n')
-
-        ansible_hosts = [{
-            'id': h['id'],
-            'name': h['hostname'],
-            'hostname': h['hostname'],
-            'port': h.get('port', 22),
-            'username': h.get('username', 'root'),
-            'pkey': h.get('pkey'),
-        } for h in self.hosts]
-
-        ansible_last_error = ''
+        env = build_host_env(host, self.interpreter, self.params)
+        code = -1
         try:
-            executor = AnsibleExecutor(
-                hostname='', port=22, username='root', pkey=None,
-                default_env={}, connect_timeout=10, term=self.term
-            )
-            with executor:
-                for host_name, code, line in executor.exec_command_with_stream_batch(
-                    ansible_hosts, self._command, self._env
-                ):
-                    host_id = self._host_map.get(host_name)
-                    if host_id is None:
-                        continue
-                    if line:
-                        self.send(host_id, line)
-                    if code != -1 and code != '':
-                        self._status[host_id] = code
-            ansible_last_error = executor.last_error
+            with ParamikoExecutor(
+                host['hostname'], host.get('port', 22),
+                host.get('username', 'root'), host.get('pkey'),
+                term=self.term
+            ) as fallback:
+                for code, out in fallback.exec_command_with_stream(self.command, env):
+                    self.send(host_id, out)
         except Exception as e:
-            logger.error(f'BatchJob 执行失败: {e}', exc_info=True)
-            for h in self.hosts:
-                if h['id'] not in self._status:
-                    self.send(h['id'], f'\r\n\x1b[31m### Exception {e}\x1b[0m')
-                    self._status[h['id']] = 131
+            code = 131
+            self.send(host_id, f'\r\n\x1b[31m### Exception {e}\x1b[0m')
+        self._status[host_id] = code
 
-        self._retry_failed_hosts(ansible_last_error)
-
+    def _finalize(self):
+        """汇总执行结果，发送状态与耗时"""
         human_time = human_seconds_time(time.time() - self._start_time)
         for h in self.hosts:
             code = self._status.get(h['id'], 131)
@@ -212,7 +277,7 @@ class Job:
         self.ssh = ExecutorFactory.create(hostname, port, username, pkey, term=term)
         self._conn_params = (hostname, port, username, pkey, term)
         self.key = key
-        self.command = self._handle_command(command, interpreter)
+        self.command = build_command(command, interpreter)
         self.token = token
         self.inspect_task_id = inspect_task_id
         self.inspect_batch_id = inspect_batch_id
@@ -220,25 +285,13 @@ class Job:
         self.inspect_item_ids = inspect_item_ids or []
         self._output_parts = []
         self.rds = get_redis_connection()
-        self.env = dict(
-            SPUG_HOST_ID=str(self.key),
-            SPUG_HOST_NAME=name,
-            SPUG_HOST_HOSTNAME=hostname,
-            SPUG_SSH_PORT=str(port),
-            SPUG_SSH_USERNAME=username,
-            SPUG_INTERPRETER=interpreter
+        self.env = build_host_env(
+            {'id': key, 'name': name, 'hostname': hostname, 'port': port, 'username': username},
+            interpreter, params
         )
-        if isinstance(params, dict):
-            self.env.update({f'_SPUG_{k}': str(v) for k, v in params.items()})
 
     def _send(self, message):
         self.rds.publish(self.token, json.dumps(message))
-
-    def _handle_command(self, command, interpreter):
-        if interpreter == 'python':
-            attach = 'INTERPRETER=python\ncommand -v python3 &> /dev/null && INTERPRETER=python3'
-            return f'{attach}\n$INTERPRETER << EOF\n# -*- coding: UTF-8 -*-\n{command}\nEOF'
-        return command
 
     def send(self, data):
         try:
@@ -375,7 +428,7 @@ class Job:
     def _retry_with_paramiko(self):
         """用 Paramiko 引擎重试，返回 exit_code"""
         from libs.execution.paramiko_executor import ParamikoExecutor
-        self.send('\r\n\x1b[33m### 检测到目标机 Python 版本不满足 ansible-core 要求，自动降级到 Paramiko 引擎重试...\x1b[0m\r\n')
+        self.send(_PARAMIKO_FALLBACK_HINT)
         logger.warning(f'目标机 Python 版本不满足 ansible 要求，自动降级到 Paramiko 引擎 key={self.key}')
         hostname, port, username, pkey, term = self._conn_params
         fallback = ParamikoExecutor(hostname, port, username, pkey, term=term)
@@ -399,7 +452,7 @@ class Job:
             return code, output
         flag = time.time()
         self._start_time = flag
-        self.send('\r\n\x1b[36m### Executing ...\x1b[0m\r\n')
+        self.send(_EXECUTING_HINT)
         code = -1
         output_parts = []
         try:

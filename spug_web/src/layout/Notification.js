@@ -175,10 +175,11 @@ export default function Notification() {
         )}
       </div>
     </div>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [notifies, reads, loading, unreadCount]);
 
   return (
-    <div>
+    <div className={styles.root}>
       <Dropdown trigger={['click']} onOpenChange={handleVisible} popupRender={() => panel}>
         <div
           className={styles.trigger}

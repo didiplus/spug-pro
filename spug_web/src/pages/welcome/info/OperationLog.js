@@ -9,7 +9,8 @@ export default function OperationLog() {
     logStore.current = 1;
     logStore.fetchRecords();
     return () => { logStore.f_name = ''; };
-  }, [store.user.username]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <ComTable autoFetch={false}/>;
 }

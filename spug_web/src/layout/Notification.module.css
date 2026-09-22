@@ -1,5 +1,10 @@
 /* Notification 组件令牌 — 消息中心弹出面板 */
 
+.root {
+  display: flex;
+  height: 100%;
+}
+
 .trigger {
   cursor: pointer;
   transition: background var(--duration-normal) var(--ease-standard);

@@ -16,6 +16,7 @@ export default observer(function Basic() {
       email: store.user.email,
       gender: store.user.gender || 'male',
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.user]);
 
   function handleSubmit() {

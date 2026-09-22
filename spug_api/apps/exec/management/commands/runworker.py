@@ -9,8 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 from apps.schedule.executors import schedule_worker_handler
 from apps.monitor.executors import monitor_worker_handler
 from apps.exec.executors import exec_worker_handler
-from apps.playbook.runner import playbook_worker_handler
-from apps.ansible.facts import facts_worker_handler
+from apps.ansible.services.runner import playbook_worker_handler
+from apps.ansible.services.facts_collector import facts_worker_handler
 from apps.account.log_worker import oplog_consumer
 from apps.notify.models import Notify
 from threading import Thread
@@ -55,6 +55,13 @@ class Worker:
                 counter += 1
             else:
                 counter = 0
+            try:
+                from apps.ansible.services.runner import compensate_stale_runs
+                compensate_stale_runs()
+            except Exception:
+                pass
+            finally:
+                connections.close_all()
 
     def run(self):
         logging.warning("Running worker")

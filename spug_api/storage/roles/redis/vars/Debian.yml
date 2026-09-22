@@ -1,0 +1,13 @@
+---
+# Debian/Ubuntu 默认值
+redis_package_name: "redis-server"
+redis_config_file: "/etc/redis/redis.conf"
+redis_config_dir: "/etc/redis"
+redis_data_dir: "/var/lib/redis"
+redis_log_dir: "/var/log/redis"
+redis_logfile: "/var/log/redis/redis-server.log"
+redis_pidfile: "/run/redis/redis-server.pid"
+redis_service_name: "redis-server"
+redis_user: "redis"
+redis_group: "redis"
+redis_bin_path: "/usr/bin"

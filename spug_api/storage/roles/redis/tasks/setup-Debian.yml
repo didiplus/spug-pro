@@ -1,0 +1,15 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  changed_when: false
+
+- name: Install redis package
+  apt:
+    name: "{{ redis_package_name }}"
+    state: present
+  register: redis_pkg_install
+  until: redis_pkg_install is success
+  retries: 3
+  delay: 5

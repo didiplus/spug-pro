@@ -1,0 +1,10 @@
+---
+- name: Restart redis
+  service:
+    name: "{{ redis_service_name }}"
+    state: restarted
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  listen: daemon reload

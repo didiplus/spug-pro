@@ -1,0 +1,61 @@
+---
+# SPUG: label=Redis 版本,required=true
+redis_version: "7.0"
+
+# SPUG: label=安装方式
+redis_install_from: "package"  # package | source
+
+# SPUG: label=监听端口
+redis_port: 6379
+
+# SPUG: label=绑定地址
+redis_bind_interface: "0.0.0.0"
+
+# SPUG: label=访问密码
+redis_requirepass: ""
+
+# SPUG: label=最大内存
+redis_maxmemory: "256mb"
+
+# SPUG: label=内存淘汰策略
+redis_maxmemory_policy: "allkeys-lru"
+
+# SPUG: label=开启 AOF 持久化
+redis_appendonly: "no"
+
+# SPUG: label=开启 RDB 持久化
+redis_save:
+  - "900 1"
+  - "300 10"
+  - "60 10000"
+
+# SPUG: label=日志级别
+redis_loglevel: "notice"
+
+# SPUG: label=数据库数量
+redis_databases: 16
+
+# SPUG: label=最大客户端连接数
+redis_maxclients: 10000
+
+# SPUG: label=超时时间(秒)
+redis_timeout: 0
+
+# SPUG: label=TCP keepalive(秒)
+redis_tcp_keepalive: 300
+
+# 源码安装相关
+redis_source_url: "https://download.redis.io/releases/redis-{{ redis_version }}.tar.gz"
+redis_source_dir: "/usr/src/redis-{{ redis_version }}"
+
+# 运行用户与目录（按平台在 setup 任务中覆盖）
+redis_user: "redis"
+redis_group: "redis"
+redis_config_dir: "/etc/redis"
+redis_config_file: "/etc/redis/redis.conf"
+redis_data_dir: "/var/lib/redis"
+redis_log_dir: "/var/log/redis"
+redis_logfile: "/var/log/redis/redis.log"
+redis_pidfile: "/var/run/redis/redis-server.pid"
+redis_service_name: "redis"
+redis_daemonize: "no"  # systemd 接管，不后台化

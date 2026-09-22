@@ -1,0 +1,38 @@
+---
+- name: Install build dependencies
+  package:
+    name:
+      - make
+      - gcc
+      - tcl
+      - wget
+    state: present
+
+- name: Download redis source
+  get_url:
+    url: "{{ redis_source_url }}"
+    dest: "/tmp/redis-{{ redis_version }}.tar.gz"
+    mode: "0644"
+
+- name: Extract redis source
+  unarchive:
+    src: "/tmp/redis-{{ redis_version }}.tar.gz"
+    dest: "/usr/src"
+    creates: "{{ redis_source_dir }}"
+    remote_src: yes
+
+- name: Build redis
+  make:
+    chdir: "{{ redis_source_dir }}"
+    target: install
+  environment:
+    PREFIX: "{{ redis_bin_path }}"
+
+- name: Install systemd service unit (source build)
+  template:
+    src: redis.service.j2
+    dest: "/etc/systemd/system/{{ redis_service_name }}.service"
+    mode: "0644"
+  notify:
+    - daemon reload
+    - restart redis

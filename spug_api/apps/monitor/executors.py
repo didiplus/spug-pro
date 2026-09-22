@@ -194,8 +194,8 @@ def playbook_check(host_id, config):
         if not playbook_id:
             return False, '未指定 Playbook'
 
-        from apps.playbook.models import Playbook
-        from apps.playbook.runner import build_dynamic_inventory
+        from apps.ansible.models import Playbook
+        from apps.ansible.services.runner import build_dynamic_inventory
         from libs.execution.ansible_executor import AnsibleExecutor
         from apps.setting.utils import AppSetting
 
@@ -213,7 +213,7 @@ def playbook_check(host_id, config):
         final_code = -1
 
         with executor:
-            from apps.playbook.runner import _write_pkey_files
+            from apps.ansible.services.runner import _write_pkey_files
             _write_pkey_files(inventory, [host], executor._tmpdir)
             executor.set_inventory(inventory)
             forks = playbook.forks or AppSetting.get_default('ansible_forks', 20)

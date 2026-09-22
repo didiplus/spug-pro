@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Drawer, Table, Button, Modal, Tag, Space, Typography, Empty, Spin, Input, Popconfirm } from 'antd';
-import { HistoryOutlined, EyeOutlined, DiffOutlined, RollbackOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Drawer, Table, Button, Modal, Tag, Space, Typography, Empty, Spin, Popconfirm } from 'antd';
+import { HistoryOutlined, EyeOutlined, DiffOutlined, RollbackOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http } from 'libs';
 import { ACEditor } from 'components';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 export default function VersionHistory({ playbookId, onClose, onRollback }) {
   const [versions, setVersions] = useState([]);
@@ -18,6 +18,7 @@ export default function VersionHistory({ playbookId, onClose, onRollback }) {
 
   useEffect(() => {
     fetchVersions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function fetchVersions() {

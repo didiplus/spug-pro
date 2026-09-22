@@ -27,4 +27,5 @@ dependencies = [
     "python-ldap==3.4.7",
     "requests==2.32.4",
     "user-agents==2.2.0",
+    "mysqlclient>=2.3.0",
 ]

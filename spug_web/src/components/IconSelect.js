@@ -41,6 +41,7 @@ export default function IconSelect({ value, onChange, allowClear = true, placeho
     if (open && !icons) {
       loadAllIcons().then(setIcons);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {

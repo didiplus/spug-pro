@@ -1,6 +1,7 @@
 # Copyright: (c) OpenSpug Organization. https://github.com/openspug/spug
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
+from django.conf import settings
 from django.db import models
 from apps.account.models import User
 from libs import ModelMixin, human_datetime
@@ -25,9 +26,10 @@ KEYS_DEFAULT = {
     "ansible_gather_facts": False,
     "ansible_fact_caching": True,
     "ansible_vault_password": None,
-    "ansible_role_dir": "/data/roles",
+    "ansible_role_dir": settings.ANSIBLE_ROLE_DIR,
     "ansible_module_timeout": 300,
     "ansible_callback_whitelist": "",
+    "ansible_strict_host_key_checking": False,
 
 }
 

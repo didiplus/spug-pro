@@ -780,7 +780,7 @@ class AnsibleExecutor(BaseExecutor):
         if skip_tags:
             runner_kwargs['skip_tags'] = ','.join(skip_tags) if isinstance(skip_tags, list) else skip_tags
         if check_mode:
-            runner_kwargs['cmdline'] = {'check': True}
+            runner_kwargs['cmdline'] = '--check'
         if forks and forks > 0:
             envvars['ANSIBLE_FORKS'] = str(forks)
         if self._vault_password_file:
@@ -930,7 +930,7 @@ class AnsibleExecutor(BaseExecutor):
         if skip_tags:
             runner_kwargs['skip_tags'] = ','.join(skip_tags) if isinstance(skip_tags, list) else skip_tags
         if check_mode:
-            runner_kwargs['cmdline'] = {'check': True}
+            runner_kwargs['cmdline'] = '--check'
         if forks and forks > 0:
             envvars['ANSIBLE_FORKS'] = str(forks)
         if self._vault_password_file:

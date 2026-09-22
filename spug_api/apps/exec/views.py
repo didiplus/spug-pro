@@ -105,42 +105,23 @@ class TaskView(View):
             task = ExecHistory.objects.get(digest=form.token)
             hosts = list(Host.objects.filter(id__in=json.loads(task.host_ids)))
 
-            from libs.execution.factory import ExecutorFactory
-            if ExecutorFactory.get_engine_name() == 'ansible' and len(hosts) > 1:
-                host_list = [{
-                    'id': h.id,
-                    'name': h.name,
-                    'hostname': h.hostname,
-                    'port': h.port,
-                    'username': h.username,
-                    'pkey': h.private_key,
-                } for h in hosts]
-                data = dict(
-                    batch=True,
-                    token=task.digest,
-                    command=task.command,
-                    interpreter=task.interpreter,
-                    params=json.loads(task.params),
-                    hosts=host_list,
-                    term=term,
-                )
-                rds.rpush(settings.EXEC_WORKER_KEY, json.dumps(data))
-            else:
-                for host in hosts:
-                    data = dict(
-                        key=host.id,
-                        name=host.name,
-                        token=task.digest,
-                        interpreter=task.interpreter,
-                        hostname=host.hostname,
-                        port=host.port,
-                        username=host.username,
-                        command=task.command,
-                        pkey=host.private_key,
-                        params=json.loads(task.params),
-                        term=term
-                    )
-                    rds.rpush(settings.EXEC_WORKER_KEY, json.dumps(data))
+            host_list = [{
+                'id': h.id,
+                'name': h.name,
+                'hostname': h.hostname,
+                'port': h.port,
+                'username': h.username,
+                'pkey': h.private_key,
+            } for h in hosts]
+            data = dict(
+                token=task.digest,
+                command=task.command,
+                interpreter=task.interpreter,
+                params=json.loads(task.params),
+                hosts=host_list,
+                term=term,
+            )
+            rds.rpush(settings.EXEC_WORKER_KEY, json.dumps(data))
         return json_response(error=error)
 
 

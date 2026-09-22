@@ -1,0 +1,88 @@
+---
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+  when: ansible_os_family is defined
+
+- name: Assert supported OS
+  assert:
+    that:
+      - ansible_os_family in ['RedHat', 'Debian']
+    msg: "Unsupported OS family: {{ ansible_os_family | default('unknown') }}. Supported: RedHat (CentOS/RHEL), Debian (Ubuntu/Debian)"
+
+- name: Setup for RedHat family
+  include_tasks: setup-RedHat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Setup for Debian family
+  include_tasks: setup-Debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Create redis group
+  group:
+    name: "{{ redis_group }}"
+    system: yes
+    state: present
+
+- name: Create redis user
+  user:
+    name: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    system: yes
+    createhome: no
+    shell: /sbin/nologin
+    state: present
+
+- name: Create config directory
+  file:
+    path: "{{ redis_config_dir }}"
+    state: directory
+    owner: root
+    group: "{{ redis_group }}"
+    mode: "0750"
+
+- name: Create data directory
+  file:
+    path: "{{ redis_data_dir }}"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: "0750"
+
+- name: Create log directory
+  file:
+    path: "{{ redis_log_dir }}"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: "0750"
+
+- name: Create pid directory
+  file:
+    path: "{{ redis_pidfile | dirname }}"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: "0755"
+
+- name: Install Redis (package)
+  include_tasks: install-package.yml
+  when: redis_install_from == "package"
+
+- name: Install Redis (source)
+  include_tasks: install-source.yml
+  when: redis_install_from == "source"
+
+- name: Render redis config
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_config_file }}"
+    owner: root
+    group: "{{ redis_group }}"
+    mode: "0640"
+  notify: restart redis
+
+- name: Ensure redis service is enabled and started
+  service:
+    name: "{{ redis_service_name }}"
+    enabled: yes
+    state: started

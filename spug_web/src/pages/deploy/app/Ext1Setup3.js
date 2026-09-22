@@ -17,7 +17,7 @@ export default observer(function () {
   const [playbooks, setPlaybooks] = useState([]);
 
   useEffect(() => {
-    http.get('/api/playbook/').then(res => setPlaybooks(res)).catch(() => {});
+    http.get('/api/ansible/playbooks/').then(res => setPlaybooks(res)).catch(() => {});
   }, []);
 
   function handleSubmit() {

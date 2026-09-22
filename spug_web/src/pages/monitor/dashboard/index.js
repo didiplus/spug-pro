@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Card, Row, Col, Button, Tag, Space, Typography, Empty, Spin } from 'antd';
+import { Modal, Card, Row, Col, Tag, Space, Typography, Empty, Spin } from 'antd';
 import { PlusOutlined, EditOutlined, EyeOutlined, DeleteOutlined, DashboardOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { AuthDiv, Breadcrumb, AuthButton } from 'components';
@@ -8,7 +8,7 @@ import store from './store';
 import Editor from './Editor';
 import DashboardView from './View';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 @observer
 class DashboardList extends React.Component {

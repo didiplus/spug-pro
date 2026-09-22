@@ -3,15 +3,25 @@
 # Released under the AGPL-3.0 License.
 from django.views.generic import View
 from libs import json_response, JsonParser, Argument, human_datetime, auth
-from apps.ansible.models import InventoryGroup, HostVariable, VaultSecret, HostFacts
-from apps.playbook.models import Role
+from apps.ansible.models import (
+    InventoryGroup, HostVariable, VaultSecret, HostFacts,
+    RoleSource, RoleDeployment,
+)
+from apps.ansible.role_meta import (
+    parse_github_url, git_clone, git_pull, extract_role_metadata, validate_role_structure,
+)
+from apps.playbook.models import Role, Playbook, PlaybookRun
 from apps.host.models import Host
 from apps.account.models import User
+from apps.account.utils import has_host_perm
 from apps.setting.utils import AppSetting
 from libs.crypto import encrypt, decrypt
 import subprocess
 import tempfile
+import uuid
 import json
+import os
+import yaml
 
 
 class InventoryView(View):
@@ -365,7 +375,7 @@ class RoleInstallView(View):
                 target = f'{form.namespace}.{form.role_name}'
             try:
                 result = subprocess.run(
-                    ['ansible-galaxy', 'install', target, '-p', role_dir],
+                    ['ansible-galaxy  role', 'install', target, '-p', role_dir],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120
                 )
                 output = result.stdout.decode()
@@ -383,3 +393,261 @@ class RoleInstallView(View):
             except Exception as e:
                 return json_response(error=f'安装失败: {e}')
         return json_response(error=error)
+
+def _get_role_base_dir() -> str:
+    return AppSetting.get_default('ansible_role_dir') or '/data/roles'
+
+
+def _build_role_local_path(namespace: str, name: str) -> str:
+    base = _get_role_base_dir()
+    if namespace:
+        return os.path.join(base, f'{namespace}.{name}')
+    return os.path.join(base, name)
+
+
+def _sync_role_record(role_source: RoleSource):
+    """确保 RoleSource 对应的 Role 记录存在且 is_active=True，供 run_playbook 复用"""
+    role, created = Role.objects.get_or_create(
+        name=role_source.name,
+        defaults={
+            'desc': role_source.description or f'RoleSource #{role_source.id}',
+            'path': role_source.local_path,
+            'created_by': role_source.created_by,
+        },
+    )
+    if not created:
+        Role.objects.filter(pk=role.id).update(
+            path=role_source.local_path,
+            is_active=True,
+        )
+    return role
+
+
+class RoleMarketView(View):
+    """Role 应用市场：列表 / 添加源"""
+
+    @auth('ansible.role.view')
+    def get(self, request):
+        category = request.GET.get('category')
+        qs = RoleSource.objects.all()
+        if category:
+            qs = qs.filter(categories__icontains=category)
+        return json_response([r.to_view() for r in qs])
+
+    @auth('ansible.role.edit')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('source_url', help='请输入源地址'),
+            Argument('name', required=False),
+            Argument('branch', default='main'),
+            Argument('source_type', default='github'),
+            Argument('namespace', required=False),
+            Argument('categories', required=False),
+            Argument('auto_install', type=bool, default=True),
+        ).parse(request.body)
+        if error is not None:
+            return json_response(error=error)
+
+        if form.source_type == 'github':
+            parsed = parse_github_url(form.source_url)
+            if not parsed:
+                return json_response(error='无效的 GitHub URL')
+            ns, repo = parsed
+            namespace = form.namespace or ns
+            name = form.name or repo
+        else:
+            name = form.name
+            namespace = form.namespace
+            if not name:
+                return json_response(error='请输入 Role 名称')
+
+        if RoleSource.objects.filter(source_url=form.source_url, branch=form.branch).exists():
+            return json_response(error='该源已存在')
+
+        local_path = _build_role_local_path(namespace, name)
+        rs = RoleSource.objects.create(
+            name=name,
+            source_type=form.source_type,
+            source_url=form.source_url,
+            branch=form.branch,
+            namespace=namespace,
+            categories=form.categories,
+            local_path=local_path,
+            created_by=request.user,
+        )
+        if form.auto_install:
+            ok, msg = _do_install_role_source(rs)
+            if not ok:
+                return json_response({'id': rs.id, 'install_status': 'failed', 'error': msg})
+        return json_response(rs.to_view())
+
+
+class RoleMarketDetailView(View):
+    """Role 源详情 / 删除"""
+
+    @auth('ansible.role.view')
+    def get(self, request, rid):
+        rs = RoleSource.objects.filter(pk=rid).first()
+        if not rs:
+            return json_response(error='Role 源不存在')
+        return json_response(rs.to_detail())
+
+    @auth('ansible.role.edit')
+    def delete(self, request, rid):
+        rs = RoleSource.objects.filter(pk=rid).first()
+        if not rs:
+            return json_response(error='Role 源不存在')
+        if rs.local_path and os.path.isdir(rs.local_path):
+            subprocess.run(['rm', '-rf', rs.local_path], check=False, timeout=30)
+        Role.objects.filter(name=rs.name).delete()
+        rs.delete()
+        return json_response()
+
+
+def _do_install_role_source(rs: RoleSource) -> tuple:
+    """执行 git clone/pull + 解析元数据，返回 (ok, error)"""
+    RoleSource.objects.filter(pk=rs.id).update(install_status='installing', install_error=None)
+    try:
+        if rs.source_type == 'github':
+            if os.path.isdir(rs.local_path) and os.path.isdir(os.path.join(rs.local_path, '.git')):
+                commit = git_pull(rs.local_path, rs.branch)
+            else:
+                commit = git_clone(rs.source_url, rs.branch, rs.local_path)
+        elif rs.source_type == 'galaxy':
+            target = f'{rs.namespace}.{rs.name}' if rs.namespace else rs.name
+            result = subprocess.run(
+                ['ansible-galaxy', 'install', target, '-p', _get_role_base_dir()],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120
+            )
+            if result.returncode != 0:
+                raise RuntimeError(result.stdout.decode(errors='ignore')[:500])
+            commit = None
+        else:
+            commit = None
+
+        valid, verr = validate_role_structure(rs.local_path)
+        if not valid:
+            RoleSource.objects.filter(pk=rs.id).update(
+                install_status='failed', install_error=verr, installed_commit=commit,
+            )
+            return False, verr
+
+        meta = extract_role_metadata(rs.local_path)
+        RoleSource.objects.filter(pk=rs.id).update(
+            author=meta.get('author'),
+            description=meta.get('description'),
+            min_ansible_version=meta.get('min_ansible_version'),
+            platforms=json.dumps(meta.get('platforms', [])),
+            dependencies=json.dumps(meta.get('dependencies', [])),
+            categories=meta.get('categories') or rs.categories,
+            variables_schema=json.dumps(meta.get('variables_schema', [])),
+            readme=meta.get('readme'),
+            installed_commit=commit,
+            install_status='installed',
+            install_error=None,
+            updated_at=human_datetime(),
+        )
+        _sync_role_record(RoleSource.objects.get(pk=rs.id))
+        return True, None
+    except Exception as e:
+        RoleSource.objects.filter(pk=rs.id).update(
+            install_status='failed', install_error=str(e), updated_at=human_datetime(),
+        )
+        return False, str(e)
+
+
+class RoleMarketInstallView(View):
+    """安装/更新 Role 源"""
+
+    @auth('ansible.role.edit')
+    def post(self, request, rid):
+        rs = RoleSource.objects.filter(pk=rid).first()
+        if not rs:
+            return json_response(error='Role 源不存在')
+        ok, err = _do_install_role_source(rs)
+        if not ok:
+            return json_response(error=err)
+        return json_response(RoleSource.objects.get(pk=rid).to_view())
+
+
+class RoleMarketDeployView(View):
+    """一键部署 Role：生成临时 Playbook + 入队执行"""
+
+    @auth('ansible.role.run')
+    def post(self, request, rid):
+        form, error = JsonParser(
+            Argument('name', help='请输入部署名称'),
+            Argument('host_ids', type=list, filter=lambda x: len(x), help='请选择目标主机'),
+            Argument('group_id', type=int, required=False),
+            Argument('variables', type=dict, default={}),
+            Argument('check_mode', type=bool, default=False),
+        ).parse(request.body)
+        if error is not None:
+            return json_response(error=error)
+
+        rs = RoleSource.objects.filter(pk=rid).first()
+        if not rs:
+            return json_response(error='Role 源不存在')
+        if rs.install_status != 'installed':
+            return json_response(error='Role 尚未安装，请先安装')
+        if not has_host_perm(request.user, form.host_ids):
+            return json_response(error='无权访问主机，请联系管理员')
+
+        role = _sync_role_record(rs)
+
+        pb_content = yaml.safe_dump([{
+            'hosts': 'all',
+            'roles': [rs.name],
+        }], default_flow_style=False)
+
+        playbook = Playbook.objects.create(
+            name=f'[Role部署] {form.name}',
+            desc=f'RoleSource #{rs.id} {rs.name}',
+            content=pb_content,
+            group_id=form.group_id,
+            created_by=request.user,
+        )
+
+        token = uuid.uuid4().hex
+        form.host_ids.sort()
+        deployment = RoleDeployment.objects.create(
+            role_source=rs,
+            name=form.name,
+            host_ids=json.dumps(form.host_ids),
+            group_id=form.group_id,
+            variables=json.dumps(form.variables),
+            run_token=token,
+            status='running',
+            created_by=request.user,
+        )
+
+        run = PlaybookRun.objects.create(
+            playbook=playbook,
+            user=request.user,
+            token=token,
+            host_ids=json.dumps(form.host_ids),
+            extra_vars=json.dumps(form.variables),
+            check_mode=form.check_mode,
+        )
+
+        from django_redis import get_redis_connection
+        from django.conf import settings
+        rds = get_redis_connection()
+        rds.rpush(settings.PLAYBOOK_WORKER_KEY, json.dumps({
+            'run_id': run.id,
+            'token': token,
+            'playbook_id': playbook.id,
+            'host_ids': form.host_ids,
+            'extra_vars': form.variables,
+            'check_mode': form.check_mode,
+        }))
+        return json_response({'token': token, 'deployment_id': deployment.id})
+
+
+class RoleDeploymentView(View):
+    """Role 部署记录列表"""
+
+    @auth('ansible.role.view')
+    def get(self, request):
+        deployments = RoleDeployment.objects.select_related('role_source').all()
+        return json_response([d.to_view() for d in deployments])

@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { ExclamationCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import {Modal, Form, Input, Select, Button, Radio, Table, Tooltip, Divider, Space} from 'antd';
 import { ACEditor } from 'components';

@@ -1,0 +1,31 @@
+[Unit]
+Description=Redis In-Memory Data Store
+After=network.target
+
+[Service]
+Type=notify
+User={{ redis_user }}
+Group={{ redis_group }}
+ExecStart={{ redis_bin_path }}/redis-server {{ redis_config_file }} --supervised systemd
+ExecStop=/bin/kill -s TERM $MAINPID
+PIDFile={{ redis_pidfile }}
+RuntimeDirectory=redis
+RuntimeDirectoryMode=0755
+LimitNOFILE=10032
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ReadOnlyPaths=/proc/sys
+ReadWritePaths=-{{ redis_data_dir }} -{{ redis_log_dir }} -{{ redis_pidfile | dirname }}
+CapabilityBoundingSet=~CAP_SYS_PTRACE
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

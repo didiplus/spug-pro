@@ -29,6 +29,7 @@ class InventoryIndex extends React.Component {
           store.fetchTree();
           store.fetchGroups();
         })
+        .catch(() => {})
     })
   };
 
@@ -40,6 +41,7 @@ class InventoryIndex extends React.Component {
           message.success('保存成功');
           store.fetchGroups();
         })
+        .catch(() => {})
     } catch {
       message.error('JSON 格式错误');
     }
@@ -153,6 +155,7 @@ class GroupPanel extends React.Component {
         message.success('保存成功');
         store.fetchGroups();
       })
+      .catch(() => {})
   };
 
   render() {
@@ -194,6 +197,7 @@ class HostPanel extends React.Component {
         message.success('删除成功');
         store.selectHost(this.props.hostId);
       })
+      .catch(() => {})
   };
 
   render() {
@@ -260,7 +264,9 @@ function AddVarModal({hostId, onClose}) {
           message.success('添加成功');
           onClose();
           store.selectHost(hostId);
-        }, () => setLoading(false))
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
     })
   }
 
@@ -307,6 +313,7 @@ function GroupForm() {
       children: (node.children || []).filter(n => n.nodeType !== 'host').map(buildNode),
     });
     return store.tree.map(buildNode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.tree]);
 
   useEffect(() => {
@@ -335,7 +342,9 @@ function GroupForm() {
         store.formVisible = false;
         store.fetchTree();
         store.fetchGroups();
-      }, () => setLoading(false))
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }
 
   return (

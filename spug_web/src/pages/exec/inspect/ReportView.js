@@ -42,6 +42,7 @@ export default observer(function () {
     http.get('/api/exec/inspect/result/', {params})
       .then(res => setResults(res))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const total = results.length;

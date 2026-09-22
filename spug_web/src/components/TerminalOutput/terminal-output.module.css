@@ -1,0 +1,82 @@
+/* TerminalOutput 公共组件 */
+
+/* ── 状态标签 ── */
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+.statusRunning {
+  background: var(--color-blue-50);
+  color: var(--color-primary);
+}
+
+.statusSuccess {
+  background: rgba(82, 196, 26, 0.1);
+  color: var(--color-green-600);
+}
+
+.statusFailed {
+  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-red-600);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusRunning .statusDot {
+  animation: toPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes toPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── 输出页 ── */
+.outputHeader {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.outputBody {
+  flex: 1;
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .statusRunning {
+    background: rgba(22, 119, 255, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statusSuccess {
+    background: rgba(82, 196, 26, 0.15);
+  }
+  :global(:root:not([data-theme="light"])) .statusFailed {
+    background: rgba(255, 77, 79, 0.15);
+  }
+}
+
+:global([data-theme="dark"]) .statusRunning {
+  background: rgba(22, 119, 255, 0.15);
+}
+:global([data-theme="dark"]) .statusSuccess {
+  background: rgba(82, 196, 26, 0.15);
+}
+:global([data-theme="dark"]) .statusFailed {
+  background: rgba(255, 77, 79, 0.15);
+}

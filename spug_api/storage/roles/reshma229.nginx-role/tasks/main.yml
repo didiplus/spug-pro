@@ -1,0 +1,15 @@
+---
+# tasks file for ngin
+- name: install nginx
+  package:
+    name: "{{ packagename }}"
+    state: present
+- name: copy index.html
+  template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+- name: start nginx service
+  service:
+    name: nginx
+    state: started
+

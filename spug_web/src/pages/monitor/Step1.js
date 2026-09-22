@@ -50,7 +50,7 @@ export default observer(function () {
   const { modal } = App.useApp();
 
   useEffect(() => {
-    http.get('/api/playbook/').then(res => setPlaybooks(res)).catch(() => {});
+    http.get('/api/ansible/playbooks/').then(res => setPlaybooks(res)).catch(() => {});
   }, []);
   function handleTest() {
     setLoading(true)

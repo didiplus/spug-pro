@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "apps.repository",
     "apps.home",
     "apps.database",
-    "apps.playbook",
+
     "apps.ansible",
     "daphne",
     "channels",
@@ -182,6 +182,7 @@ REPOS_DIR = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "repos")
 BUILD_DIR = os.path.join(REPOS_DIR, "build")
 TRANSFER_DIR = os.path.join(BASE_DIR, "storage", "transfer")
 SSH_SESSION_DIR = os.path.join(BASE_DIR, "storage", "ssh_sessions")
+ANSIBLE_ROLE_DIR = os.path.join(BASE_DIR, "storage", "roles")
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Shanghai"

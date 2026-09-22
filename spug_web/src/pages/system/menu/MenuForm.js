@@ -26,6 +26,7 @@ export default function MenuForm({ visible, editRecord, parentId, parentOptions,
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editRecord, parentId]);
 
   function handleSubmit() {

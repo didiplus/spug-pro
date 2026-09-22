@@ -224,8 +224,8 @@ def _ext2_deploy(req, helper, env):
 def _run_playbook_hook(helper, h_id, playbook_id):
     """在发布流程中执行 Playbook 钩子"""
     try:
-        from apps.playbook.models import Playbook
-        from apps.playbook.runner import build_dynamic_inventory, _write_pkey_files
+        from apps.ansible.models import Playbook
+        from apps.ansible.services.runner import build_dynamic_inventory, _write_pkey_files
         from libs.execution.ansible_executor import AnsibleExecutor
         from apps.setting.utils import AppSetting
 

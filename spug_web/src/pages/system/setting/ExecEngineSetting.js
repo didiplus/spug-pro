@@ -53,6 +53,7 @@ export default observer(function () {
     setSaving(true);
     const data = Object.entries(ansibleConfig)
       .filter(([key]) => key !== 'ansible_vault_password' || ansibleConfig.ansible_vault_password)
+      .filter(([key]) => key !== 'github_token' || ansibleConfig.github_token)
       .map(([key, value]) => ({key, value}));
     http.post('/api/setting/', {data})
       .then(() => {

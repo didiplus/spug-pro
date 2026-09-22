@@ -31,6 +31,7 @@ function ModulesIndex() {
         setCategories(res.categories);
         setModules(res.modules);
       })
+      .catch(() => {})
   }, []);
 
   function loadDoc(name) {
@@ -39,6 +40,7 @@ function ModulesIndex() {
     setLoading(true);
     http.get(`/api/ansible/modules/${name}/`)
       .then(res => setDoc(res))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }
 

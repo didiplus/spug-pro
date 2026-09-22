@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Form, Input, Table, Tag, Typography } from 'antd';
+import { Modal, Form, Input, Table, Tag, Typography, Select } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';
 import { AuthDiv, Breadcrumb, TableCard, Action, AuthButton } from 'components';
+import HostSelector from 'pages/host/Selector';
 
 const { Text } = Typography;
 
@@ -20,6 +21,7 @@ function VaultIndex() {
     setIsFetching(true);
     http.get('/api/ansible/vault/')
       .then(res => setRecords(res))
+      .catch(() => {})
       .finally(() => setIsFetching(false))
   }
 
@@ -31,12 +33,14 @@ function VaultIndex() {
       content: '确定要删除该 Vault 密钥？',
       onOk: () => http.delete('/api/ansible/vault/', {params: {id}})
         .then(() => { message.success('删除成功'); fetchRecords() })
+        .catch(() => {})
     })
   }
 
   function handleDecrypt(id) {
     http.post('/api/ansible/vault/decrypt/', {id})
       .then(res => { setDecryptData(res); setDecryptVisible(true) })
+      .catch(() => {})
   }
 
   return (
@@ -55,12 +59,16 @@ function VaultIndex() {
         <Table.Column title="名称" dataIndex="name"/>
         <Table.Column title="变量名" dataIndex="key" render={v => <Tag color="blue">{v}</Tag>}/>
         <Table.Column title="Vault ID" dataIndex="vault_id" width={100}/>
+        <Table.Column title="关联主机" dataIndex="host_ids" width={100} render={v => {
+          const count = Array.isArray(v) ? v.length : 0;
+          return count > 0 ? <Tag color="cyan">{count} 台</Tag> : <Tag>全部</Tag>;
+        }}/>
         <Table.Column title="描述" dataIndex="desc" ellipsis/>
         <Table.Column title="更新时间" dataIndex="updated_at" width={180} render={v => v || '-'}/>
         {hasPermission('ansible.vault.view|ansible.vault.edit') && (
           <Table.Column title="操作"  render={info => (
             <Action>
-              <Action.Button auth="ansible.vault.view" icon={<EyeOutlined/>} onClick={() => handleDecrypt(info.id)}>查看</Action.Button>
+              <Action.Button auth="ansible.vault.decrypt" icon={<EyeOutlined/>} onClick={() => handleDecrypt(info.id)}>查看</Action.Button>
               <Action.Button auth="ansible.vault.edit" onClick={() => {setEditRecord(info); setFormVisible(true)}}>编辑</Action.Button>
               <Action.Button danger auth="ansible.vault.edit" icon={<DeleteOutlined/>} onClick={() => handleDelete(info.id)}>删除</Action.Button>
             </Action>
@@ -99,7 +107,9 @@ function VaultForm({record, onCancel, onOk}) {
     const formData = form.getFieldsValue();
     formData['id'] = record?.id;
     http.post('/api/ansible/vault/', formData)
-      .then(() => { message.success('操作成功'); onCancel(); onOk() }, () => setLoading(false))
+      .then(() => { message.success('操作成功'); onCancel(); onOk() })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }
 
   return (
@@ -118,11 +128,14 @@ function VaultForm({record, onCancel, onOk}) {
         <Form.Item required name="key" label="变量名">
           <Input placeholder="如 db_password"/>
         </Form.Item>
-        <Form.Item required name="value" label="明文值">
-          <Input.TextArea placeholder="请输入明文值，保存时自动加密" autoSize={{minRows: 3}}/>
+        <Form.Item name="value" label="明文值" rules={record ? [] : [{required: true, message: '请输入变量值'}]}>
+          <Input.TextArea placeholder={record ? '留空则不修改原值' : '请输入明文值，保存时自动加密'} autoSize={{minRows: 3}}/>
         </Form.Item>
         <Form.Item name="vault_id" label="Vault ID">
           <Input placeholder="default"/>
+        </Form.Item>
+        <Form.Item name="host_ids" label="关联主机" extra="仅注入到选中的主机，不选则注入所有主机">
+          <HostSelector nullable placeholder="选择关联主机（不选则全部）"/>
         </Form.Item>
         <Form.Item name="desc" label="描述">
           <Input placeholder="可选"/>

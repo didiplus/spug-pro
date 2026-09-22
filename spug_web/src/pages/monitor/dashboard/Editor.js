@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Switch, Button, Select, Space, Divider, Card, Row, Col, Popconfirm, Typography } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Button, Select, Space, Divider, Card, Row, Col, Popconfirm } from 'antd';
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http } from 'libs';
 import store from './store';
 
-const { Text } = Typography;
 
 const PANEL_TYPES = [
   {value: 'timeseries', label: '时间序列'},
@@ -19,7 +18,7 @@ export default function Editor() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [panels, setPanels] = useState([]);
-  const [fetching, setFetching] = useState(false);
+  const [, setFetching] = useState(false);
 
   useEffect(() => {
     if (store.editingId) {
@@ -34,6 +33,7 @@ export default function Editor() {
         })
         .finally(() => setFetching(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function addPanel() {

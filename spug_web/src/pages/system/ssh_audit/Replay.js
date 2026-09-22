@@ -303,7 +303,9 @@ export default function Replay() {
         <button className={styles.iconBtn} onClick={replayFromStart} title="重新播放" disabled={loading}>
           <ReloadOutlined/>
         </button>
- 
+        <button className={styles.iconBtn} onClick={toggleFullscreen} title={isFullscreen ? '退出全屏' : '全屏'}>
+          {isFullscreen ? <FullscreenExitOutlined/> : <FullscreenOutlined/>}
+        </button>
       </div>
     </Modal>
   );

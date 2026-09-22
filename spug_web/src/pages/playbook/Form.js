@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select, Typography, Space, Flex } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Button, Divider, Row, Col, Select, Space, Flex } from 'antd';
 import { CheckCircleOutlined, FileTextOutlined, CodeOutlined, HistoryOutlined } from '@ant-design/icons';
 import { ACEditor } from 'components';
 import { http } from 'libs';
@@ -9,7 +9,6 @@ import S from './store';
 import styles from './playbook.module.css';
 import VersionHistory from './VersionHistory';
 
-const { Text } = Typography;
 
 export default observer(function () {
   const [form] = Form.useForm();

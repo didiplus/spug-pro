@@ -96,3 +96,4 @@ sync.sh
 spug_web/node_modules/
 spug_api/design
 spug_api/backups
+spug_api/storage/ssh_sessions/

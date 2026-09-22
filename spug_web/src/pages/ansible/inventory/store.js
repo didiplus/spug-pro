@@ -49,17 +49,20 @@ class Store {
     this.isFetching = true;
     http.get('/api/ansible/inventory/tree/')
       .then(res => this.tree = res)
+      .catch(() => {})
       .finally(() => this.isFetching = false)
   };
 
   fetchGroups = () => {
     http.get('/api/ansible/inventory/')
       .then(res => this.groups = res)
+      .catch(() => {})
   };
 
   fetchHosts = () => {
     http.get('/api/host/')
       .then(res => this.hosts = res)
+      .catch(() => {})
   };
 
   selectGroup = (key) => {
@@ -78,6 +81,7 @@ class Store {
         this.hostDetail = res.host;
         this.hostVars = res.variables;
       })
+      .catch(() => {})
       .finally(() => this.hostVarsFetching = false)
   };
 

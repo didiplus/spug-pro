@@ -46,7 +46,7 @@ export default observer(function BackupManager() {
   const [policyVisible, setPolicyVisible] = useState(false);
   const [policyForm] = Form.useForm();
   const [policySaving, setPolicySaving] = useState(false);
-  const [pollingIds, setPollingIds] = useState(new Set());
+  const [, setPollingIds] = useState(new Set());
 
 
   const record = store.detailData || store.detailRecord || {};

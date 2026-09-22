@@ -5,7 +5,7 @@ import { Modal, Form, Input, Select, Button, Table, Typography, Space, Tooltip, 
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   ReloadOutlined, ExperimentOutlined, CheckCircleOutlined, StopOutlined,
-  CodeOutlined, FilterOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
 import { http, hasPermission } from 'libs';
 import { AuthDiv, AuthButton, ACEditor } from 'components';
