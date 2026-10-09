@@ -1,10 +1,49 @@
-<h1 align="center">Spug v4.0</h1>
-
 <div align="center">
 
-面向中小企业的轻量级无 Agent 自动化运维平台，基于 SSH 协议，整合主机管理、批量执行、在线终端、应用发布、配置中心、数据库管理、Ansible 自动化、CI/CD 流水线编排、监控报警等全栈运维能力。
+# Spug Pro
+
+**基于开源项目 [Spug](https://github.com/openspug/spug) 二次开发 · 面向中小企业的轻量级无 Agent 自动化运维平台**
+
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0)
+[![Python](https://img.shields.io/badge/python-%E2%89%A5%203.12-3776AB.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/django-4.2-092E20.svg)](https://www.djangoproject.com/)
+[![React](https://img.shields.io/badge/react-16-61DAFB.svg)](https://react.dev/)
+[![Ant Design](https://img.shields.io/badge/Ant%20Design-5-1677FF.svg)](https://ant.design/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
 </div>
+
+> 本项目 fork 自开源运维平台 [Spug](https://github.com/openspug/spug)，在其基础上进行二次开发与功能扩展。
+> 继承原项目「无 Agent、基于 SSH 协议」的轻量级理念，并新增 **Ansible 自动化**、**CI/CD 流水线可视化编排**、
+> **数据库管理与备份**、**监控报警中心**、**字段级加密**、**深色模式** 等能力，形成覆盖主机管理、批量执行、
+> 在线终端、应用发布、配置中心、数据库管理、Ansible 自动化、CI/CD 流水线编排、监控报警等场景的全栈运维平台。
+
+---
+
+## 目录
+
+- [与原项目 Spug 的关系](#与原项目-spug-的关系)
+- [特性](#特性)
+- [技术栈](#技术栈)
+- [项目结构](#项目结构)
+- [环境要求](#环境要求)
+- [快速开始](#快速开始)
+- [环境变量](#环境变量)
+- [服务架构](#服务架构)
+- [常用管理命令](#常用管理命令)
+- [License](#license)
+
+---
+
+## 与原项目 Spug 的关系
+
+| 维度 | 说明 |
+|:----:|------|
+| **上游** | [openspug/spug](https://github.com/openspug/spug) |
+| **继承** | 无 Agent 架构、SSH 协议、主机管理、批量执行、应用发布、配置中心、账户权限体系、LDAP 集成 |
+| **新增** | Ansible全功能管理、CI/CD 流水线编排、数据库管理与备份、监控报警中心、字段级加密、深色模式令牌系统、 |
+| **技术栈升级** | Python ≥ 3.12、Django 4.2、Channels 4.1、Ant Design 5 |
+| **License** | 沿用上游 AGPL-3.0 |
 
 ---
 
@@ -12,10 +51,53 @@
 
 ### 核心运维
 - **主机管理** — 集中管理主机信息，支持分组与标签
+
+![添加分组](./docs/images/spug_pro001.png)
+
+![添加主机](./docs/images/spug_pro002.png)
+
+![查看主机详情](./docs/images/spug_pro003.png)
+
 - **批量执行** — 在线批量执行命令，支持模板化管理
+
+![批量执行页面](./docs/images/spug_pro020.png)
+
+![批量执行结果返回页面](./docs/images/spug_pro019.png)
+- **模板管理** - 在线创建命令模板，方便复用
+
+![模板管理列表页](./docs/images/spug_pro021.png)
+
+![模板管理编辑页](./docs/images/spug_pro022.png)
+
 - **在线终端** — 浏览器内 SSH 终端，基于 xterm.js 实时交互
+
+![在线终端](./docs/images/spug_pro024.png)
+
+- **SSH 会话审计** - 记录所有通过平台进行的SSH操作，方便后续审计追踪
+
+![SSH会话审计](./docs/images/spug_pro025.png)
+
+![SSH会话审计](./docs/images/spug_pro026.png)
+
 - **文件管理** — 主机文件在线上传下载与远程管理
+
+![文件管理](./docs/images/spug_pro023.png)
+
 - **文件分发** — 跨主机文件批量分发
+
+![文件分发](./docs/images/spug_pro027.png)
+
+- **巡检任务** — 通过自定义巡检项，组装巡检任务，方便运维人员进行主机健康检查
+
+![巡检项列表](./docs/images/spug_pro028.png)
+
+![添加巡检项](./docs/images/spug_pro029.png)
+
+![添加巡检任务](./docs/images/spug_pro030.png)
+
+![巡检任务列表](./docs/images/spug_pro031.png)
+
+![查看巡检结果](./docs/images/spug_pro032.png)
 
 ### 发布与配置
 - **应用发布** — 自定义发布部署流程，多环境多应用管理
@@ -38,9 +120,30 @@
 
 ### 数据库管理
 - **多数据库支持** — MySQL / PostgreSQL / SQL Server / Oracle / MongoDB / Redis / ClickHouse 等
+
+![添加数据库](./docs/images/spug_pro005.png)
+
+![数据库列表页面](./docs/images/spug_pro006.png)
+
+![数据库详情页](./docs/images/spug_pro007.png)
+
+![数据库详情页](./docs/images/spug_pro008.png)
+
 - **在线 SQL** — 数据库在线查询与执行，语法高亮
+
+![在线SQL](./docs/images/spug_pro013.png)
+
 - **数据库备份** — 异步备份，保留策略（数量 / 时间 / GFS 旋转）
+
+![添加备份](./docs/images/spug_pro014.png)
+
+![添加保留规则](./docs/images/spug_pro015.png)
+
+![数据库备份列表](./docs/images/spug_pro016.png)
+
 - **远程存储** — S3 / 阿里云 OSS / 腾讯云 COS / 华为云 OBS
+
+![添加对象存储](./docs/images/spug_pro017.png)
 
 ### 监控与报警
 - **监控中心** — 站点 / 端口 / 进程 / 自定义脚本监控
@@ -63,11 +166,14 @@
 - **速率限制** — 登录 / API 请求速率限制
 - **安全加固** — 生产环境 SSL / HSTS / X-Frame-Options 自动启用
 
+---
+
 ## 技术栈
 
 ### 后端 (`spug_api/`)
+
 | 依赖 | 版本 | 用途 |
-|------|------|------|
+|------|:----:|------|
 | Python | ≥ 3.12 | 运行时 |
 | Django | 4.2.16 | Web 框架 |
 | Channels + Daphne | 4.1 / 4.1 | ASGI / WebSocket |
@@ -81,8 +187,9 @@
 | APScheduler | 3.10 | 定时任务调度 |
 
 ### 前端 (`spug_web/`)
+
 | 依赖 | 版本 | 用途 |
-|------|------|------|
+|------|:----:|------|
 | React | 16 | UI 框架 |
 | Ant Design | 5 | 组件库 |
 | MobX | 5 | 状态管理 |
@@ -90,10 +197,12 @@
 | Ace Editor | 9 | 代码编辑器 |
 | BizCharts | 3 | 数据可视化 |
 
+---
+
 ## 项目结构
 
 ```
-spug-4.0/
+spug-pro/
 ├── spug_api/                        # 后端
 │   ├── apps/                        # 业务应用
 │   │   ├── account/                 # 账户 / 角色 / 权限 / 操作日志
@@ -153,12 +262,18 @@ spug-4.0/
 └── LICENSE                          # AGPL-3.0
 ```
 
+---
+
 ## 环境要求
 
-- Python ≥ 3.12
-- Node.js ≥ 16
-- Redis ≥ 5.0
-- MySQL ≥ 5.7 或 PostgreSQL ≥ 12 或 SQLite（开发默认）
+| 组件 | 版本要求 |
+|------|----------|
+| Python | ≥ 3.12 |
+| Node.js | ≥ 16 |
+| Redis | ≥ 5.0 |
+| 数据库 | MySQL ≥ 5.7 / PostgreSQL ≥ 12 / SQLite（开发默认） |
+
+---
 
 ## 快速开始
 
@@ -199,7 +314,9 @@ docker-compose up -d
 bash docs/install.sh
 ```
 
-默认管理员：`admin` / `spug.dev`
+> 默认管理员账号：`admin` / `spug.dev`
+
+---
 
 ## 环境变量
 
@@ -221,6 +338,8 @@ bash docs/install.sh
 | `REDIS_PORT` | `6379` | Redis 端口 |
 | `REDIS_PASSWORD` | — | Redis 密码 |
 | `TOKEN_TTL` | `28800` | Token 有效期（秒，默认 8 小时） |
+
+---
 
 ## 服务架构
 
@@ -255,17 +374,29 @@ bash docs/install.sh
 | Monitor | `python manage.py runmonitor` | 监控检查 |
 | Scheduler | `python manage.py runscheduler` | 定时任务调度 |
 
-统一管理：`tools/start-all.sh {start|stop|restart|status}`
+> 统一管理：`tools/start-all.sh {start|stop|restart|status}`
+
+---
 
 ## 常用管理命令
 
 ```bash
-python manage.py updatedb            # 初始化/更新数据库（建表 + 菜单种子数据）
+python manage.py updatedb              # 初始化/更新数据库（建表 + 菜单种子数据）
 python manage.py updatedb --menu-only  # 仅更新菜单
 python manage.py useradd -u <用户> -p <密码> -s -n <昵称>  # 创建超级用户
 python manage.py useradd -u <用户> -p <密码> -n <昵称>     # 创建普通用户
 ```
 
+---
+
 ## License
 
 [AGPL-3.0](https://opensource.org/licenses/AGPL-3.0)
+
+---
+
+<div align="center">
+
+<sub>本项目基于 [Spug](https://github.com/openspug/spug) 二次开发，感谢原作者的开源贡献。</sub>
+
+</div>
