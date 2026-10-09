@@ -1,0 +1,45 @@
+.editor {
+  padding: 16px;
+  background: var(--color-bg-layout);
+  min-height: calc(100vh - 55px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.actionItem {
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.upAction {
+  position: absolute;
+  right: 30px;
+  top: 0;
+}
+
+.downAction {
+  position: absolute;
+  right: 30px;
+  top: 40px;
+}
+
+.delAction {
+  position: absolute;
+  right: 30px;
+  bottom: 0;
+  cursor: pointer;
+  color: var(--color-error);
+}
+
+.variables {
+  display: flex;
+  flex-direction: column;
+}

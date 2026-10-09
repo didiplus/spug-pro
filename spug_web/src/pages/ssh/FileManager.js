@@ -32,6 +32,7 @@ export default function FileManager({ id }) {
   const [objects, setObjects] = useState([]);
   const [editing, setEditing] = useState(false);
   const [inputPath, setInputPath] = useState('');
+  const [scrollY, setScrollY] = useState(() => document.body.clientHeight - 168);
 
   const fileInputRef = useRef(null);
   const pwdHistoryRef = useRef(new Map());
@@ -62,8 +63,13 @@ export default function FileManager({ id }) {
   useEffect(() => {
     mountedRef.current = true;
     fetchFiles();
+    const onResize = () => {
+      if (mountedRef.current) setScrollY(document.body.clientHeight - 168);
+    };
+    window.addEventListener('resize', onResize);
     return () => {
       mountedRef.current = false;
+      window.removeEventListener('resize', onResize);
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
@@ -238,17 +244,20 @@ export default function FileManager({ id }) {
       key: 'name',
       render: (info) =>
         info.kind === 'd' ? (
-          <div onClick={() => handleChdir(info.name, '1')} style={{ cursor: 'pointer' }}>
-            <FolderOutlined style={{ color: info.is_link ? '#008b8b' : '#2563fc' }} />
-            <span style={{ color: info.is_link ? '#008b8b' : '#2563fc', paddingLeft: 5 }}>
+          <div
+            className={`${styles.nameCell} ${styles.clickable}`}
+            onClick={() => handleChdir(info.name, '1')}
+          >
+            <FolderOutlined className={info.is_link ? styles.symlink : styles.folderIcon} />
+            <span className={info.is_link ? styles.symlink : styles.folderName}>
               {info.name}
             </span>
           </div>
         ) : (
-          <React.Fragment>
-            <FileOutlined />
-            <span style={{ paddingLeft: 5 }}>{info.name}</span>
-          </React.Fragment>
+          <div className={styles.nameCell}>
+            <FileOutlined className={styles.fileIcon} />
+            <span className={styles.fileName}>{info.name}</span>
+          </div>
         ),
       ellipsis: true,
     },
@@ -290,8 +299,6 @@ export default function FileManager({ id }) {
     displayObjects = objects.filter((x) => !x.name.startsWith('.'));
   }
 
-  const scrollY = document.body.clientHeight - 168;
-
   return (
     <React.Fragment>
       <input style={{ display: 'none' }} type="file" ref={fileInputRef} />
@@ -302,7 +309,7 @@ export default function FileManager({ id }) {
               autoFocus
               size="small"
               className={styles.input}
-              suffix={<span style={{ color: '#999', fontSize: 12 }}>回车确认</span>}
+              suffix={<span className={styles.inputHint}>回车确认</span>}
               value={inputPath}
               onChange={(e) => setInputPath(e.target.value)}
               onFocus={() => {
@@ -338,24 +345,24 @@ export default function FileManager({ id }) {
         </div>
 
         <div className={styles.action}>
-          <span>显示隐藏文件：</span>
+          <span className={styles.actionLabel}>显示隐藏文件</span>
           <Switch
             checked={showDot}
-            checkedChildren="开启"
-            unCheckedChildren="关闭"
+            checkedChildren="开"
+            unCheckedChildren="关"
             onChange={setShowDot}
           />
           {uploading ? (
             <Progress
               className={styles.progress}
-              strokeWidth={14}
+              strokeWidth={10}
               status={uploadStatus}
               percent={percent}
             />
           ) : (
             <AuthButton
               auth="host.console.upload"
-              style={{ marginLeft: 12 }}
+              className={styles.uploadBtn}
               size="small"
               type="primary"
               icon={<UploadOutlined />}
@@ -367,16 +374,13 @@ export default function FileManager({ id }) {
         </div>
       </div>
       <Table
+        className={styles.fileTable}
         size="small"
         rowKey="name"
         loading={fetching}
         pagination={false}
         columns={columns}
         scroll={{ y: scrollY }}
-        style={{
-          fontFamily:
-            'Source Code Pro, Courier New, Courier, Monaco, monospace, PingFang SC, Microsoft YaHei',
-        }}
         dataSource={displayObjects}
       />
     </React.Fragment>

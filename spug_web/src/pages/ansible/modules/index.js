@@ -4,6 +4,7 @@ import { Input, Tree, Typography, Tag, Flex, Empty, Spin } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { http } from 'libs';
 import { AuthDiv, Breadcrumb } from 'components';
+import styles from './modules.module.css';
 
 const { Text, Paragraph } = Typography;
 
@@ -57,28 +58,22 @@ function ModulesIndex() {
   return (
     <AuthDiv auth="ansible.modules.view">
       <Breadcrumb items={['首页', 'Ansible', 'Module 浏览器']}/>
-      <Flex gap={16} style={{height: 'calc(100vh - 120px)'}}>
-        <div style={{width: 250, background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'auto'}}>
+      <Flex gap={16} className={styles.container}>
+        <div className={styles.sidePanel}>
           <Input
             allowClear
             prefix={<SearchOutlined/>}
             placeholder="搜索模块"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{marginBottom: 12}}/>
+            className={styles.searchInput}/>
           {search ? (
             <div>
               {filteredModules.map(m => (
                 <div
                   key={m}
                   onClick={() => loadDoc(m)}
-                  style={{
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    borderRadius: 4,
-                    background: selectedModule === m ? '#e6f4ff' : 'transparent',
-                    fontSize: 13,
-                  }}>
+                  className={`${styles.searchItem} ${selectedModule === m ? styles.searchItemActive : ''}`}>
                   {m}
                 </div>
               ))}
@@ -94,9 +89,9 @@ function ModulesIndex() {
               }}/>
           )}
         </div>
-        <div style={{flex: 1, background: '#fff', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'auto'}}>
+        <div className={styles.docPanel}>
           {loading ? (
-            <div style={{textAlign: 'center', padding: 40}}><Spin/></div>
+            <div className={styles.loadingWrap}><Spin/></div>
           ) : doc ? (
             <ModuleDoc name={selectedModule} doc={doc}/>
           ) : (
@@ -113,33 +108,33 @@ function ModuleDoc({name, doc}) {
   const docData = docs.doc || docs;
   return (
     <div>
-      <Flex align="center" gap={8} style={{marginBottom: 16}}>
-        <Text strong style={{fontSize: 18}}>{name}</Text>
+      <Flex align="center" gap={8} className={styles.docHeader}>
+        <Text strong className={styles.docTitle}>{name}</Text>
         <Tag color="blue">module</Tag>
       </Flex>
       {docData.short_description && (
         <Paragraph>{docData.short_description}</Paragraph>
       )}
       {docData.description && (
-        <div style={{marginBottom: 16}}>
+        <div className={styles.docSection}>
           <Text strong>描述</Text>
           <Paragraph>{Array.isArray(docData.description) ? docData.description.join('\n') : docData.description}</Paragraph>
         </div>
       )}
       {docData.options && (
-        <div style={{marginBottom: 16}}>
+        <div className={styles.docSection}>
           <Text strong>参数</Text>
-          <div style={{marginTop: 8}}>
+          <div className={styles.docOptions}>
             {Object.entries(docData.options).map(([key, opt]) => (
-              <div key={key} style={{padding: '8px 0', borderBottom: '1px solid var(--color-border-secondary)'}}>
+              <div key={key} className={styles.optionItem}>
                 <Flex align="center" gap={8}>
-                  <Text strong style={{color: '#2563fc'}}>{key}</Text>
+                  <Text strong className={styles.optionKey}>{key}</Text>
                   {opt.required && <Tag color="red">required</Tag>}
                   {opt.type && <Tag>{opt.type}</Tag>}
                   {opt.default !== undefined && <Tag color="default">default: {String(opt.default)}</Tag>}
                 </Flex>
                 {opt.description && (
-                  <Text type="secondary" style={{fontSize: 12}}>
+                  <Text type="secondary" className={styles.optionDesc}>
                     {Array.isArray(opt.description) ? opt.description.join(' ') : opt.description}
                   </Text>
                 )}
@@ -149,17 +144,9 @@ function ModuleDoc({name, doc}) {
         </div>
       )}
       {docData.examples && (
-        <div style={{marginBottom: 16}}>
+        <div className={styles.docSection}>
           <Text strong>示例</Text>
-          <pre style={{
-            background: '#1e1e1e',
-            color: '#d4d4d4',
-            padding: 12,
-            borderRadius: 8,
-            fontSize: 12,
-            overflow: 'auto',
-            marginTop: 8,
-          }}>{docData.examples}</pre>
+          <pre className={styles.codeBlock}>{docData.examples}</pre>
         </div>
       )}
       {docData.notes && (

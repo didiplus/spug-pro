@@ -195,28 +195,25 @@ class PlaybookHistoryView(View):
 
 class PlaybookStatsView(View):
     @auth('ansible.playbook.view|ansible.playbook.run')
-    def get(self, request):
-        form, error = JsonParser(
-            Argument('token', help='参数错误')
-        ).parse(request.GET)
-        if error is None:
-            query = PlaybookRun.objects.filter(token=form.token)
-            if not request.user.is_supper:
-                query = query.filter(user=request.user)
-            run = query.first()
-            if not run:
-                return json_response(error='执行记录不存在')
-            stats = json.loads(run.stats) if run.stats else {}
-            host_ids = json.loads(run.host_ids) if run.host_ids else []
-            hosts = {h.id: {'name': h.name, 'hostname': h.hostname} for h in Host.objects.filter(id__in=host_ids)}
-            for host_id in hosts:
-                hosts[host_id]['stats'] = stats.get(str(host_id), {})
-            return json_response({
-                'status': run.status,
-                'duration': run.duration,
-                'hosts': hosts,
-            })
-        return json_response(error=error)
+    def get(self, request, token=None):
+        if not token:
+            return json_response(error='参数错误')
+        query = PlaybookRun.objects.filter(token=token)
+        if not request.user.is_supper:
+            query = query.filter(user=request.user)
+        run = query.first()
+        if not run:
+            return json_response(error='执行记录不存在')
+        stats = json.loads(run.stats) if run.stats else {}
+        host_ids = json.loads(run.host_ids) if run.host_ids else []
+        hosts = {h.id: {'name': h.name, 'hostname': h.hostname} for h in Host.objects.filter(id__in=host_ids)}
+        for host_id in hosts:
+            hosts[host_id]['stats'] = stats.get(str(host_id), {})
+        return json_response({
+            'status': run.status,
+            'duration': run.duration,
+            'hosts': hosts,
+        })
 
 
 class PlaybookVersionView(View):

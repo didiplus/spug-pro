@@ -127,10 +127,25 @@
   transition: opacity 0.2s;
 }
 
+:global(.ant-tree-treenode:hover) .treeActions {
+  opacity: 1;
+}
+
 /* ── 空状态 ── */
 .emptyWrap {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 300px;
+}
+
+/* ── 深色模式 ── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .tagBlue {
+    background: rgba(22, 119, 255, 0.15);
+  }
+}
+
+:global([data-theme="dark"]) .tagBlue {
+  background: rgba(22, 119, 255, 0.15);
 }

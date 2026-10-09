@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Form, Input, InputNumber, Select, Switch, Divider, Typography, Space } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Divider, Typography, Space } from 'antd';
 import { ThunderboltOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http } from 'libs';

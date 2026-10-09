@@ -128,10 +128,10 @@
     }
 
     .fileManger {
-      margin: 12px;
-      padding: 12px;
-      border-radius: 6px;
-      background: #fff;
+      margin: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-elevated);
       height: calc(100vh - 66px);
     }
 
@@ -183,12 +183,12 @@
 
 
 .fileSize {
-  padding-right: 24px !important;
+  padding-right: var(--space-6) !important;
 }
 
 .drawerContainer {
   :global(.ant-drawer-body) {
-    padding: 10px 16px;
+    padding: var(--space-2) var(--space-4);
   }
 }
 
@@ -196,12 +196,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
 
   .pathArea {
     flex: 1;
     min-width: 0;
-    margin-right: 16px;
   }
 
   .breadWrap {
@@ -212,18 +212,19 @@
   }
 
   .breadItem {
-    color: rgba(0, 0, 0, 0.85);
+    color: var(--color-text);
     cursor: pointer;
     padding: 0 2px;
+    transition: color var(--duration-fast) var(--ease-standard);
 
     &:hover {
-      color: #2563fc;
+      color: var(--color-primary);
     }
   }
 
   .breadSep {
     font-size: 10px;
-    color: rgba(0, 0, 0, 0.45);
+    color: var(--color-text-tertiary);
     margin: 0 2px;
   }
 
@@ -233,6 +234,13 @@
     align-items: center;
     height: 24px;
     flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  .actionLabel {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
   }
 
   .input {
@@ -240,23 +248,68 @@
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
   }
 
+  .inputHint {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+  }
+
   .edit {
-    color: #2563fcbb;
-    margin-left: 8px;
+    color: var(--color-primary);
+    margin-left: var(--space-2);
     cursor: pointer;
+    opacity: 0.7;
+    transition: opacity var(--duration-fast) var(--ease-standard);
 
     &:hover {
-      color: #2563fc;
+      opacity: 1;
     }
   }
 
   .progress {
-    width: 94px;
-    margin-left: 12px;
+    width: 160px;
+  }
+
+  .uploadBtn {
+    margin-left: var(--space-3);
   }
 }
 
 .drawerBtn {
   height: 22px;
   width: 22px;
+}
+
+/* ── 文件列表 ── */
+.fileTable {
+  font-family: 'Source Code Pro, Courier New, Courier, Monaco, monospace, PingFang SC, Microsoft YaHei';
+}
+
+.nameCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &.clickable {
+    cursor: pointer;
+  }
+}
+
+.folderIcon {
+  color: var(--color-primary);
+}
+
+.folderName {
+  color: var(--color-primary);
+}
+
+.symlink {
+  color: var(--color-purple-500);
+}
+
+.fileIcon {
+  color: var(--color-text-secondary);
+}
+
+.fileName {
+  color: var(--color-text);
 }

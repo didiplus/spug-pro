@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Table, Tag, Form, Drawer, Typography, Space, Tooltip } from 'antd';
+import { Modal, Table, Tag, Form, Drawer } from 'antd';
 import { ReloadOutlined, EyeOutlined, DesktopOutlined, CheckCircleOutlined, CloudOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http } from 'libs';
@@ -9,7 +9,6 @@ import HostSelector from 'pages/host/Selector';
 import TerminalOutput from 'components/TerminalOutput';
 import styles from './facts.module.css';
 
-const { Text } = Typography;
 
 function FactsIndex() {
   const [records, setRecords] = useState([]);

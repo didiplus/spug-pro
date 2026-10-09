@@ -235,7 +235,11 @@ class PubSubConsumer(BaseConsumer):
         super().connect()
 
     def init(self):
-        log_key = f'spug:pb:log:{self.token}'
+        if self.token.startswith('spug:pipeline:log:'):
+            pipe_token = self.token.replace('spug:pipeline:log:', '', 1)
+            log_key = f'spug:pipeline:{pipe_token}'
+        else:
+            log_key = f'spug:pb:log:{self.token}'
         messages = self.rds.lrange(log_key, 0, -1)
         for msg in messages:
             self.send(text_data=msg.decode())

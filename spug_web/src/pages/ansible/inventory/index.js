@@ -61,7 +61,7 @@ class InventoryIndex extends React.Component {
   render() {
     return (
       <AuthDiv auth="ansible.inventory.view">
-        <style>{`.ant-tree-treenode:hover .${styles.treeActions}{opacity:1!important}`}</style>
+
         <Breadcrumb items={['首页', 'Ansible', 'Inventory 管理']}/>
         <div className={styles.container}>
           <div className={styles.treePanel}>

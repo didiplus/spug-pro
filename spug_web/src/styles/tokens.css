@@ -94,6 +94,10 @@
 
   --color-card:         #ffffff;
   --color-card-text:    var(--color-gray-800);
+  --color-bg-secondary: var(--color-gray-100);
+  --color-bg-container: #ffffff;
+  --color-fill-quaternary: var(--color-gray-50);
+  --color-primary-bg:   rgba(22, 119, 255, 0.04);
 
   --color-primary:        var(--color-blue-500);
   --color-primary-hover:  var(--color-blue-400);
@@ -121,6 +125,10 @@
 
     --color-card:         var(--color-gray-950);
     --color-card-text:    rgba(255, 255, 255, 0.85);
+    --color-bg-secondary: var(--color-gray-900);
+    --color-bg-container: var(--color-gray-950);
+    --color-fill-quaternary: var(--color-gray-900);
+    --color-primary-bg:   rgba(22, 119, 255, 0.15);
 
     --color-primary:        var(--color-blue-400);
     --color-primary-hover:  var(--color-blue-300);
@@ -152,6 +160,10 @@
 
   --color-card:         var(--color-gray-950);
   --color-card-text:    rgba(255, 255, 255, 0.85);
+  --color-bg-secondary: var(--color-gray-900);
+  --color-bg-container: var(--color-gray-950);
+  --color-fill-quaternary: var(--color-gray-900);
+  --color-primary-bg:   rgba(22, 119, 255, 0.15);
 
   --color-primary:        var(--color-blue-400);
   --color-primary-hover:  var(--color-blue-300);

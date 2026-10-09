@@ -37,4 +37,5 @@ urlpatterns = [
     path('db/', include('apps.database.urls')),
 
     path('ansible/', include('apps.ansible.urls')),
+    path('pipeline/', include('apps.pipeline.urls')),
 ]

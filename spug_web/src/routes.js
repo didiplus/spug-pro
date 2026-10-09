@@ -18,6 +18,7 @@ import {
   SettingOutlined,
   PlayCircleOutlined,
   ClusterOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 
 const withSuspense = (Comp) => (props) => (
@@ -64,6 +65,8 @@ export const ComponentRegistry = {
   'pages/system/ssh_audit': withSuspense(lazy(() => import('./pages/system/ssh_audit'))),
   'pages/welcome/index': withSuspense(lazy(() => import('./pages/welcome/index'))),
   'pages/welcome/info': withSuspense(lazy(() => import('./pages/welcome/info'))),
+  'pages/pipeline': withSuspense(lazy(() => import('./pages/pipeline'))),
+  'pages/pipeline/editor': withSuspense(lazy(() => import('./pages/pipeline/Editor'))),
 };
 
 export const IconRegistry = {
@@ -79,4 +82,5 @@ export const IconRegistry = {
   SettingOutlined: <SettingOutlined/>,
   PlayCircleOutlined: <PlayCircleOutlined/>,
   ClusterOutlined: <ClusterOutlined/>,
+  ApartmentOutlined: <ApartmentOutlined/>,
 };

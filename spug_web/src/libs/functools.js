@@ -85,6 +85,11 @@ export function trimFixed(data, bit) {
   return String(data.toFixed(bit)).replace(/0*$/, '').replace(/\.$/, '')
 }
 
+export function t(text, ...args) {
+  if (args.length === 0) return text
+  return text.replace(/\{\}/g, () => args.shift())
+}
+
 // 日期
 export function human_date(date) {
   const now = date || new Date();

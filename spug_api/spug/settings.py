@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.database",
 
     "apps.ansible",
+    "apps.pipeline",
     "daphne",
     "channels",
 ]
@@ -175,6 +176,7 @@ MONITOR_WORKER_KEY = "spug:monitor:worker"
 EXEC_WORKER_KEY = "spug:exec:worker"
 PLAYBOOK_WORKER_KEY = "spug:playbook:worker"
 FACTS_WORKER_KEY = "spug:facts:worker"
+PIPELINE_WORKER_KEY = "spug:pipeline:worker"
 OPERATION_LOG_WORKER_KEY = "spug:oplog:worker"
 REQUEST_KEY = "spug:request"
 BUILD_KEY = "spug:build"
@@ -183,6 +185,7 @@ BUILD_DIR = os.path.join(REPOS_DIR, "build")
 TRANSFER_DIR = os.path.join(BASE_DIR, "storage", "transfer")
 SSH_SESSION_DIR = os.path.join(BASE_DIR, "storage", "ssh_sessions")
 ANSIBLE_ROLE_DIR = os.path.join(BASE_DIR, "storage", "roles")
+PIPELINE_UPLOAD_DIR = os.path.join(BASE_DIR, "storage", "pipeline_uploads")
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Shanghai"

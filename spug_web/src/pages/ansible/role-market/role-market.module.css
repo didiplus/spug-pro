@@ -156,7 +156,7 @@
 
 .detailMeta {
   padding: var(--space-3);
-  background: var(--color-fill-quaternary, var(--color-gray-50, #fafafa));
+  background: var(--color-fill-quaternary);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-secondary);
 }
@@ -220,13 +220,13 @@
 }
 
 .varTable :global(.ant-table-thead > tr > th) {
-  background: var(--color-fill-quaternary, var(--color-gray-50, #fafafa));
+  background: var(--color-fill-quaternary);
   font-size: 12px;
   font-weight: 600;
 }
 
 .varTable :global(.ant-table-tbody > tr:hover > td) {
-  background: var(--color-primary-bg, rgba(22, 119, 255, 0.04)) !important;
+  background: var(--color-primary-bg) !important;
 }
 
 .readme {
@@ -299,20 +299,6 @@
   border: 1px solid var(--color-border-secondary);
 }
 
-/* ── 输出页 ── */
-.outputHeader {
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--color-border-secondary);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.outputBody {
-  flex: 1;
-  padding: var(--space-2);
-  overflow: hidden;
-}
 
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {

@@ -526,6 +526,22 @@ class AnsibleExecutor(BaseExecutor):
             }],
         }]
 
+    def _build_remote_sync_playbook(self, src_path: str, remote_path: str,
+                                    dest_host: str, dest_port: int = 22) -> list:
+        """构建远程到远程的 rsync playbook，在源主机上直接执行 rsync 命令"""
+        ssh_opts = f'ssh -p {dest_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        rsync_cmd = f'rsync -azv --progress -e "{ssh_opts}" {src_path} {dest_host}:{remote_path}'
+        return [{
+            'hosts': 'all',
+            'gather_facts': False,
+            'tasks': [{
+                'shell': {
+                    'cmd': rsync_cmd,
+                },
+                'register': 'sync_result',
+            }],
+        }]
+
     def _process_sync_event(self, event: dict) -> Tuple[int, Optional[str]]:
         """处理 copy 模块事件"""
         event_type = event.get('event', '')
@@ -562,6 +578,76 @@ class AnsibleExecutor(BaseExecutor):
                 return -1, f'\x1b[33m{self._normalize_output(verbose_msg)}\x1b[0m\r\n'
             return -1, None
         return -1, None
+
+    def transfer_file_remote(self, src_path: str, remote_path: str,
+                             dest_host: str, dest_port: int = 22
+                             ) -> Generator[Tuple[int, str], None, None]:
+        """
+        远程到远程文件传输，使用 ansible synchronize 模块（rsync 封装）。
+        在当前主机上执行 rsync 将 src_path 同步到 dest_host:remote_path。
+        """
+        if not HAS_ANSIBLE_RUNNER:
+            yield 131, '\r\n\x1b[31m### ansible-runner 未安装\x1b[0m\r\n'
+            return
+
+        err = _check_ansible_cli()
+        if err:
+            yield 127, f'\r\n\x1b[31m### {err}\x1b[0m\r\n'
+            return
+
+        _auto_cleanup = False
+        if self._tmpdir is None:
+            self.__enter__()
+            _auto_cleanup = True
+
+        inventory = self._build_inventory()
+        playbook = self._build_remote_sync_playbook(src_path, remote_path, dest_host, dest_port)
+        envvars = self._build_envvars()
+
+        logger.info(f'Ansible remote sync: {src_path} -> {dest_host}:{remote_path}')
+
+        event_queue: queue.Queue = queue.Queue()
+        final_rc = [None]
+
+        def event_handler(event):
+            event_queue.put(event)
+
+        def run_in_thread():
+            try:
+                result = ansible_runner.run(
+                    private_data_dir=self._tmpdir,
+                    inventory=inventory,
+                    playbook=playbook,
+                    envvars=envvars,
+                    event_handler=event_handler,
+                )
+                final_rc[0] = result.rc if result.rc is not None else 1
+            except Exception as e:
+                logger.error(f'Ansible remote sync error: {e}', exc_info=True)
+                final_rc[0] = 1
+            finally:
+                event_queue.put(_SENTINEL)
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+
+        while True:
+            try:
+                item = event_queue.get(timeout=0.5)
+            except queue.Empty:
+                if final_rc[0] is not None:
+                    break
+                continue
+            if item is _SENTINEL:
+                break
+            code, line = self._process_sync_event(item)
+            if line:
+                yield code, line
+
+        if _auto_cleanup:
+            self.__exit__(None, None, None)
+
+        yield final_rc[0] or 0, ''
 
     def transfer_file(self, local_path: str, remote_path: str,
                       archive: bool = True) -> Generator[Tuple[int, str], None, None]:

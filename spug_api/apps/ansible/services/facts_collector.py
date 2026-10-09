@@ -10,7 +10,7 @@ from apps.ansible.models import HostFacts
 from apps.host.models import Host
 from apps.setting.utils import AppSetting
 import json
-import time
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -115,23 +115,34 @@ def collect_host_facts(host_id: int, token: str = None) -> dict:
 def collect_batch_facts(host_ids: list, token: str = None) -> dict:
     """
     批量采集 Facts
-    1. 逐台执行 collect_host_facts（避免并发对目标主机造成压力）
+    1. 并发执行 collect_host_facts（限制并发数，避免对目标主机造成过大压力）
     2. 返回 {host_id: result}
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     results = {}
     total = len(host_ids)
     if token:
         _send_progress(token, f'\x1b[36m### Facts 采集任务启动，共 {total} 台主机\x1b[0m\r\n\r\n')
-    for i, host_id in enumerate(host_ids, 1):
-        if token:
-            _send_progress(token, f'[{i}/{total}] ')
-        result = collect_host_facts(host_id, token)
-        results[host_id] = result
-        time.sleep(0.5)
+
+    max_workers = min(5, total) if total > 0 else 1
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_map = {pool.submit(collect_host_facts, hid, token): hid for hid in host_ids}
+        completed = 0
+        for future in as_completed(future_map):
+            host_id = future_map[future]
+            try:
+                results[host_id] = future.result()
+            except Exception as e:
+                results[host_id] = {'host_id': host_id, 'success': False, 'error': str(e)}
+            completed += 1
+            if token:
+                _send_progress(token, f'[{completed}/{total}] ')
+
     if token:
         success_count = sum(1 for r in results.values() if r.get('success'))
         fail_count = total - success_count
-        status = 'success' if fail_count == 0 else ('failed' if success_count == 0 else 'failed')
+        status = 'success' if fail_count == 0 else 'failed'
         summary = f'\r\n\x1b[36m### 采集完成: {success_count} 成功, {fail_count} 失败, 共 {total} 台\x1b[0m\r\n'
         _send_progress(token, summary, status=status)
     return results

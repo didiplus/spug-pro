@@ -1,0 +1,133 @@
+.box {
+  position: relative;
+  width: 240px;
+  height: 70px;
+  margin-right: 24px;
+  flex-shrink: 0;
+}
+
+.blank {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.triangle {
+  position: absolute;
+  bottom: -8px;
+  left: 112px;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  border-top-color: #b0c4de;
+}
+
+.node {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 20px;
+  margin: 0;
+  transition: all 0.25s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(37, 99, 252, 0.18);
+    transform: translateY(-2px);
+    .action {
+      display: block;
+    }
+  }
+
+  .title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .action {
+    display: none;
+    padding: 10px;
+    margin-right: -8px;
+    font-size: 18px;
+    color: #8c8c8c;
+
+    &:hover {
+      color: #2563fc;
+    }
+  }
+}
+
+.active {
+  border-color: #4d8ffd;
+  box-shadow: 0 4px 20px rgba(37, 99, 252, 0.25);
+  background-color: #f0f7ff;
+}
+
+.line {
+  &:after {
+    content: ' ';
+    height: 2px;
+    background: #b0c4de;
+    position: absolute;
+    top: 34px;
+    left: -24px;
+    right: 0;
+    border-radius: 1px;
+  }
+}
+
+.line2 {
+  &:after {
+    left: -144px;
+  }
+}
+
+.angle {
+  &:before {
+    content: ' ';
+    position: absolute;
+    background: #b0c4de;
+    top: 34px;
+    bottom: 34px;
+    left: -24px;
+    right: 119px;
+    border-radius: 1px;
+  }
+
+  &:after {
+    content: ' ';
+    position: absolute;
+    background: #b0c4de;
+    top: 34px;
+    left: 119px;
+    right: 119px;
+    bottom: 0;
+    border-radius: 1px;
+  }
+}
+
+.angle2 {
+  &:before {
+    left: -144px;
+  }
+}
+
+.arrow {
+  &:after {
+    content: ' ';
+    background: #b0c4de;
+    position: absolute;
+    top: 0;
+    left: 119px;
+    right: 119px;
+    bottom: 4px;
+    border-radius: 1px;
+  }
+}

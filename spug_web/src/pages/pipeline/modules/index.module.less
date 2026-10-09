@@ -1,0 +1,97 @@
+.formTips {
+  margin-bottom: 16px;
+  padding: 4px 4px 0 4px;
+
+  .content {
+    font-size: 12px;
+    margin: 0;
+    color: #ff4d4f;
+    white-space: pre-line;
+  }
+}
+.parameter {
+  display: flex;
+  flex-direction: column;
+
+  .sectionTitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    :global(.anticon) {
+      margin-left: 4px;
+      color: #999999;
+      cursor: help;
+    }
+  }
+
+  .sectionBody {
+    background: #f6f7f9;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin-bottom: 12px;
+
+      &:last-child {
+        margin-bottom: 14px;
+      }
+
+      .label {
+        width: 110px;
+        font-size: 14px;
+        color: #262626;
+        text-align: right;
+        flex-shrink: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:after {
+          position: relative;
+          top: -0.5px;
+          margin: 0 8px 0 2px;
+          content: ':';
+        }
+      }
+
+      .required:before {
+        display: inline-block;
+        margin-right: 4px;
+        color: #ff4d4f;
+        font-size: 14px;
+        font-family: SimSun, sans-serif;
+        line-height: 1;
+        content: '*';
+      }
+
+      :global(.anticon-edit) {
+        font-size: 16px;
+        color: #1677ff;
+        margin-left: 10px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      :global(.anticon-delete) {
+        font-size: 16px;
+        color: #ff4d4f;
+        margin-left: 10px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+    }
+  }
+}

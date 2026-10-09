@@ -1,0 +1,56 @@
+.container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miniCard {
+  cursor: pointer;
+}
+
+.miniHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miniTitle {
+  font-weight: 600;
+}
+
+.consoleCard {
+  :global {
+    .ant-card-body {
+      padding: 16px;
+    }
+  }
+}
+
+.collapse {
+  :global {
+    .ant-collapse-header {
+      padding: 8px 12px !important;
+    }
+  }
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.panelTitle {
+  min-width: 100px;
+}
+
+.steps {
+  flex: 1;
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Form, Input, Table, Tag, Typography, Select } from 'antd';
+import { Modal, Form, Input, Table, Tag, Typography } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';

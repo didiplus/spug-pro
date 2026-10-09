@@ -113,6 +113,7 @@ class Command(BaseCommand):
             (11, 0, 'Ansible', 'M', 10, None, None, 'ansible.inventory.view|ansible.vault.view|ansible.facts.view|ansible.modules.view|ansible.playbook.view|ansible.playbook.run|ansible.role.view', 'ClusterOutlined'),
             (12, 0, '报警中心', 'M', 12, None, None, 'alarm.alarm.view|alarm.policy.view|alarm.contact.view|alarm.group.view', 'AlertOutlined'),
             (13, 0, '系统管理', 'M', 13, None, None, 'system.account.view|system.role.view|system.setting.view|system.menu.view|system.login.view|system.log.view', 'SettingOutlined'),
+            (14, 0, '流水线', 'M', 14, None, None, 'pipeline.pipeline.view|pipeline.pipeline.do', 'ApartmentOutlined'),
         ]
         for mid, pid, name, mtype, order, path, comp, perms, icon in top_menus:
             Menu.objects.create(id=mid, parent_id=pid, menu_name=name, menu_type=mtype, order_num=order, path=path, component=comp, perms=perms, icon=icon)
@@ -148,6 +149,8 @@ class Command(BaseCommand):
             (13, '系统设置', 'C', 5, '/system/setting', 'pages/system/setting', 'system.setting.view', '0'),
             (13, '菜单管理', 'C', 6, '/system/menu', 'pages/system/menu', 'system.menu.view', '0'),
             (13, 'SSH 会话审计', 'C', 7, '/system/ssh_audit', 'pages/system/ssh_audit', 'host.console.view', '0'),
+            (14, '流水线列表', 'C', 1, '/pipeline', 'pages/pipeline', 'pipeline.pipeline.view', '0'),
+            (14, '编排编辑器', 'C', 2, '/pipeline/:id', 'pages/pipeline/editor', None, '1'),
             (3, 'Web终端', 'C', 5, '/host/console', 'pages/host/console', 'host.console.view', '1'),
         ]
         for pid, name, mtype, order, path, comp, perms, visible in children:
@@ -181,6 +184,8 @@ class Command(BaseCommand):
             (13, '角色查看', 7, 'system.role.view'), (13, '角色新增', 8, 'system.role.add'), (13, '角色修改', 9, 'system.role.edit'), (13, '角色删除', 10, 'system.role.del'),
             (13, '查看设置', 11, 'system.setting.view'), (13, '编辑设置', 12, 'system.setting.edit'),
             (13, '菜单查看', 13, 'system.menu.view'), (13, '菜单新增', 14, 'system.menu.add'), (13, '菜单修改', 15, 'system.menu.edit'), (13, '菜单删除', 16, 'system.menu.del'),
+            (14, '查看流水线', 1, 'pipeline.pipeline.view'), (14, '新建流水线', 2, 'pipeline.pipeline.add'), (14, '编辑流水线', 3, 'pipeline.pipeline.edit'), (14, '删除流水线', 4, 'pipeline.pipeline.del'), (14, '执行流水线', 5, 'pipeline.pipeline.do'),
+
         ]
         for pid, name, order, perms in buttons:
             Menu.objects.create(parent_id=pid, menu_name=name, menu_type='F', order_num=order, perms=perms, visible='0')

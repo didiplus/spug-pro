@@ -42,8 +42,9 @@ function HostSelector(props) {
   }, [store.treeData])
 
   useEffect(() => {
-    setSelectedRowKeys([...props.value])
-  }, [props.value])
+    const val = props.onlyOne ? (props.value ? [props.value] : []) : [...(props.value || [])]
+    setSelectedRowKeys(val)
+  }, [props.value, props.onlyOne])
 
   useEffect(() => {
     if (props.onlySelf) {
@@ -114,6 +115,8 @@ function HostSelector(props) {
     }
   }
 
+  const valueLen = props.onlyOne ? (props.value ? 1 : 0) : (props.value?.length || 0)
+
   return (
     <div className={styles.selector}>
       {props.mode !== 'group' && (
@@ -121,11 +124,11 @@ function HostSelector(props) {
           <div onClick={() => setVisible(true)}>{props.children}</div>
         ) : (
           props.type === 'button' ? (
-            props.value.length > 0 ? (
+            valueLen > 0 ? (
               <Alert
                 type="info"
                 className={styles.area}
-                message={<div>已选择 <b style={{fontSize: 18, color: 'var(--color-primary)'}}>{props.value.length}</b> 台主机</div>}
+                message={<div>已选择 <b style={{fontSize: 18, color: 'var(--color-primary)'}}>{valueLen}</b> 台主机</div>}
                 onClick={() => setVisible(true)}/>
             ) : (
               <Button icon={<PlusOutlined/>} onClick={() => setVisible(true)}>
@@ -133,7 +136,7 @@ function HostSelector(props) {
               </Button>
             )) : (
             <div style={{display: 'flex', alignItems: 'center'}}>
-              {props.value.length > 0 && <span style={{marginRight: 16}}>已选择 {props.value.length} 台</span>}
+              {valueLen > 0 && <span style={{marginRight: 16}}>已选择 {valueLen} 台</span>}
               <Button type="link" style={{padding: 0}} onClick={() => setVisible(true)}>选择主机</Button>
             </div>
           )

@@ -4,6 +4,7 @@ import { HistoryOutlined, EyeOutlined, DiffOutlined, RollbackOutlined } from '@a
 import { message } from 'libs/message';
 import { http } from 'libs';
 import { ACEditor } from 'components';
+import styles from './playbook.module.css';
 
 const { Text } = Typography;
 
@@ -128,18 +129,13 @@ export default function VersionHistory({ playbookId, onClose, onRollback }) {
         footer={null}
         destroyOnClose>
         <Spin spinning={diffLoading}>
-          <pre style={{
-            background: '#1e1e1e', color: '#d4d4d4', padding: 16,
-            borderRadius: 8, maxHeight: 500, overflow: 'auto',
-            fontSize: 13, fontFamily: '"Cascadia Code", "Fira Code", monospace',
-            whiteSpace: 'pre-wrap', lineHeight: 1.5,
-          }}>
+          <pre className={styles.diffPre}>
             {diffText.split('\n').map((line, i) => {
-              let color = '#d4d4d4';
-              if (line.startsWith('+') && !line.startsWith('+++')) color = '#98c379';
-              else if (line.startsWith('-') && !line.startsWith('---')) color = '#e06c75';
-              else if (line.startsWith('@')) color = '#61afef';
-              return <div key={i} style={{color}}>{line || ' '}</div>;
+              let cls = styles.diffLine;
+              if (line.startsWith('+') && !line.startsWith('+++')) cls = styles.diffAdd;
+              else if (line.startsWith('-') && !line.startsWith('---')) cls = styles.diffDel;
+              else if (line.startsWith('@')) cls = styles.diffHunk;
+              return <div key={i} className={cls}>{line || ' '}</div>;
             })}
           </pre>
         </Spin>

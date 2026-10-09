@@ -11,6 +11,7 @@ from apps.monitor.executors import monitor_worker_handler
 from apps.exec.executors import exec_worker_handler
 from apps.ansible.services.runner import playbook_worker_handler
 from apps.ansible.services.facts_collector import facts_worker_handler
+from apps.pipeline.services.engine import pipeline_worker_handler
 from apps.account.log_worker import oplog_consumer
 from apps.notify.models import Notify
 from threading import Thread
@@ -23,6 +24,7 @@ MONITOR_WORKER_KEY = settings.MONITOR_WORKER_KEY
 SCHEDULE_WORKER_KEY = settings.SCHEDULE_WORKER_KEY
 PLAYBOOK_WORKER_KEY = settings.PLAYBOOK_WORKER_KEY
 FACTS_WORKER_KEY = settings.FACTS_WORKER_KEY
+PIPELINE_WORKER_KEY = settings.PIPELINE_WORKER_KEY
 
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(message)s")
 
@@ -68,12 +70,12 @@ class Worker:
         Thread(target=self.queue_monitor, daemon=True).start()
         Thread(target=oplog_consumer, daemon=True).start()
         self.rds.delete(EXEC_WORKER_KEY, MONITOR_WORKER_KEY, SCHEDULE_WORKER_KEY,
-                        PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY)
+                        PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY, PIPELINE_WORKER_KEY)
         while True:
             try:
                 result = self.rds.blpop(
                     [EXEC_WORKER_KEY, SCHEDULE_WORKER_KEY, MONITOR_WORKER_KEY,
-                     PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY],
+                     PLAYBOOK_WORKER_KEY, FACTS_WORKER_KEY, PIPELINE_WORKER_KEY],
                     timeout=30
                 )
             except Exception as e:
@@ -102,6 +104,8 @@ class Worker:
                 future = self._executor.submit(playbook_worker_handler, job)
             elif key == FACTS_WORKER_KEY:
                 future = self._executor.submit(facts_worker_handler, job)
+            elif key == PIPELINE_WORKER_KEY:
+                future = self._executor.submit(pipeline_worker_handler, job)
             else:
                 continue
             future.add_done_callback(self.job_done)
