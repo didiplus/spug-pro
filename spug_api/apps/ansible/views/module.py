@@ -8,14 +8,23 @@ import json
 
 MODULE_CATEGORIES = {
     "files": ["copy", "file", "fetch", "synchronize", "archive", "unarchive",
-              "template", "blockinfile", "lineinfile", "replace", "stat"],
-    "packages": ["yum", "apt", "dnf", "pip", "gem", "npm", "package"],
-    "services": ["systemd", "service", "sysvinit", "supervisorctl"],
-    "network": ["uri", "get_url", "slurp"],
-    "commands": ["shell", "command", "raw", "script"],
+              "template", "blockinfile", "lineinfile", "replace", "stat",
+              "find", "ini_file", "xml", "assemble"],
+    "packages": ["yum", "apt", "dnf", "pip", "gem", "npm", "package", "snap",
+                 "homebrew", "apt_repository", "yum_repository", "package_facts"],
+    "services": ["systemd", "service", "sysvinit", "supervisorctl",
+                 "launchd", "service_facts"],
+    "network": ["uri", "get_url", "slurp", "nsupdate", "net_ping", "cli_command"],
+    "commands": ["shell", "command", "raw", "script", "expect"],
     "system": ["user", "group", "cron", "hostname", "timezone", "sysctl",
-               "mount", "authorized_key", "known_hosts"],
-    "monitoring": ["setup", "debug", "assert", "fail", "wait_for", "pause"],
+               "mount", "authorized_key", "known_hosts", "iptables", "selinux",
+               "pam_limits", "reboot", "firewalld", "ufw"],
+    "monitoring": ["setup", "debug", "assert", "fail", "wait_for", "pause",
+                   "set_stats", "meta"],
+    "cloud": ["docker_container", "docker_image", "docker_compose", "vmware_guest"],
+    "database": ["mysql_db", "mysql_user", "postgresql_db", "postgresql_user",
+                 "redis_info", "mongodb_user"],
+    "source_control": ["git_config", "github_issue", "gitlab_project"],
 }
 
 

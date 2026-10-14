@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   db:
-    image: mariadb:10.8
+    image: mariadb:10.11
     container_name: spug-db
     restart: always
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
@@ -10,24 +10,33 @@ services:
     environment:
       - MYSQL_DATABASE=spug
       - MYSQL_USER=spug
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?请在 .env 中设置 MYSQL_PASSWORD 强密码}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD 强密码}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?请在 .env 中设置 MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   spug:
-    image: openspug/spug-service
+    build:
+      context: ../..
+      dockerfile: docs/docker/Dockerfile
     container_name: spug
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
-      - /data/spug/service:/data/spug
-      - /data/spug/repos:/data/repos
+      - /data/spug/storage:/data/spug/storage
+      - /data/repos:/data/repos
     ports:
-      # 如果80端口被占用可替换为其他端口，例如: - "8000:80"
       - "80:80"
     environment:
-      - SPUG_DOCKER_VERSION=v3.4.0
       - MYSQL_DATABASE=spug
       - MYSQL_USER=spug
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?请在 .env 中设置 MYSQL_PASSWORD 强密码}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?请在 .env 中设置 MYSQL_PASSWORD}
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
-    depends_on:
-      - db
+      - SPUG_ADMIN_USER=${SPUG_ADMIN_USER:-admin}
+      - SPUG_ADMIN_PASS=${SPUG_ADMIN_PASS:-spug.dev}

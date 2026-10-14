@@ -16,6 +16,9 @@ const CATEGORY_LABELS = {
   commands: '命令执行',
   system: '系统管理',
   monitoring: '监控/调试',
+  cloud: '云/容器',
+  database: '数据库',
+  source_control: '版本控制',
 };
 
 function ModulesIndex() {

@@ -1,38 +1,68 @@
-FROM centos:7.9.2009
+# ── Stage 1: 构建前端 ──
+FROM node:18-slim AS frontend-builder
+WORKDIR /build
+COPY spug_web/package.json spug_web/package-lock.json ./
+RUN npm ci --legacy-peer-deps
+COPY spug_web/ ./
+RUN NODE_OPTIONS=--openssl-legacy-provider GENERATE_SOURCEMAP=false npx react-app-rewired build
 
-ENV TZ=Asia/Shanghai
-RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm && yum install -y --setopt=tsflags=nodocs nginx redis mariadb-devel python36 python36-devel openldap-devel supervisor git gcc wget unzip net-tools sshpass rsync sshfs && yum -y clean all --enablerepo='*'
+# ── Stage 2: 运行时 ──
+FROM python:3.12-slim
 
-RUN pip3 install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
-RUN pip3 install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ \
-    gunicorn \
-    mysqlclient \
-    cryptography==36.0.2 \
-    apscheduler==3.7.0 \
-    asgiref==3.2.10 \
-    Django==2.2.28 \
-    channels==2.3.1 \
-    channels_redis==2.4.1 \
-    paramiko==2.11.0 \
-    django-redis==4.10.0 \
-    requests==2.22.0 \
-    GitPython==3.0.8 \
-    python-ldap==3.4.0 \
-    openpyxl==3.0.3 \
-    user_agents==2.2.0
+LABEL org.opencontainers.image.title="Spug" \
+      org.opencontainers.image.description="轻量级无 Agent 自动化运维平台" \
+      org.opencontainers.image.version="4.0.0" \
+      org.opencontainers.image.license="AGPL-3.0" \
+      org.opencontainers.image.source="https://github.com/openspug/spug"
 
-RUN localedef -c -i en_US -f UTF-8 en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
-RUN echo -e '\n# Source definitions\n. /etc/profile\n' >> /root/.bashrc
-RUN mkdir -p /data/repos
-COPY init_spug /usr/bin/
-COPY nginx.conf /etc/nginx/
-COPY ssh_config /etc/ssh/
-COPY spug.ini /etc/supervisord.d/
-COPY redis.conf /etc/
-COPY entrypoint.sh /
+ENV TZ=Asia/Shanghai \
+    SPUG_ENV=prod \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
-VOLUME /data
+# 系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx redis-server supervisor \
+    default-libmysqlclient-dev build-essential pkg-config \
+    libldap2-dev libsasl2-dev \
+    git sshpass rsync curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/redis-server /usr/local/bin/redis-server
+
+# Python 依赖
+COPY spug_api/requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt \
+    && pip install gunicorn mysqlclient psycopg2-binary
+
+# Ansible（可选但推荐）
+RUN pip install ansible ansible-runner || true
+
+# 后端代码
+COPY spug_api/ /data/spug/spug_api/
+WORKDIR /data/spug/spug_api
+
+# 前端构建产物
+COPY --from=frontend-builder /build/build/ /data/spug/spug_web/build/
+
+# 存储目录
+RUN mkdir -p /data/spug/storage/transfer \
+             /data/spug/storage/ssh_sessions \
+             /data/spug/storage/roles \
+             /data/spug/storage/pipeline_uploads \
+             /data/repos /data/spug/spug_api/logs /data/spug/spug_api/pids
+
+# 配置文件
+COPY docs/docker/nginx.conf /etc/nginx/nginx.conf
+COPY docs/docker/redis.conf /etc/redis/redis.conf
+COPY docs/docker/spug.ini /etc/supervisor/conf.d/spug.conf
+COPY docs/docker/ssh_config /etc/ssh/ssh_config
+COPY docs/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh /data/spug/spug_api/tools/*.sh
+
+VOLUME ["/data/spug/storage", "/data/repos"]
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -sf http://localhost/api/setting/basic/ || exit 1
+
 ENTRYPOINT ["/entrypoint.sh"]
