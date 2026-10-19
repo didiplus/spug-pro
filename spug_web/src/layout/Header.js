@@ -6,7 +6,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Layout, Dropdown, Avatar, Modal } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CodeOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CodeOutlined, DownOutlined } from '@ant-design/icons';
 import { AuthDiv } from 'components';
 import Notification from './Notification';
 import styles from './layout.module.less';
@@ -38,9 +38,9 @@ export default function (props) {
   }
 
   const userMenuItems = [
-    {key: 'info', icon: <UserOutlined style={{marginRight: 8}}/>, label: <Link to="/welcome/info">个人中心</Link>},
+    {key: 'info', icon: <UserOutlined className={styles.menuIcon}/>, label: <Link to="/welcome/info">个人中心</Link>},
     {type: 'divider'},
-    {key: 'logout', icon: <LogoutOutlined style={{marginRight: 8}}/>, label: '退出登录', onClick: confirmLogout},
+    {key: 'logout', icon: <LogoutOutlined className={styles.menuIcon}/>, label: '退出登录', onClick: confirmLogout},
   ];
 
   return (
@@ -63,6 +63,7 @@ export default function (props) {
           onClick={openTerminal}
           role="button"
           aria-label="打开终端"
+          title="终端"
         >
           <CodeOutlined/>
         </AuthDiv>
@@ -70,8 +71,9 @@ export default function (props) {
         <div className={styles.user}>
           <Dropdown menu={{items: userMenuItems}}>
             <span className={styles.action} role="button" tabIndex={0} aria-label="用户菜单">
-              <Avatar size={24} src={avatar} className={styles.avatar}/>
+              <Avatar size={28} src={avatar} className={styles.avatar}/>
               <span className={styles.nickname}>{localStorage.getItem('nickname') || '用户'}</span>
+              <DownOutlined className={styles.userArrow}/>
             </span>
           </Dropdown>
         </div>

@@ -6,7 +6,19 @@
 import React, { useState, useEffect } from 'react';
 import { message } from 'libs/message';
 import { Form, Input, Button, Tabs, Modal } from 'antd';
-import { UserOutlined, LockOutlined, CopyrightOutlined, GithubOutlined, MailOutlined } from '@ant-design/icons';
+import {
+  UserOutlined,
+  LockOutlined,
+  CopyrightOutlined,
+  GithubOutlined,
+  MailOutlined,
+  ThunderboltOutlined,
+  CloudServerOutlined,
+  SafetyCertificateOutlined,
+  DeploymentUnitOutlined,
+  CodeOutlined,
+  StarFilled,
+} from '@ant-design/icons';
 import styles from './login.module.css';
 import 'styles/tokens.css';
 import './tokens.css';
@@ -18,6 +30,19 @@ import appStore from 'pages/config/app/store';
 import requestStore from 'pages/deploy/request/store';
 import execStore from 'pages/exec/task/store';
 import hostStore from 'pages/host/store';
+
+const FEATURES = [
+  { icon: <ThunderboltOutlined />, text: '无 Agent 运维', desc: 'SSH 直连批量执行' },
+  { icon: <CloudServerOutlined />, text: '一体化平台', desc: '发布/配置/监控/告警' },
+  { icon: <SafetyCertificateOutlined />, text: '权限管控', desc: 'RBAC + 操作日志追溯' },
+  { icon: <DeploymentUnitOutlined />, text: '流水线编排', desc: '可视化 CI 并行执行' },
+];
+
+const STATS = [
+  { icon: <StarFilled />, label: 'GitHub', value: '5.1k+' },
+  { icon: <CodeOutlined />, label: '开源协议', value: 'AGPL-3.0' },
+  { icon: <ThunderboltOutlined />, label: '版本', value: 'v4.0' },
+];
 
 export default function () {
   const [form] = Form.useForm();
@@ -99,100 +124,136 @@ export default function () {
 
   return (
     <div className={styles.container}>
-      <main className={styles.card} aria-labelledby="login-title">
-        <div className={styles.header}>
-          <img className={styles.logo} src={logo} alt="Spug Pro 运维平台" />
-          <div id="login-title" className={styles.title}>Spug Pro 运维平台</div>
-          <div className={styles.desc}>灵活、强大、易用的开源运维平台</div>
-        </div>
-
-        <Tabs
-          activeKey={loginType}
-          className={styles.tabs}
-          onTabClick={v => setLoginType(v)}
-          items={[
-            { key: 'default', label: '普通登录' },
-            { key: 'ldap', label: 'LDAP登录' },
-          ]}
-        />
-
-        <Form form={form} onFinish={handleSubmit} requiredMark={false}>
-          <Form.Item name="username" className={styles.formItem}>
-            <Input
-              size="large"
-              autoComplete="username"
-              placeholder="请输入账户"
-              aria-label="账户"
-              prefix={<UserOutlined className={styles.icon} />}
-            />
-          </Form.Item>
-          <Form.Item name="password" className={styles.formItem}>
-            <Input.Password
-              size="large"
-              autoComplete="current-password"
-              placeholder="请输入密码"
-              aria-label="密码"
-              prefix={<LockOutlined className={styles.icon} />}
-              onPressEnter={handleSubmit}
-            />
-          </Form.Item>
-          {codeVisible && (
-            <Form.Item name="captcha" className={styles.formItem}>
-              <div className={styles.captchaWrapper}>
-                <Form.Item noStyle name="captcha">
-                  <Input
-                    size="large"
-                    autoComplete="one-time-code"
-                    placeholder="请输入验证码"
-                    aria-label="验证码"
-                    prefix={<MailOutlined className={styles.icon} />}
-                  />
-                </Form.Item>
-                {counter > 0 ? (
-                  <Button disabled size="large" className={styles.captchaBtn}>
-                    {counter} 秒后重新获取
-                  </Button>
-                ) : (
-                  <Button
-                    size="large"
-                    loading={codeLoading}
-                    className={styles.captchaBtn}
-                    onClick={handleCaptcha}
-                  >
-                    获取验证码
-                  </Button>
-                )}
+      <aside className={styles.brand}>
+        <div className={styles.brandGrid} />
+        <div className={styles.brandOrb1} />
+        <div className={styles.brandOrb2} />
+        <div className={styles.brandContent}>
+          <div className={styles.brandBadge}>OPEN SOURCE</div>
+          <div className={styles.brandTitle}>Spug Pro</div>
+          <div className={styles.brandSubtitle}>轻量级自动化运维平台</div>
+          <div className={styles.brandDesc}>
+            灵活、强大、易用，让运维工作更简单高效
+          </div>
+          <div className={styles.featureGrid}>
+            {FEATURES.map((item, i) => (
+              <div key={i} className={styles.featureCard}>
+                <div className={styles.featureIcon}>{item.icon}</div>
+                <div className={styles.featureText}>
+                  <div className={styles.featureTitle}>{item.text}</div>
+                  <div className={styles.featureDesc}>{item.desc}</div>
+                </div>
               </div>
-            </Form.Item>
-          )}
-          <Form.Item className={styles.submitItem}>
-            <Button
-              block
-              size="large"
-              type="primary"
-              htmlType="submit"
-              className={styles.button}
-              loading={loading}
-            >
-              登录
-            </Button>
-          </Form.Item>
-        </Form>
-      </main>
+            ))}
+          </div>
+          <div className={styles.brandStats}>
+            {STATS.map((s, i) => (
+              <div key={i} className={styles.statItem}>
+                <span className={styles.statIcon}>{s.icon}</span>
+                <span className={styles.statValue}>{s.value}</span>
+                <span className={styles.statLabel}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerLinks}>
-          <a href="https://spug.cc" target="_blank" rel="noopener noreferrer">官网</a>
-          <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer"
-            aria-label="GitHub 仓库">
-            <GithubOutlined />
-          </a>
-          <a href="https://ops.spug.cc/docs/about-spug/" target="_blank" rel="noopener noreferrer">文档</a>
-        </div>
-        <div>
-          Copyright <CopyrightOutlined /> {new Date().getFullYear()} By OpenSpug
-        </div>
-      </footer>
+      <div className={styles.main}>
+        <main className={styles.card} aria-labelledby="login-title">
+          <div className={styles.header}>
+            <img className={styles.logo} src={logo} alt="Spug Pro 运维平台" />
+            <div id="login-title" className={styles.title}>Spug Pro 运维平台</div>
+            <div className={styles.desc}>灵活、强大、易用的开源运维平台</div>
+          </div>
+
+          <Tabs
+            activeKey={loginType}
+            className={styles.tabs}
+            onTabClick={v => setLoginType(v)}
+            items={[
+              { key: 'default', label: '普通登录' },
+              { key: 'ldap', label: 'LDAP登录' },
+            ]}
+          />
+
+          <Form form={form} onFinish={handleSubmit} requiredMark={false}>
+            <Form.Item name="username" className={styles.formItem}>
+              <Input
+                size="large"
+                autoComplete="username"
+                placeholder="请输入账户"
+                aria-label="账户"
+                prefix={<UserOutlined className={styles.icon} />}
+              />
+            </Form.Item>
+            <Form.Item name="password" className={styles.formItem}>
+              <Input.Password
+                size="large"
+                autoComplete="current-password"
+                placeholder="请输入密码"
+                aria-label="密码"
+                prefix={<LockOutlined className={styles.icon} />}
+                onPressEnter={handleSubmit}
+              />
+            </Form.Item>
+            {codeVisible && (
+              <Form.Item name="captcha" className={styles.formItem}>
+                <div className={styles.captchaWrapper}>
+                  <Form.Item noStyle name="captcha">
+                    <Input
+                      size="large"
+                      autoComplete="one-time-code"
+                      placeholder="请输入验证码"
+                      aria-label="验证码"
+                      prefix={<MailOutlined className={styles.icon} />}
+                    />
+                  </Form.Item>
+                  {counter > 0 ? (
+                    <Button disabled size="large" className={styles.captchaBtn}>
+                      {counter} 秒后重新获取
+                    </Button>
+                  ) : (
+                    <Button
+                      size="large"
+                      loading={codeLoading}
+                      className={styles.captchaBtn}
+                      onClick={handleCaptcha}
+                    >
+                      获取验证码
+                    </Button>
+                  )}
+                </div>
+              </Form.Item>
+            )}
+            <Form.Item className={styles.submitItem}>
+              <Button
+                block
+                size="large"
+                type="primary"
+                htmlType="submit"
+                className={styles.button}
+                loading={loading}
+              >
+                登录
+              </Button>
+            </Form.Item>
+          </Form>
+        </main>
+
+        <footer className={styles.footer}>
+          <div className={styles.footerLinks}>
+            <a href="https://spug.cc" target="_blank" rel="noopener noreferrer">官网</a>
+            <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer"
+              aria-label="GitHub 仓库">
+              <GithubOutlined />
+            </a>
+            <a href="https://ops.spug.cc/docs/about-spug/" target="_blank" rel="noopener noreferrer">文档</a>
+          </div>
+          <div>
+            Copyright <CopyrightOutlined /> {new Date().getFullYear()} By OpenSpug
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

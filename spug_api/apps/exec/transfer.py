@@ -8,19 +8,16 @@ from django_redis import get_redis_connection
 from apps.exec.models import Transfer
 from apps.account.utils import has_host_perm
 from apps.host.models import Host
-from apps.setting.utils import AppSetting
 from libs import json_response, JsonParser, Argument, auth
 from libs.utils import human_seconds_time
 from libs.execution.factory import ExecutorFactory
 from concurrent import futures
 from threading import Thread
 import subprocess
-import tempfile
 import uuid
 import json
 import time
 import os
-import shlex
 
 
 class TransferView(View):
@@ -33,61 +30,27 @@ class TransferView(View):
     def post(self, request):
         data = request.POST.get('data')
         form, error = JsonParser(
-            Argument('host', required=False),
             Argument('dst_dir', help='请输入目标路径'),
             Argument('host_ids', type=list, filter=lambda x: len(x), help='请选择目标主机'),
         ).parse(data)
         if error is None:
             if not has_host_perm(request.user, form.host_ids):
                 return json_response(error='无权访问主机，请联系管理员')
-            host_id = None
-            src_path = None
             token = uuid.uuid4().hex
             base_dir = os.path.join(settings.TRANSFER_DIR, token)
-            if form.host:
-                host_id, path = json.loads(form.host)
-                src_path = path
-                if not path.strip('/'):
-                    return json_response(error='请输入正确的数据源路径')
-                host = Host.objects.get(pk=host_id)
-                with host.get_ssh() as ssh:
-                    code, _ = ssh.exec_command_raw(f'[ -d {shlex.quote(path)} ]')
-                    if code != 0:
-                        return json_response(error='数据源路径必须为该主机上已存在的目录')
-                os.makedirs(base_dir)
-                with tempfile.NamedTemporaryFile(mode='w') as fp:
-                    fp.write(host.pkey or AppSetting.get('private_key'))
-                    fp.flush()
-                    target = f'{host.username}@{host.hostname}:{path}'
-                    # 使用参数列表形式调用 sshfs，避免命令注入
-                    ssh_cmd = ['ssh', '-p', str(host.port), '-i', fp.name]
-                    command = ['sshfs', '-o', 'ro', '-o', f'ssh_command=ssh -p {host.port} -i {fp.name}', target, base_dir]
-                    task = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    if task.returncode != 0:
-                        # 使用 subprocess.run 替代 os.system，避免命令注入
-                        try:
-                            subprocess.run(['umount', '-f', base_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-                            subprocess.run(['rm', '-rf', base_dir], check=False)
-                        except Exception:
-                            pass
-                        return json_response(error=task.stdout.decode())
-            else:
-                os.makedirs(base_dir)
-                index = 0
-                while True:
-                    file = request.FILES.get(f'file{index}')
-                    if not file:
-                        break
-                    with open(os.path.join(base_dir, file.name), 'wb') as f:
-                        for chunk in file.chunks():
-                            f.write(chunk)
-                    index += 1
+            os.makedirs(base_dir)
+            index = 0
+            while True:
+                file = request.FILES.get(f'file{index}')
+                if not file:
+                    break
+                with open(os.path.join(base_dir, os.path.basename(file.name)), 'wb') as f:
+                    for chunk in file.chunks():
+                        f.write(chunk)
+                index += 1
             Transfer.objects.create(
                 user=request.user,
                 digest=token,
-                src_host_id=host_id,
-                src_path=src_path,
-                src_type='remote' if host_id else 'upload',
                 src_dir=base_dir,
                 dst_dir=form.dst_dir,
                 host_ids=json.dumps(form.host_ids),
@@ -124,15 +87,8 @@ def _dispatch_sync(task):
                     t.token,
                     json.dumps({'key': t.key, 'status': -1, 'data': f'\x1b[31mException: {exc}\x1b[0m'})
                 )
-    if task.src_host_id:
-        # 使用 subprocess.run 替代 shell=True，避免命令注入
-        try:
-            subprocess.run(['umount', '-f', task.src_dir], check=False)
-            subprocess.run(['rm', '-rf', task.src_dir], check=False)
-        except Exception:
-            pass
-    else:
-        subprocess.run(['rm', '-rf', task.src_dir], check=False)
+
+    subprocess.run(['rm', '-rf', task.src_dir], check=False)
     close_old_connections()
 
 
@@ -147,12 +103,11 @@ def _do_sync(rds, task, host):
         pkey=host.private_key,
     )
 
-    archive = bool(task.src_host_id)
     flag = time.time()
     status = -1
 
     try:
-        for code, line in executor.transfer_file(task.src_dir, task.dst_dir, archive=archive):
+        for code, line in executor.transfer_file(task.src_dir, task.dst_dir, archive=False):
             if line:
                 rds.publish(token, json.dumps({'key': host.id, 'data': line}))
             if code != -1:

@@ -48,7 +48,7 @@ export default observer(function () {
       icon: <ExclamationCircleOutlined/>,
       title: '添加模板类型',
       content: (
-        <Form layout="vertical" style={{marginTop: 24}}>
+        <Form layout="vertical" style={{marginTop: 'var(--space-6)'}}>
           <Form.Item required label="模板类型">
             <Input onChange={e => type = e.target.value}/>
           </Form.Item>
@@ -93,14 +93,14 @@ export default observer(function () {
       <Form form={form} initialValues={info} labelCol={{span: 6}} wrapperCol={{span: 14}}>
         <div className={styles.sectionTitle}>基本信息</div>
         <Form.Item required label="模板类型" style={{marginBottom: 0}}>
-          <Form.Item name="type" style={{display: 'inline-block', width: 'calc(75%)', marginRight: 8}}>
+          <Form.Item name="type" className={styles.typeSelect}>
             <Select placeholder="请选择模板类型">
               {S.types.map(item => (
                 <Select.Option value={item} key={item}>{item}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item style={{display: 'inline-block', width: 'calc(25%-8px)'}}>
+          <Form.Item className={styles.typeAddBtn}>
             <Button type="link" onClick={handleAddZone}>添加类型</Button>
           </Form.Item>
         </Form.Item>
@@ -117,7 +117,7 @@ export default observer(function () {
           <Input.TextArea placeholder="请输入模板备注信息"/>
         </Form.Item>
 
-        <Divider style={{margin: '8px 0'}}/>
+        <Divider className={styles.sectionDivider}/>
 
         <div className={styles.sectionTitle}>模板内容</div>
         <Form.Item required label="脚本内容" shouldUpdate={(p, c) => p.interpreter !== c.interpreter}>
@@ -132,7 +132,7 @@ export default observer(function () {
           )}
         </Form.Item>
 
-        <Divider style={{margin: '8px 0'}}/>
+        <Divider className={styles.sectionDivider}/>
 
         <div className={styles.sectionTitle}>参数与主机</div>
         <Form.Item label="参数化">

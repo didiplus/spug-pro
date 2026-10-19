@@ -1,26 +1,87 @@
-/* login-tokens.css - 登录页组件级令牌
- * 公共令牌（primitive/semantic/dark mode）见 src/styles/tokens.css
+/* login-tokens.css - 登录页组件级令牌（三层架构：primitive → semantic → component）
+ * 公共令牌见 src/styles/tokens.css，此处仅定义登录页组件级令牌。
+ * 色调统一：品牌面板渐变引用 blue/purple 原始令牌，与表单主色 --color-primary 同源。
  */
 
 :root {
-  /* 登录卡片 */
-  --login-card-bg:      var(--color-card);
-  --login-card-text:    var(--color-card-text);
-  --login-card-border:  var(--color-border-secondary);
-  --login-card-shadow:  var(--shadow-md);
-  --login-card-shadow-hover: var(--shadow-lg);
-  --login-card-radius:  var(--radius-xl);
-  --login-card-width:   400px;
-  --login-card-padding: var(--space-12);
+  /* ── 登录卡片 ── */
+  --login-card-bg:           rgba(255, 255, 255, 0.88);
+  --login-card-text:         var(--color-card-text);
+  --login-card-border:       rgba(255, 255, 255, 0.6);
+  --login-card-shadow:       0 20px 60px -12px rgba(0, 0, 0, 0.12);
+  --login-card-shadow-hover: 0 24px 72px -8px rgba(0, 0, 0, 0.18);
+  --login-card-radius:       20px;
+  --login-card-width:        420px;
+  --login-card-padding:      var(--space-12);
 
-  /* 登录按钮 */
-  --login-button-height:    44px;
-  --login-button-radius:   var(--radius-md);
-  --login-button-font:     var(--font-size-base);
+  /* ── 登录按钮 ── */
+  --login-button-height:     46px;
+  --login-button-radius:     12px;
+  --login-button-font:       var(--font-size-base);
 
-  /* 输入框 */
-  --login-input-height:    44px;
+  /* ── 输入框 ── */
+  --login-input-height:      46px;
 
-  /* 页脚 */
-  --login-footer-text: var(--color-text-secondary);
+  /* ── 页脚 ── */
+  --login-footer-text:       var(--color-text-secondary);
+
+  /* ── 品牌面板（引用 primitive 令牌，与 --color-primary 同源）── */
+  --login-brand-width:       500px;
+  --login-brand-bg:          linear-gradient(
+    135deg,
+    var(--color-blue-600) 0%,
+    var(--color-blue-500) 40%,
+    var(--color-purple-500) 100%
+  );
+  --login-brand-text:        #ffffff;
+  --login-brand-text-secondary: rgba(255, 255, 255, 0.72);
+  --login-brand-text-tertiary:  rgba(255, 255, 255, 0.55);
+  --login-brand-glass-bg:    rgba(255, 255, 255, 0.06);
+  --login-brand-glass-border: rgba(255, 255, 255, 0.1);
+  --login-brand-glass-hover:  rgba(255, 255, 255, 0.1);
+  --login-brand-divider:     rgba(255, 255, 255, 0.1);
+  --login-brand-grid-line:   rgba(255, 255, 255, 0.03);
+}
+
+/* ── 深色模式（手动覆盖）── */
+:global([data-theme="dark"]) .container,
+:global(.spug-dark) .container {
+  --login-card-bg:           rgba(30, 30, 42, 0.82);
+  --login-card-border:       rgba(255, 255, 255, 0.08);
+  --login-card-shadow:       0 20px 60px -12px rgba(0, 0, 0, 0.5);
+  --login-card-shadow-hover: 0 24px 72px -8px rgba(0, 0, 0, 0.6);
+
+  --login-brand-bg:          linear-gradient(
+    135deg,
+    var(--color-gray-950) 0%,
+    var(--color-blue-700) 45%,
+    var(--color-purple-600) 100%
+  );
+  --login-brand-glass-bg:    rgba(255, 255, 255, 0.04);
+  --login-brand-glass-border: rgba(255, 255, 255, 0.06);
+  --login-brand-glass-hover:  rgba(255, 255, 255, 0.08);
+  --login-brand-divider:     rgba(255, 255, 255, 0.06);
+  --login-brand-grid-line:   rgba(255, 255, 255, 0.02);
+}
+
+/* ── 深色模式（跟随系统）── */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .container {
+    --login-card-bg:           rgba(30, 30, 42, 0.82);
+    --login-card-border:       rgba(255, 255, 255, 0.08);
+    --login-card-shadow:       0 20px 60px -12px rgba(0, 0, 0, 0.5);
+    --login-card-shadow-hover: 0 24px 72px -8px rgba(0, 0, 0, 0.6);
+
+    --login-brand-bg:          linear-gradient(
+      135deg,
+      var(--color-gray-950) 0%,
+      var(--color-blue-700) 45%,
+      var(--color-purple-600) 100%
+    );
+    --login-brand-glass-bg:    rgba(255, 255, 255, 0.04);
+    --login-brand-glass-border: rgba(255, 255, 255, 0.06);
+    --login-brand-glass-hover:  rgba(255, 255, 255, 0.08);
+    --login-brand-divider:     rgba(255, 255, 255, 0.06);
+    --login-brand-grid-line:   rgba(255, 255, 255, 0.02);
+  }
 }

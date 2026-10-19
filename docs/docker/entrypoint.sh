@@ -15,6 +15,17 @@ DB_PASSWORD="${DB_PASSWORD:-${MYSQL_PASSWORD:-}}"
 DB_HOST="${DB_HOST:-${MYSQL_HOST:-127.0.0.1}}"
 DB_PORT="${DB_PORT:-${MYSQL_PORT:-3306}}"
 
+# Redis 配置（支持外部 Redis）
+REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+REDIS_DB="${REDIS_DB:-1}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+# Channels Redis 配置（默认回退到普通 Redis）
+CHANNELS_REDIS_HOST="${CHANNELS_REDIS_HOST:-${REDIS_HOST}}"
+CHANNELS_REDIS_PORT="${CHANNELS_REDIS_PORT:-${REDIS_PORT}}"
+CHANNELS_REDIS_PASSWORD="${CHANNELS_REDIS_PASSWORD:-${REDIS_PASSWORD}}"
+
 # 写入 .env
 cat > /data/spug/spug_api/.env << EOF
 SPUG_ENV=prod
@@ -27,10 +38,15 @@ DB_HOST=${DB_HOST}
 DB_PORT=${DB_PORT}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-REDIS_DB=1
+REDIS_HOST=${REDIS_HOST}
+REDIS_PORT=${REDIS_PORT}
+REDIS_DB=${REDIS_DB}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+CHANNELS_REDIS_HOST=${CHANNELS_REDIS_HOST}
+CHANNELS_REDIS_PORT=${CHANNELS_REDIS_PORT}
+CHANNELS_REDIS_PASSWORD=${CHANNELS_REDIS_PASSWORD}
 TOKEN_TTL=28800
+SECURE_SSL=${SECURE_SSL:-false}
 EOF
 
 # 等待数据库就绪
@@ -61,7 +77,7 @@ if [ ! -f /data/spug/.initialized ]; then
     cd /data/spug/spug_api
     python3 manage.py updatedb
     if [ -n "$SPUG_ADMIN_USER" ] && [ -n "$SPUG_ADMIN_PASS" ]; then
-        python3 manage.py useradd -u "$SPUG_ADMIN_USER" -p "$SPUG_ADMIN_PASS" -s -n 管理员
+        python3 manage.py user add -u "$SPUG_ADMIN_USER" -p "$SPUG_ADMIN_PASS" -s -n 管理员
         echo "[entrypoint] 管理员账户已创建: $SPUG_ADMIN_USER"
     fi
     touch /data/spug/.initialized

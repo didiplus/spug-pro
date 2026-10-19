@@ -46,11 +46,13 @@ def port_check(addr, port):
 
 def ping_check(addr):
     try:
+        if not addr or len(addr) > 255:
+            return False, '无效的地址'
         if platform.system().lower() == 'windows':
-            command = f'ping -n 1 -w 3000 {addr}'
+            command = ['ping', '-n', '1', '-w', '3000', addr]
         else:
-            command = f'ping -c 1 -W 3 {addr}'
-        task = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+            command = ['ping', '-c', '1', '-W', '3', addr]
+        task = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if task.returncode == 0:
             return True, 'Ping检测正常'
         else:

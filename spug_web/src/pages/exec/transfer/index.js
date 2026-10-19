@@ -1,6 +1,6 @@
 /**
  * Copyright (c) OpenSpug Organization. https://github.com/openspug/spug
- * Copyright (c) <spug.dev@gmail.com>
+ * Copyright: (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
 import React, { useState, useEffect } from 'react';
@@ -9,8 +9,6 @@ import {
   ThunderboltOutlined,
   QuestionCircleOutlined,
   UploadOutlined,
-  CloudServerOutlined,
-
 } from '@ant-design/icons';
 import { message } from 'libs/message';
 import {Form, Button, Tooltip, Space, Table, Input, Upload, Drawer, Flex, Typography, Tag, Empty} from 'antd';
@@ -47,18 +45,13 @@ function TransferIndex() {
   }
 
   function handleSubmit() {
-    const formData = new FormData();
     if (files.length === 0) return message.error('请添加数据源')
     if (!dir) return message.error('请输入目标路径')
     if (hosts.length === 0) return message.error('请选择目标主机')
+    const formData = new FormData();
     const data = {dst_dir: dir, host_ids: hosts.map(x => x.id)}
     for (let index in files) {
-      const item = files[index]
-      if (item.type === 'host') {
-        data.host = JSON.stringify([item.host_id, item.path])
-      } else {
-        formData.append(`file${index}`, item.path)
-      }
+      formData.append(`file${index}`, files[index].path)
     }
     formData.append('data', JSON.stringify(data))
     setLoading(true)
@@ -81,20 +74,10 @@ function TransferIndex() {
       })
   }
 
-  function makeFile(row) {
-    setFiles([{
-      id: uniqueId(),
-      type: 'host',
-      name: row.name,
-      path: '',
-      host_id: row.id
-    }])
-  }
-
   function handleUpload(_, fileList) {
-    const tmp = files.length > 0 && files[0].type === 'upload' ? [...files] : []
+    const tmp = []
     for (let file of fileList) {
-      tmp.push({id: uniqueId(), type: 'upload', name: '本地上传', path: file})
+      tmp.push({id: uniqueId(), name: file.name, path: file})
     }
     setFiles(tmp)
     return Upload.LIST_IGNORE
@@ -121,18 +104,13 @@ function TransferIndex() {
             <Upload multiple beforeUpload={handleUpload}>
               <Button icon={<UploadOutlined />}>上传本地文件</Button>
             </Upload>
-            <HostSelector onlyOne mode="rows" onChange={row => makeFile(row)}>
-              <Button icon={<CloudServerOutlined />}>添加主机文件</Button>
-            </HostSelector>
           </Space>
           <div className={style.fileList}>
             {files.length === 0 ? (
               <Empty description="暂无数据源" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
               <Table rowKey="id" showHeader={false} pagination={false} size="small" dataSource={files}>
-                <Table.Column title="文件来源" dataIndex="name" width={120} />
-                <Table.Column title="文件名称/路径" render={info => info.type === 'upload' ? info.path.name : (
-                  <Input onChange={e => info.path = e.target.value} placeholder="请输入要同步的目录路径"/>)}/>
+                <Table.Column title="文件名称" dataIndex="name" />
                 <Table.Column title="操作" width={72} render={(_, __, index) => (
                   <Button danger type="link" onClick={() => handleRemove(index)}>移除</Button>)}/>
               </Table>
@@ -170,9 +148,7 @@ function TransferIndex() {
             histories.map((item, index) => (
               <div key={index} className={style.historyItem}>
                 <Flex align="center" gap={8}>
-                  <Tag color={item.src_host_id ? 'blue' : 'gold'} style={{ margin: 0 }}>
-                    {item.src_host_id ? '主机' : '上传'}
-                  </Tag>
+                  <Tag color="gold" style={{ margin: 0 }}>上传</Tag>
                   <Tag style={{ margin: 0 }}>{item.host_ids.length} 台</Tag>
                   <Text ellipsis style={{ flex: 1, fontSize: 12 }}>
                     {item.dst_dir}

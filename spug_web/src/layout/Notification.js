@@ -142,7 +142,7 @@ export default function Notification() {
       </div>
       <div className={styles.list}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{ padding: 'var(--space-10)', textAlign: 'center' }}>
             <Spin />
           </div>
         ) : notifies.length === 0 ? (

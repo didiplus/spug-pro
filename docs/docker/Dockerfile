@@ -2,14 +2,14 @@
 FROM node:18-slim AS frontend-builder
 WORKDIR /build
 COPY spug_web/package.json spug_web/package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 COPY spug_web/ ./
 RUN NODE_OPTIONS=--openssl-legacy-provider GENERATE_SOURCEMAP=false npx react-app-rewired build
 
 # ── Stage 2: 运行时 ──
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="Spug" \
+LABEL org.opencontainers.image.title="Spug Pro" \
       org.opencontainers.image.description="轻量级无 Agent 自动化运维平台" \
       org.opencontainers.image.version="4.0.0" \
       org.opencontainers.image.license="AGPL-3.0" \

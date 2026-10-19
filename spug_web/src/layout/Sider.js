@@ -6,6 +6,9 @@ import { IconByName } from '../components/IconSelect';
 import styles from './layout.module.less';
 import logo from './logo-spug-white.png';
 
+const SIDER_WIDTH = 208;
+const SIDER_COLLAPSED_WIDTH = 64;
+
 function buildMenuItems(menus, openKeysMap) {
   const result = [];
   for (const m of menus) {
@@ -81,13 +84,18 @@ export default function Sider(props) {
   };
 
   return (
-    <Layout.Sider width={208} collapsed={props.collapsed} className={styles.sider}>
+    <Layout.Sider
+      width={SIDER_WIDTH}
+      collapsedWidth={SIDER_COLLAPSED_WIDTH}
+      collapsed={props.collapsed}
+      className={styles.sider}
+    >
       <div className={styles.logo}>
         <img src={logo} alt="Logo" />
       </div>
       <div
         className={styles.menus}
-        style={{ height: `${document.body.clientHeight - 64}px` }}
+        style={{ height: 'calc(100vh - var(--layout-logo-height))' }}
       >
         <Menu
           theme="dark"

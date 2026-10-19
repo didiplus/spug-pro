@@ -9,7 +9,7 @@ from apps.account.models import History, OperationLog
 class HistoryView(View):
     @auth('system.login.view')
     def get(self, request):
-        histories = History.objects.all()
+        histories = History.objects.all().order_by('created_at')
         return json_response(histories)
 
 
@@ -24,7 +24,7 @@ class OperotionLogView(View):
         start_time = request.GET.get('start_time', '').strip()
         end_time = request.GET.get('end_time', '').strip()
 
-        queryset = OperationLog.objects.all()
+        queryset = OperationLog.objects.all().order_by('create_time')
 
         if username:
             queryset = queryset.filter(username__icontains=username)

@@ -62,7 +62,7 @@ export default function () {
   return (
     <Layout>
       <Sider collapsed={collapsed} menus={menus}/>
-      <Layout style={{height: '100vh'}}>
+      <Layout style={{height: '100dvh'}}>
         <Header collapsed={collapsed} toggle={() => setCollapsed(!collapsed)}/>
         <Layout.Content className={styles.content} id="spug-container">
           <Switch>

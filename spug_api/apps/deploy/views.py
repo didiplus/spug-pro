@@ -346,12 +346,19 @@ def do_upload(request):
     file = request.FILES['file']
     deploy_id = request.POST.get('deploy_id')
     if file and deploy_id:
+        try:
+            deploy_id = str(int(deploy_id))
+        except (ValueError, TypeError):
+            return json_response(error='无效的 deploy_id')
         dir_name = os.path.join(repos_dir, deploy_id)
         file_name = datetime.now().strftime("%Y%m%d%H%M%S")
-        command = f'mkdir -p {dir_name} && cd {dir_name} && ls | sort  -rn | tail -n +11 | xargs rm -rf'
-        code, outputs = subprocess.getstatusoutput(command)
-        if code != 0:
-            return json_response(error=outputs)
+        os.makedirs(dir_name, exist_ok=True)
+        old_files = sorted(
+            (f for f in os.listdir(dir_name) if os.path.isfile(os.path.join(dir_name, f))),
+            reverse=True,
+        )
+        for old_file in old_files[10:]:
+            os.remove(os.path.join(dir_name, old_file))
         with open(os.path.join(dir_name, file_name), 'wb') as f:
             for chunk in file.chunks():
                 f.write(chunk)
