@@ -9,6 +9,7 @@ import {
 import { http } from 'libs';
 import store from '../store';
 import { getDbTypeConfig } from '../dbTypes';
+import { METRIC_COLORS } from 'styles/statusPresets';
 
 const { Text } = Typography;
 
@@ -21,15 +22,18 @@ function MetricCards({ metrics }) {
   if (!metrics || metrics.length === 0) return null;
   return (
     <Row gutter={12}>
-      {metrics.map((m) => (
+      {metrics.map((m) => {
+        const resolvedColor = METRIC_COLORS[m.color] || m.color;
+        return (
         <Col key={m.key} span={Math.max(4, Math.floor(24 / metrics.length))}>
           <Card size="small" style={{ textAlign: 'center' }} styles={{ body: { padding: '12px 8px' } }}>
-            <div style={{ color: m.color, fontSize: 18, marginBottom: 4 }}>{iconMap[m.icon] || <ClockCircleOutlined />}</div>
-            <Statistic value={m.value} valueStyle={{ color: m.color, fontSize: 20, fontWeight: 600 }} />
+            <div style={{ color: resolvedColor, fontSize: 18, marginBottom: 4 }}>{iconMap[m.icon] || <ClockCircleOutlined />}</div>
+            <Statistic value={m.value} valueStyle={{ color: resolvedColor, fontSize: 20, fontWeight: 600 }} />
             <Text type="secondary" style={{ fontSize: 12 }}>{m.label}</Text>
           </Card>
         </Col>
-      ))}
+        );
+      })}
     </Row>
   );
 }

@@ -437,7 +437,7 @@ export default observer(function BackupManager() {
           <Progress
             percent={downloadState.percent}
             status={downloadState.percent >= 100 ? 'success' : 'active'}
-            strokeColor={{ from: '#1677ff', to: '#52c41a' }}
+            strokeColor={{ from: 'var(--color-primary)', to: 'var(--color-green-500)' }}
           />
         </Flex>
       </Modal>

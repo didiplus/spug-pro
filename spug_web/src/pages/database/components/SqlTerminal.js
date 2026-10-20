@@ -348,7 +348,7 @@ export default observer(function SqlTerminal() {
               <Flex vertical align="center" justify="center" style={{ padding: '100px 0' }}>
                 <ConsoleSqlOutlined style={{ fontSize: 40, color: 'var(--color-text-tertiary)' }} />
                 <Text type="secondary" style={{ marginTop: 8 }}>输入 SQL 并执行查看结果</Text>
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, color: 'var(--color-text-tertiary)' }}>支持 SELECT / INSERT / UPDATE / DELETE 等语句</Text>
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, color: 'var(--color-text-tertiary)' }}>仅支持 SELECT / SHOW / DESCRIBE / EXPLAIN 查询语句</Text>
               </Flex>
             )}
           </div>

@@ -12,6 +12,7 @@ import {
 import { hasPermission } from 'libs';
 import store from '../store';
 import { getDbTypeConfig } from '../dbTypes';
+import { METRIC_COLORS } from 'styles/statusPresets';
 import SlowQuery from './SlowQuery';
 import BackupManager from './BackupManager';
 
@@ -32,13 +33,14 @@ const iconComponentMap = {
 };
 
 function MetricCard({ label, value, color, icon }) {
+  const resolvedColor = METRIC_COLORS[color] || color;
   return (
-    <Card size="small" style={{ textAlign: 'center', height: '100%' }} bodyStyle={{ padding: '16px 8px' }}>
-      <div style={{ color, fontSize: 20, marginBottom: 8 }}>
+    <Card size="small" style={{ textAlign: 'center', height: '100%' }} styles={{ body: { padding: '16px 8px' } }}>
+      <div style={{ color: resolvedColor, fontSize: 20, marginBottom: 8 }}>
         {iconComponentMap[icon] || <DatabaseOutlined />}
       </div>
-      <Statistic value={value} valueStyle={{ color, fontSize: 22, fontWeight: 600 }} />
-      <div style={{ marginTop: 4, color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>{label}</div>
+      <Statistic value={value} valueStyle={{ color: resolvedColor, fontSize: 22, fontWeight: 600 }} />
+      <div style={{ marginTop: 4, color: 'var(--color-text-secondary)', fontSize: 13 }}>{label}</div>
     </Card>
   );
 }
@@ -243,7 +245,7 @@ export default observer(function DatabaseDetail() {
       styles={{ body: { padding: '24px' } }}
       title={
         <Flex align="center" gap={8}>
-          <DatabaseOutlined style={{ color: '#1890ff' }} />
+          <DatabaseOutlined style={{ color: 'var(--color-primary)' }} />
           <span style={{ fontWeight: 500 }}>{record.name}</span>
           <Tag color={(statusMap[record.status] || {}).color || 'default'}>
             {(statusMap[record.status] || {}).text || '未知'}

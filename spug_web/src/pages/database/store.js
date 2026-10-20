@@ -212,6 +212,37 @@ showEdit = (record) => {
       });
     }
   }
+
+  @action
+  async createStorageConfig(values) {
+    const res = await http.post('/api/setting/storage-configs/', values);
+    runInAction(() => {
+      this.storageConfigs = [...this.storageConfigs, res];
+    });
+    return res;
+  }
+
+  @action
+  async updateStorageConfig(id, values) {
+    const res = await http.put(`/api/setting/storage-configs/${id}/`, values);
+    runInAction(() => {
+      this.storageConfigs = this.storageConfigs.map(c => c.id === id ? res : c);
+    });
+    return res;
+  }
+
+  @action
+  async deleteStorageConfig(id) {
+    await http.delete(`/api/setting/storage-configs/${id}/`);
+    runInAction(() => {
+      this.storageConfigs = this.storageConfigs.filter(c => c.id !== id);
+    });
+  }
+
+  @action
+  async testStorageConfig(values) {
+    return await http.post('/api/setting/storage-configs/test/', values);
+  }
 }
 
 export default new DatabaseStore();

@@ -86,3 +86,13 @@ export const DB_TYPE_HEX = {
   elasticsearch: '#d4380d',
   cassandra:     '#7cb305',
 };
+export const METRIC_COLORS = {
+  error:      VAR('--color-red-600'),
+  warning:    VAR('--color-orange-500'),
+  success:    VAR('--color-green-500'),
+  info:       VAR('--color-blue-500'),
+  processing: VAR('--color-purple-500'),
+  default:    VAR('--color-gray-500'),
+  danger:     VAR('--color-red-500'),
+  primary:    VAR('--color-primary'),
+};

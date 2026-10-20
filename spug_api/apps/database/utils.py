@@ -1,4 +1,7 @@
+import os
+import re
 import time
+import subprocess
 from typing import Dict, Union, Optional, List
 from functools import wraps
 
@@ -68,7 +71,7 @@ except ImportError:
 #             "key": "connections",         # 唯一标识
 #             "label": "连接数",            # 显示名称
 #             "value": "120/500",           # 显示值（字符串）
-#             "color": "#fa8c16",           # 值颜色
+#             "color": "warning",           # 值颜色
 #             "icon": "api"                 # 图标名（前端映射）
 #         },
 #         ...
@@ -301,10 +304,10 @@ def fetch_mysql_detail(host, port, username, password):
 
     return {
         "metrics": [
-            {"key": "connections", "label": "连接数", "value": f"{sv.get('Threads_connected', 0)}/{sv.get('Max_used_connections', '-')}", "color": "#fa8c16", "icon": "api"},
-            {"key": "qps", "label": "QPS", "value": sv.get('Queries', '0'), "color": "#722ed1", "icon": "thunderbolt"},
-            {"key": "slow_queries", "label": "慢查询", "value": sv.get('Slow_queries', '0'), "color": "#cf1322" if int(sv.get('Slow_queries', 0)) > 0 else "#52c41a", "icon": "clock"},
-            {"key": "uptime", "label": "运行时长", "value": _format_uptime(sv.get('Uptime', 0)), "color": "#1890ff", "icon": "clock"},
+            {"key": "connections", "label": "连接数", "value": f"{sv.get('Threads_connected', 0)}/{sv.get('Max_used_connections', '-')}", "color": "warning", "icon": "api"},
+            {"key": "qps", "label": "QPS", "value": sv.get('Queries', '0'), "color": "processing", "icon": "thunderbolt"},
+            {"key": "slow_queries", "label": "慢查询", "value": sv.get('Slow_queries', '0'), "color": "error" if int(sv.get('Slow_queries', 0)) > 0 else "#52c41a", "icon": "clock"},
+            {"key": "uptime", "label": "运行时长", "value": _format_uptime(sv.get('Uptime', 0)), "color": "info", "icon": "clock"},
         ],
         "databases": {
             "columns": [
@@ -365,10 +368,10 @@ def fetch_redis_detail(host, port, username=None, password=None):
 
     return {
         "metrics": [
-            {"key": "clients", "label": "连接客户端", "value": str(clients_info.get("connected_clients", 0)), "color": "#fa8c16", "icon": "api"},
-            {"key": "ops", "label": "OPS", "value": str(stats_info.get("instantaneous_ops_per_sec", 0)), "color": "#722ed1", "icon": "thunderbolt"},
-            {"key": "memory", "label": "内存使用", "value": memory_info.get("used_memory_human", "-"), "color": "#52c41a", "icon": "database"},
-            {"key": "uptime", "label": "运行时长", "value": _format_uptime(server_info.get("uptime_in_seconds", 0)), "color": "#1890ff", "icon": "clock"},
+            {"key": "clients", "label": "连接客户端", "value": str(clients_info.get("connected_clients", 0)), "color": "warning", "icon": "api"},
+            {"key": "ops", "label": "OPS", "value": str(stats_info.get("instantaneous_ops_per_sec", 0)), "color": "processing", "icon": "thunderbolt"},
+            {"key": "memory", "label": "内存使用", "value": memory_info.get("used_memory_human", "-"), "color": "success", "icon": "database"},
+            {"key": "uptime", "label": "运行时长", "value": _format_uptime(server_info.get("uptime_in_seconds", 0)), "color": "info", "icon": "clock"},
         ],
         "databases": {
             "columns": [
@@ -413,9 +416,9 @@ def fetch_pg_detail(host, port, username, password, database="postgres"):
 
     return {
         "metrics": [
-            {"key": "active", "label": "活跃连接", "value": str(active), "color": "#fa8c16", "icon": "api"},
-            {"key": "idle", "label": "空闲连接", "value": str(idle), "color": "#8c8c8c", "icon": "api"},
-            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "#1890ff", "icon": "database"},
+            {"key": "active", "label": "活跃连接", "value": str(active), "color": "warning", "icon": "api"},
+            {"key": "idle", "label": "空闲连接", "value": str(idle), "color": "default", "icon": "api"},
+            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "info", "icon": "database"},
         ],
         "databases": {
             "columns": [
@@ -630,10 +633,10 @@ def fetch_mysql_slow_queries(host, port, username, password, limit=50):
             "rows": [],
         },
         "metrics": [
-            {"key": "slow_query_count", "label": "慢查询总数", "value": "0", "color": "#cf1322", "icon": "clock"},
-            {"key": "avg_latency", "label": "平均耗时", "value": "0ms", "color": "#fa8c16", "icon": "clock"},
-            {"key": "max_latency", "label": "最大耗时", "value": "0ms", "color": "#ff4d4f", "icon": "clock"},
-            {"key": "total_exec", "label": "总执行次数", "value": "0", "color": "#1677ff", "icon": "api"},
+            {"key": "slow_query_count", "label": "慢查询总数", "value": "0", "color": "error", "icon": "clock"},
+            {"key": "avg_latency", "label": "平均耗时", "value": "0ms", "color": "warning", "icon": "clock"},
+            {"key": "max_latency", "label": "最大耗时", "value": "0ms", "color": "danger", "icon": "clock"},
+            {"key": "total_exec", "label": "总执行次数", "value": "0", "color": "primary", "icon": "api"},
         ],
     }
 
@@ -670,10 +673,10 @@ def fetch_mysql_slow_queries(host, port, username, password, limit=50):
                 avg_latency = round(total_latency / total_exec, 2) if total_exec > 0 else 0
 
                 result['metrics'] = [
-                    {"key": "slow_query_count", "label": "慢查询总数", "value": str(len(rows)), "color": "#cf1322", "icon": "clock"},
-                    {"key": "avg_latency", "label": "平均耗时", "value": f"{avg_latency}ms", "color": "#fa8c16", "icon": "clock"},
-                    {"key": "max_latency", "label": "最大耗时", "value": f"{max_latency}ms", "color": "#ff4d4f", "icon": "clock"},
-                    {"key": "total_exec", "label": "总执行次数", "value": str(total_exec), "color": "#1677ff", "icon": "api"},
+                    {"key": "slow_query_count", "label": "慢查询总数", "value": str(len(rows)), "color": "error", "icon": "clock"},
+                    {"key": "avg_latency", "label": "平均耗时", "value": f"{avg_latency}ms", "color": "warning", "icon": "clock"},
+                    {"key": "max_latency", "label": "最大耗时", "value": f"{max_latency}ms", "color": "danger", "icon": "clock"},
+                    {"key": "total_exec", "label": "总执行次数", "value": str(total_exec), "color": "primary", "icon": "api"},
                 ]
             except Exception:
                 pass
@@ -711,8 +714,7 @@ SLOW_QUERY_FETCHERS = {
 # =====================================================================
 # 备份管理
 # =====================================================================
-import os
-import subprocess
+
 
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'backups')
 os.makedirs(BACKUP_DIR, exist_ok=True)
@@ -852,14 +854,16 @@ def create_redis_backup(instance, database=None, created_by_id=None):
         rdb_path = rdb_fd.name
 
         cmd = ['redis-cli', '-h', instance.host, '-p', str(instance.port), '--rdb', rdb_path]
-        if instance.password:
-            cmd.extend(['-a', instance.password])
         if instance.username:
             cmd.extend(['--user', instance.username])
 
+        env = dict(os.environ)
+        if instance.password:
+            env['REDISCLI_AUTH'] = instance.password
+
         proc = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            timeout=3600,
+            timeout=3600, env=env,
         )
         if proc.returncode != 0:
             err_msg = proc.stderr.decode('utf-8', errors='replace')[:500]
@@ -1004,8 +1008,11 @@ def create_tidb_backup(instance, database=None, created_by_id=None):
 
 def create_mssql_backup(instance, database=None, created_by_id=None):
     """执行 SQL Server 备份，使用 sqlcmd + BACKUP DATABASE"""
+
     ts = time.strftime('%Y%m%d_%H%M%S')
     db_name = database or 'master'
+    if not re.match(r'^[A-Za-z0-9_.$-]+$', db_name):
+        raise RuntimeError(f'Invalid database name: {db_name}')
     filename = f"mssql_{instance.id}_{db_name}_{ts}.bak"
     filepath = os.path.join(BACKUP_DIR, filename)
 
@@ -1045,7 +1052,7 @@ def create_oracle_backup(instance, database=None, created_by_id=None):
             f'{instance.username}/{instance.password}@{instance.host}:{instance.port}/{db_name}',
             f'DUMPFILE={filename}',
             f'DIRECTORY=DATA_PUMP_DIR',
-            f'DUMPFILE={filename}',
+
             'COMPRESSION=ALL',
         ]
         if database:
@@ -1077,7 +1084,8 @@ def create_sqlite_backup(instance, database=None, created_by_id=None):
     try:
         conn = sqlite3_module.connect(db_path, timeout=10)
         try:
-            conn.execute(f"VACUUM INTO '{filepath}'")
+            safe_path = filepath.replace("'", "''")
+            conn.execute(f"VACUUM INTO '{safe_path}'")
         finally:
             conn.close()
         if not os.path.exists(filepath):
@@ -1412,10 +1420,10 @@ def fetch_mongo_detail(host, port, username=None, password=None):
 
     return {
         "metrics": [
-            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "#1890ff", "icon": "database"},
-            {"key": "active_ops", "label": "活跃操作", "value": str(active_ops), "color": "#fa8c16", "icon": "api"},
-            {"key": "version", "label": "版本", "value": server_version, "color": "#52c41a", "icon": "info"},
-            {"key": "uptime", "label": "运行时长", "value": _format_uptime(uptime), "color": "#722ed1", "icon": "clock"},
+            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "info", "icon": "database"},
+            {"key": "active_ops", "label": "活跃操作", "value": str(active_ops), "color": "warning", "icon": "api"},
+            {"key": "version", "label": "版本", "value": server_version, "color": "success", "icon": "info"},
+            {"key": "uptime", "label": "运行时长", "value": _format_uptime(uptime), "color": "processing", "icon": "clock"},
         ],
         "databases": {
             "columns": [
@@ -1445,9 +1453,9 @@ def fetch_mssql_detail(host, port, username, password, database=None):
         conn.close()
     return {
         "metrics": [
-            {"key": "connections", "label": "连接数", "value": str(conn_count), "color": "#fa8c16", "icon": "api"},
-            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "#1890ff", "icon": "database"},
-            {"key": "version", "label": "版本", "value": version, "color": "#52c41a", "icon": "info"},
+            {"key": "connections", "label": "连接数", "value": str(conn_count), "color": "warning", "icon": "api"},
+            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "info", "icon": "database"},
+            {"key": "version", "label": "版本", "value": version, "color": "success", "icon": "info"},
         ],
         "databases": {"columns": [{"key": "name", "title": "数据库名", "width": 250}], "rows": db_rows},
         "processes": None, "variables": None,
@@ -1471,9 +1479,9 @@ def fetch_oracle_detail(host, port, username, password, database=None):
         conn.close()
     return {
         "metrics": [
-            {"key": "active_sessions", "label": "活跃会话", "value": str(active_sessions), "color": "#fa8c16", "icon": "api"},
-            {"key": "db_name", "label": "数据库名", "value": db_name, "color": "#1890ff", "icon": "database"},
-            {"key": "version", "label": "版本", "value": version, "color": "#52c41a", "icon": "info"},
+            {"key": "active_sessions", "label": "活跃会话", "value": str(active_sessions), "color": "warning", "icon": "api"},
+            {"key": "db_name", "label": "数据库名", "value": db_name, "color": "info", "icon": "database"},
+            {"key": "version", "label": "版本", "value": version, "color": "success", "icon": "info"},
         ],
         "databases": {"columns": [{"key": "name", "title": "数据库名", "width": 250}], "rows": [{"name": db_name}]},
         "processes": None, "variables": None,
@@ -1494,9 +1502,9 @@ def fetch_clickhouse_detail(host, port, username, password, database=None):
         client.close()
     return {
         "metrics": [
-            {"key": "queries", "label": "当前查询数", "value": str(query_count), "color": "#fa8c16", "icon": "api"},
-            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "#1890ff", "icon": "database"},
-            {"key": "version", "label": "版本", "value": version, "color": "#52c41a", "icon": "info"},
+            {"key": "queries", "label": "当前查询数", "value": str(query_count), "color": "warning", "icon": "api"},
+            {"key": "databases", "label": "数据库数", "value": str(len(db_rows)), "color": "info", "icon": "database"},
+            {"key": "version", "label": "版本", "value": version, "color": "success", "icon": "info"},
         ],
         "databases": {"columns": [{"key": "name", "title": "数据库名", "width": 250}], "rows": db_rows},
         "processes": None, "variables": None,
@@ -1518,9 +1526,9 @@ def fetch_es_detail(host, port, username=None, password=None):
         client.close()
     return {
         "metrics": [
-            {"key": "indices", "label": "索引数", "value": str(total_indices), "color": "#1890ff", "icon": "database"},
-            {"key": "status", "label": "集群状态", "value": status, "color": "#cf1322" if status == "red" else "#52c41a", "icon": "heart"},
-            {"key": "version", "label": "版本", "value": version, "color": "#722ed1", "icon": "info"},
+            {"key": "indices", "label": "索引数", "value": str(total_indices), "color": "info", "icon": "database"},
+            {"key": "status", "label": "集群状态", "value": status, "color": "error" if status == "red" else "#52c41a", "icon": "heart"},
+            {"key": "version", "label": "版本", "value": version, "color": "processing", "icon": "info"},
         ],
         "databases": {"columns": [{"key": "name", "title": "索引名", "width": 250}], "rows": []},
         "processes": None, "variables": None,
@@ -1540,8 +1548,8 @@ def fetch_cassandra_detail(host, port, username=None, password=None):
         cluster.shutdown()
     return {
         "metrics": [
-            {"key": "keyspaces", "label": "Keyspace 数", "value": str(len(db_rows)), "color": "#1890ff", "icon": "database"},
-            {"key": "version", "label": "版本", "value": version, "color": "#52c41a", "icon": "info"},
+            {"key": "keyspaces", "label": "Keyspace 数", "value": str(len(db_rows)), "color": "info", "icon": "database"},
+            {"key": "version", "label": "版本", "value": version, "color": "success", "icon": "info"},
         ],
         "databases": {"columns": [{"key": "name", "title": "Keyspace", "width": 250}], "rows": db_rows},
         "processes": None, "variables": None,
@@ -1562,131 +1570,3 @@ DETAIL_FETCHERS = {
     "cassandra": fetch_cassandra_detail,
 }
 
-
-# =====================================================================
-# 拓扑关系查询 — 统一返回 schema
-# =====================================================================
-# Schema:
-# {
-#     "nodes": [
-#         {
-#             "id": "instance_<pk>",         # 唯一标识
-#             "instance_id": <pk>,            # 数据库实例 ID
-#             "name": "mysql-master",         # 实例名称
-#             "type": "mysql",                # 数据库类型
-#             "role": "master",               # 角色：master / slave / replica / standalone
-#             "host": "192.168.1.10",         # 主机地址
-#             "port": 3306,                   # 端口
-#             "status": 0,                    # 实例状态
-#             "version": "8.0.30",            # 版本号
-#         },
-#         ...
-#     ],
-#     "edges": [
-#         {
-#             "source": "instance_1",         # 源节点 ID（主库）
-#             "target": "instance_2",         # 目标节点 ID（从库）
-#             "label": "复制",                # 关系标签
-#             "status": "running",            # 复制状态：running / stopped / error
-#             "delay": 0,                     # 复制延迟（秒）
-#         },
-#         ...
-#     ]
-# }
-# =====================================================================
-
-def fetch_mysql_replication(host, port, username, password):
-    if pymysql is None:
-        raise ImportError("pymysql is not installed")
-
-    result = {"role": "standalone", "slaves": [], "master": None}
-
-    with pymysql.connect(host=host, port=int(port), user=username, password=password,
-                         connect_timeout=5, charset='utf8mb4') as conn:
-        with conn.cursor() as cursor:
-            try:
-                cursor.execute("SHOW MASTER STATUS")
-                master_status = cursor.fetchone()
-                if master_status:
-                    result["role"] = "master"
-                    result["master_status"] = {
-                        "file": master_status[0],
-                        "position": master_status[1],
-                    }
-            except Exception:
-                pass
-
-            try:
-                cursor.execute("SHOW SLAVE STATUS")
-                cols = [desc[0] for desc in cursor.description] if cursor.description else []
-                slave_row = cursor.fetchone()
-                if slave_row and cols:
-                    slave_info = dict(zip(cols, slave_row))
-                    master_host = slave_info.get("Master_Host", "")
-                    master_port = slave_info.get("Master_Port", 3306)
-                    io_running = slave_info.get("Slave_IO_Running", "No")
-                    sql_running = slave_info.get("Slave_SQL_Running", "No")
-                    seconds_behind = slave_info.get("Seconds_Behind_Master")
-
-                    if master_host in ("localhost", "127.0.0.1", "0.0.0.0"):
-                        master_host = host
-
-                    result["role"] = "slave"
-                    result["master_host"] = master_host
-                    result["master_port"] = int(master_port) if master_port else 3306
-                    result["replication_status"] = "running" if (io_running == "Yes" and sql_running == "Yes") else "stopped"
-                    result["seconds_behind"] = int(seconds_behind) if seconds_behind is not None else None
-                    result["io_running"] = io_running == "Yes"
-                    result["sql_running"] = sql_running == "Yes"
-            except Exception:
-                pass
-
-    return result
-
-
-def fetch_redis_replication(host, port, username=None, password=None):
-    if redis is None:
-        raise ImportError("redis is not installed")
-
-    conn_params = {"host": host, "port": int(port), "socket_connect_timeout": 5, "socket_timeout": 5, "decode_responses": True}
-    if username and str(username).strip():
-        conn_params["username"] = username
-    if password and str(password).strip():
-        conn_params["password"] = password
-
-    client = redis.Redis(**conn_params)
-    client.ping()
-
-    result = {"role": "standalone", "slaves": [], "master": None}
-
-    info = client.info("replication")
-    role = info.get("role", "standalone")
-    result["role"] = role
-
-    if role == "master":
-        connected_slaves = info.get("connected_slaves", 0)
-        for i in range(connected_slaves):
-            slave_key = f"slave{i}"
-            slave_info = info.get(slave_key, "")
-            if slave_info:
-                parts = str(slave_info).split(",")
-                slave_ip = parts[0].split("=")[1] if "=" in parts[0] else ""
-                slave_port = parts[1].split("=")[1] if "=" in parts[1] else ""
-                slave_state = parts[2].split("=")[1] if len(parts) > 2 and "=" in parts[2] else ""
-                result["slaves"].append({
-                    "host": slave_ip,
-                    "port": int(slave_port) if slave_port else 0,
-                    "state": slave_state,
-                })
-    elif role == "slave":
-        result["master_host"] = info.get("master_host", "")
-        result["master_port"] = info.get("master_port", 6379)
-        result["master_link_status"] = info.get("master_link_status", "down")
-
-    return result
-
-
-REPLICATION_FETCHERS = {
-    "mysql": fetch_mysql_replication,
-    "redis": fetch_redis_replication,
-}

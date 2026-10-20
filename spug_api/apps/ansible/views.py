@@ -5,12 +5,11 @@ from django.views.generic import View
 from libs import json_response, JsonParser, Argument, human_datetime, auth
 from apps.ansible.models import (
     InventoryGroup, HostVariable, VaultSecret, HostFacts,
-    RoleSource, RoleDeployment,
+    RoleSource, RoleDeployment, Role, Playbook, PlaybookRun,
 )
 from apps.ansible.role_meta import (
     parse_github_url, git_clone, git_pull, extract_role_metadata, validate_role_structure,
 )
-from apps.playbook.models import Role, Playbook, PlaybookRun
 from apps.host.models import Host
 from apps.account.models import User
 from apps.account.utils import has_host_perm

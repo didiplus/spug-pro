@@ -25,7 +25,7 @@ export default observer(function DatabaseDashboard() {
         .slice(0, 4)
         .map(([key, conf]) => (
             <Col key={key} xs={24} sm={12} lg={6}>
-                <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
                     <Statistic
                         title={<Tag color={conf.tagColor} style={{ margin: 0 }}>{conf.label}</Tag>}
                         value={store.typeCounts[key] || 0}
@@ -42,17 +42,17 @@ export default observer(function DatabaseDashboard() {
                 <Breadcrumb items={['首页', '数据库管理']} />
                 <Row gutter={[16, 16]} style={{marginBottom: '20px'}}>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                        <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
                             <Statistic
                                 title="数据库总数"
                                 value={store.total || 0}
-                                prefix={<DatabaseOutlined style={{ color: '#1890ff' }} />}
-                                valueStyle={{ color: '#1890ff' }}
+                                prefix={<DatabaseOutlined style={{ color: 'var(--color-primary)' }} />}
+                                valueStyle={{ color: 'var(--color-primary)' }}
                             />
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                        <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
                             <Statistic
                                 title="在线实例"
                                 value={store.online || 0}

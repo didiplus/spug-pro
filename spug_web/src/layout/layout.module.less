@@ -10,18 +10,18 @@
   --layout-logo-height:      64px;
   --layout-logo-img-height:  30px;
   --layout-content-padding:  var(--space-6);
-  --layout-sider-bg:         var(--color-gray-900);
+  --layout-sider-bg:         #001529;
   --layout-sider-shadow:     2px 0 8px 0 rgba(0, 0, 0, 0.06);
 }
 
 :global([data-theme="dark"]) {
-  --layout-sider-bg:     var(--color-gray-950);
+  --layout-sider-bg:     #001529;
   --layout-sider-shadow: 2px 0 8px 0 rgba(0, 0, 0, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) {
-    --layout-sider-bg:     var(--color-gray-950);
+    --layout-sider-bg:     #001529;
     --layout-sider-shadow: 2px 0 8px 0 rgba(0, 0, 0, 0.3);
   }
 }

@@ -30,7 +30,7 @@ class DatabaseInstanceView(View):
         try:
             return json.loads(request.body), None
         except json.JSONDecodeError:
-            return json_response(error="Invalid JSON")
+            return None, json_response(error="Invalid JSON")
 
     def _get_instance_or_404(self, instance_id):
         try:
@@ -396,7 +396,22 @@ def backup_download(request, instance_id, backup_id):
             tmp_fd, tmp_path = tempfile.mkstemp(suffix=f'_{filename}')
             os.close(tmp_fd)
             download_from_remote(config, backup.remote_path, tmp_path)
-            response = FileResponse(open(tmp_path, 'rb'), as_attachment=True, filename=filename)
+
+            def _stream_and_cleanup(path):
+                try:
+                    with open(path, 'rb') as f:
+                        while True:
+                            chunk = f.read(8192)
+                            if not chunk:
+                                break
+                            yield chunk
+                finally:
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+
+            response = FileResponse(_stream_and_cleanup(tmp_path), as_attachment=True, filename=filename)
             response['Content-Length'] = os.path.getsize(tmp_path)
             return response
         except Exception as e:
