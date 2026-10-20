@@ -3,7 +3,9 @@
 # Spug Pro
 
 **基于开源项目 [Spug](https://github.com/openspug/spug) 二次开发 · 面向中小企业的轻量级无 Agent 自动化运维平台**
+
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0) [![Python](https://img.shields.io/badge/python-%E2%89%A5%203.12-3776AB.svg)](https://www.python.org/) [![Django](https://img.shields.io/badge/django-4.2-092E20.svg)](https://www.djangoproject.com/) [![React](https://img.shields.io/badge/react-16-61DAFB.svg)](https://react.dev/) [![Ant Design](https://img.shields.io/badge/Ant%20Design-5-1677FF.svg)](https://ant.design/) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
+
 **✨ Ansible 自动化 · CI/CD 流水线编排 · 数据库管理与备份 · 监控报警中心 · 字段级加密 · 深色模式**
 
 </div>
