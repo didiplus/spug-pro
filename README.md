@@ -510,29 +510,7 @@ bash docs/install.sh
 
 ## 服务架构
 
-```
-                ┌─────────────┐
-                │   Nginx     │  静态文件 + 反向代理
-                └──┬──────┬───┘
-                   │      │
-          ┌────────▼┐  ┌──▼──────────┐
-          │  Daphne  │  │  Daphne     │  ASGI 服务
-          │  (HTTP)  │  │  (WebSocket)│
-          └────┬─────┘  └──┬──────────┘
-               │           │
-          ┌────▼───────────▼────┐
-          │      Redis           │  缓存 / 消息队列 / Channel Layer
-          └────┬───────────┬────┘
-               │           │
- ┌─────────────▼──┐  ┌────▼───────────┐
- │    Worker       │  │   Monitor      │  后台进程
- │  (执行/Playbook │  │  (监控检查)     │
- │   /Pipeline)    │  │                │
- └─────────────────┘  └────────────────┘
-                      ┌────────────────┐
-                      │   Scheduler    │  APScheduler 定时任务
-                      └────────────────┘
-```
+![服务架构](./docs/images/17925082834fc8.png)
 
 | 服务 | 启动命令 | 职责 |
 |------|---------|------|
@@ -550,8 +528,8 @@ bash docs/install.sh
 ```bash
 python manage.py updatedb              # 初始化/更新数据库（建表 + 菜单种子数据）
 python manage.py updatedb --menu-only  # 仅更新菜单
-python manage.py useradd -u <用户> -p <密码> -s -n <昵称>  # 创建超级用户
-python manage.py useradd -u <用户> -p <密码> -n <昵称>     # 创建普通用户
+python manage.py user add -u <用户> -p <密码> -s -n <昵称>  # 创建超级用户
+python manage.py user add -u <用户> -p <密码> -n <昵称>     # 创建普通用户
 ```
 
 ---
