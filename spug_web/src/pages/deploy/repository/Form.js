@@ -144,7 +144,7 @@ export default observer(function () {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>{`${tag} ${info.author} ${info.message}`}</span>
-                        <span style={{color: '#999', fontSize: 12}}>{info['date']} </span>
+                        <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{info['date']} </span>
                       </div>
                     </Select.Option>
                   ))
@@ -169,7 +169,7 @@ export default observer(function () {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>{item.id.substr(0, 6)} {item['author']} {item['message']}</span>
-                    <span style={{color: '#999', fontSize: 12}}>{item['date']} </span>
+                    <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{item['date']} </span>
                   </div>
                 </Select.Option>
               )) : null}

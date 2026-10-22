@@ -5,7 +5,7 @@
   .content {
     font-size: 12px;
     margin: 0;
-    color: #ff4d4f;
+    color: var(--color-red-500);
     white-space: pre-line;
   }
 }
@@ -23,14 +23,14 @@
 
     :global(.anticon) {
       margin-left: 4px;
-      color: #999999;
+      color: var(--color-text-tertiary);
       cursor: help;
     }
   }
 
   .sectionBody {
-    background: #f6f7f9;
-    border: 1px solid #ececec;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-secondary);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 24px;
@@ -52,7 +52,7 @@
       .label {
         width: 110px;
         font-size: 14px;
-        color: #262626;
+        color: var(--color-text);
         text-align: right;
         flex-shrink: 0;
         overflow: hidden;
@@ -70,7 +70,7 @@
       .required:before {
         display: inline-block;
         margin-right: 4px;
-        color: #ff4d4f;
+        color: var(--color-red-500);
         font-size: 14px;
         font-family: SimSun, sans-serif;
         line-height: 1;
@@ -79,7 +79,7 @@
 
       :global(.anticon-edit) {
         font-size: 16px;
-        color: #1677ff;
+        color: var(--color-primary);
         margin-left: 10px;
         cursor: pointer;
         flex-shrink: 0;
@@ -87,7 +87,7 @@
 
       :global(.anticon-delete) {
         font-size: 16px;
-        color: #ff4d4f;
+        color: var(--color-red-500);
         margin-left: 10px;
         cursor: pointer;
         flex-shrink: 0;

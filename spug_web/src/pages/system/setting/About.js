@@ -63,7 +63,7 @@ class About extends React.Component {
           column={1}
           bordered
           size="small"
-          labelStyle={{ width: 140, fontWeight: 'var(--font-weight-medium)', background: 'var(--color-gray-50)' }}
+          labelStyle={{ width: 140, fontWeight: 'var(--font-weight-medium)', background: 'var(--color-bg-secondary)' }}
           contentStyle={{ background: 'var(--color-card)' }}
         >
           <Descriptions.Item label="操作系统">{info['system_version']}</Descriptions.Item>

@@ -6,9 +6,9 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    background-color: #f7f8fa;
+    background-color: var(--color-bg-secondary);
     position: relative;
-    border-right: 1px solid #f0f0f0;
+    border-right: 1px solid var(--color-border-secondary);
 
     .split {
       position: absolute;
@@ -20,7 +20,7 @@
       transition: background-color 0.2s;
 
       &:hover {
-        background-color: rgba(37, 99, 252, 0.15);
+        background-color: var(--color-primary-bg);
       }
     }
 
@@ -29,7 +29,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: #2563fc;
+      background-color: var(--color-primary);
       flex-shrink: 0;
 
       img {
@@ -55,9 +55,9 @@
         }
 
         :global(.ant-btn-text) {
-          color: #595959;
+          color: var(--color-text-secondary);
           &:hover {
-            color: #2563fc;
+            color: var(--color-primary);
           }
         }
       }
@@ -90,14 +90,14 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #eeeeee;
+    background: var(--color-bg-secondary);
 
     .tips {
       position: absolute;
       top: 12px;
       left: 12px;
       font-size: 12px;
-      color: #666;
+      color: var(--color-text-secondary);
     }
 
     .fig {
@@ -112,8 +112,8 @@
 
     .fig2 {
       flex: 1;
-      background-color: #fff;
-      color: #2b2b2b;
+      background-color: var(--color-bg-elevated);
+      color: var(--color-text);
       margin: 12px;
       padding-top: 200px;
       text-align: center;
@@ -124,7 +124,7 @@
       user-select: none;
       padding: 8px 8px 8px 16px;
       margin: 0 -8px 0 -16px;
-      color: #2563fc;
+      color: var(--color-primary);
     }
 
     .fileManger {
@@ -139,7 +139,7 @@
       cursor: pointer;
       padding-right: 6px;
       margin-right: 6px;
-      color: #fa8c16;
+      color: var(--color-orange-500);
     }
 
     :global(.ant-tabs-nav) {
@@ -154,16 +154,16 @@
 
     :global(.ant-tabs-tab) {
       border: none;
-      background: #fff;
+      background: var(--color-bg-elevated);
     }
 
     :global(.ant-tabs-tab-active) {
-      border-bottom: 2px solid #2563fc !important;
+      border-bottom: 2px solid var(--color-primary) !important;
       transition: unset;
     }
 
     :global(.ant-tabs-content) {
-      background: #eeeeee;
+      background: var(--color-bg-secondary);
     }
   }
 }

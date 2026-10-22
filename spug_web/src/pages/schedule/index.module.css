@@ -82,7 +82,7 @@
 .dbBackupForm {
   margin-top: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-gray-50);
+  background: var(--color-fill-quaternary);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-secondary);
 }

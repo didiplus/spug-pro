@@ -9,11 +9,11 @@
     left: 0;
     right: 0;
     padding: 10px 16px 0 16px;
-    background: #f5f7fa;
+    background: var(--color-bg);
     display: flex;
     flex-direction: row;
     align-items: flex-end;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid var(--color-border-secondary);
     z-index: 10;
 
     .item {
@@ -27,7 +27,7 @@
       margin-right: 4px;
       font-size: 14px;
       cursor: pointer;
-      color: #595959;
+      color: var(--color-text-secondary);
       transition: all 0.2s;
 
       span {
@@ -35,13 +35,13 @@
       }
 
       &:hover {
-        color: #2563fc;
+        color: var(--color-primary);
       }
     }
 
     .active {
-      background: #ffffff;
-      color: #2563fc;
+      background: var(--color-bg-elevated);
+      color: var(--color-primary);
       font-weight: 500;
     }
   }
@@ -76,7 +76,7 @@
       width: 6px;
     }
     &::-webkit-scrollbar-thumb {
-      background: #d9d9d9;
+      background: var(--color-border);
       border-radius: 3px;
     }
   }
@@ -86,9 +86,9 @@
     bottom: 0;
     left: 0;
     right: 0;
-    border-top: 1px solid #e8e8e8;
+    border-top: 1px solid var(--color-border-secondary);
     padding: 10px 16px;
-    background-color: #ffffff;
+    background-color: var(--color-bg-elevated);
     z-index: 100;
     text-align: right;
   }
@@ -96,7 +96,7 @@
   .category {
     font-size: 12px;
     font-weight: 600;
-    color: #8c8c8c;
+    color: var(--color-text-secondary);
     margin: 14px 0 6px 16px;
     letter-spacing: 0.5px;
 
@@ -117,7 +117,7 @@
       min-width: 140px;
       max-width: 200px;
       height: 50px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow-sm);
       border: 2px solid transparent;
       display: flex;
       flex-direction: row;
@@ -137,17 +137,17 @@
     }
 
     .item:hover {
-      border-color: #a3c7ff;
-      background: #f5faff;
-      color: #2563fc;
-      box-shadow: 0 2px 10px rgba(37, 99, 252, 0.12);
+      border-color: var(--color-blue-300);
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      box-shadow: var(--shadow-md);
     }
 
     .active {
-      border-color: #4d8ffd;
-      background: #e6f7ff;
-      color: #2563fc;
-      box-shadow: 0 2px 10px rgba(37, 99, 252, 0.18);
+      border-color: var(--color-blue-400);
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      box-shadow: var(--shadow-md);
     }
   }
 }

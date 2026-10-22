@@ -70,7 +70,7 @@ export default observer(function () {
           placeholder="输入要执行的命令"
           value={info['hook_pre_host']}
           onChange={v => info['hook_pre_host'] = cleanCommand(v)}
-          style={{border: '1px solid #e8e8e8'}}/>
+          style={{border: '1px solid var(--color-border-secondary)'}}/>
       </Form.Item>
       <Form.Item
         label="发布前 Playbook"
@@ -101,7 +101,7 @@ export default observer(function () {
           placeholder="输入要执行的命令"
           value={info['hook_post_host']}
           onChange={v => info['hook_post_host'] = cleanCommand(v)}
-          style={{border: '1px solid #e8e8e8'}}/>
+          style={{border: '1px solid var(--color-border-secondary)'}}/>
       </Form.Item>
       <Form.Item
         label="发布后 Playbook"

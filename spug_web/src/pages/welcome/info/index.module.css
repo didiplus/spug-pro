@@ -1,65 +1,65 @@
 .container {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: flex-start;
 }
 
 .sidebar {
   flex: 0 0 300px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 20px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
 }
 
 .main {
   flex: 1;
   min-width: 0;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 20px 24px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
 }
 
 .sidebarTitle {
   font-size: 16px;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
-  margin-bottom: 20px;
+  color: var(--color-text);
+  margin-bottom: var(--space-5);
 }
 
 .avatarWrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .infoList {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .infoItem {
   display: flex;
   align-items: center;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   font-size: 14px;
 }
 
 .infoIcon {
   width: 28px;
-  color: #8c8c8c;
+  color: var(--color-text-secondary);
   font-size: 15px;
   flex-shrink: 0;
 }
 
 .infoLabel {
-  color: #8c8c8c;
+  color: var(--color-text-secondary);
   width: 84px;
   flex-shrink: 0;
 }
 
 .infoValue {
-  color: rgba(0, 0, 0, 0.85);
+  color: var(--color-text);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,18 +68,18 @@
 
 .securityTitle {
   font-size: 14px;
-  color: #8c8c8c;
-  margin-bottom: 8px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
 }
 
 .securityLinks {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .securityLink {
-  color: #1890ff;
+  color: var(--color-primary);
   cursor: pointer;
   font-size: 14px;
 }
@@ -89,8 +89,8 @@
 }
 
 .title {
-  margin-bottom: 24px;
-  color: rgba(0, 0, 0, .85);
+  margin-bottom: var(--space-6);
+  color: var(--color-text);
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;

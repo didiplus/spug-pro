@@ -6,8 +6,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Router } from 'react-router-dom';
-import { ConfigProvider, App as AntApp } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
 import './index.less';
 import App from './App';
 import moment from 'moment';
@@ -18,6 +16,7 @@ import 'dayjs/locale/zh-cn';
 import * as serviceWorker from './serviceWorker';
 import { history, updatePermissions } from 'libs';
 import MessageHolder from 'libs/message';
+import ThemeProvider from 'components/ThemeProvider';
 
 moment.locale('zh-cn');
 dayjs.extend(relativeTime);
@@ -26,13 +25,11 @@ updatePermissions();
 
 ReactDOM.render(
   <Router history={history}>
-    <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#2563fc' } }} getPopupContainer={() => document.fullscreenElement || document.body}>
-      <AntApp>
-        <MessageHolder>
-          <App/>
-        </MessageHolder>
-      </AntApp>
-    </ConfigProvider>
+    <ThemeProvider>
+      <MessageHolder>
+        <App/>
+      </MessageHolder>
+    </ThemeProvider>
   </Router>,
   document.getElementById('root')
 );

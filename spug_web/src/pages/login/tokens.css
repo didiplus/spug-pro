@@ -44,8 +44,7 @@
 }
 
 /* ── 深色模式（手动覆盖）── */
-:global([data-theme="dark"]) .container,
-:global(.spug-dark) .container {
+[data-theme="dark"] {
   --login-card-bg:           rgba(30, 30, 42, 0.82);
   --login-card-border:       rgba(255, 255, 255, 0.08);
   --login-card-shadow:       0 20px 60px -12px rgba(0, 0, 0, 0.5);
@@ -66,7 +65,7 @@
 
 /* ── 深色模式（跟随系统）── */
 @media (prefers-color-scheme: dark) {
-  :global(:root:not([data-theme="light"])) .container {
+  :root:not([data-theme="light"]) {
     --login-card-bg:           rgba(30, 30, 42, 0.82);
     --login-card-border:       rgba(255, 255, 255, 0.08);
     --login-card-shadow:       0 20px 60px -12px rgba(0, 0, 0, 0.5);

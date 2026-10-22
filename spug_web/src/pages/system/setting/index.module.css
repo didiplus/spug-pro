@@ -1,12 +1,12 @@
 .container {
   display: flex;
-  background-color: #fff;
+  background: var(--color-bg-elevated);
   padding: 16px 0;
 }
 
 .left {
   flex: 2;
-  border-right: 1px solid #e8e8e8;
+  border-right: 1px solid var(--color-border-secondary);
 }
 
 .right {
@@ -31,8 +31,8 @@
 }
 
 .statistic {
-  background: #fafafa;
-  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
 
   .body {
     display: flex;
@@ -40,12 +40,12 @@
     position: relative;
 
     .badge {
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       line-height: 20px;
       height: 20px;
       font-size: 12px;
       padding: 0 8px;
-      background: #2563fc;
+      background: var(--color-primary);
       font-weight: bold;
       color: #ffffff;
       cursor: pointer;
@@ -70,21 +70,21 @@
           left: 0;
           width: 1px;
           height: 56px;
-          background: #CCCCCC;
+          background: var(--color-border);
           opacity: 0.5;
         }
       }
 
       .title {
         font-size: 14px;
-        color: #666666;
+        color: var(--color-text-secondary);
         margin-bottom: 6px;
       }
 
       .value {
         font-size: 40px;
         line-height: 46px;
-        color: #333333;
+        color: var(--color-text);
         position: relative;
       }
 
@@ -92,8 +92,8 @@
         position: absolute;
         bottom: 16px;
         font-size: 11px;
-        color: rgba(0, 0, 0, 0.35);
-        background: rgba(0, 0, 0, 0.04);
+        color: var(--color-text-tertiary);
+        background: var(--color-fill-quaternary);
         border-radius: 10px;
         line-height: 20px;
         text-align: center;
@@ -101,8 +101,8 @@
       }
 
       .active {
-        color: #2563fc;
-        background: #ffffff;
+        color: var(--color-primary);
+        background: var(--color-bg-elevated);
       }
     }
 
@@ -117,7 +117,7 @@
       width: 96px;
       padding: 0 16px 0 20px;
       border-radius: 16px;
-      color: #2563fc;
+      color: var(--color-primary);
       font-size: 14px;
       cursor: pointer;
 
@@ -127,4 +127,3 @@
     }
   }
 }
-

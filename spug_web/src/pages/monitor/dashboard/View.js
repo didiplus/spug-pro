@@ -198,14 +198,14 @@ function TablePanel({result}) {
   return (
     <table style={{width: '100%', borderCollapse: 'collapse', fontSize: 13}}>
       <thead>
-        <tr style={{borderBottom: '1px solid #e8e8e8'}}>
+        <tr style={{borderBottom: '1px solid var(--color-border-secondary)'}}>
           <th style={{textAlign: 'left', padding: '8px 4px'}}>指标</th>
           <th style={{textAlign: 'right', padding: '8px 4px'}}>值</th>
         </tr>
       </thead>
       <tbody>
         {rows.map(r => (
-          <tr key={r.key} style={{borderBottom: '1px solid #f0f0f0'}}>
+          <tr key={r.key} style={{borderBottom: '1px solid var(--color-border-secondary)'}}>
             <td style={{padding: '8px 4px'}}><Text ellipsis style={{maxWidth: 400}}>{r.metric}</Text></td>
             <td style={{textAlign: 'right', padding: '8px 4px'}}><Text code>{r.value}</Text></td>
           </tr>

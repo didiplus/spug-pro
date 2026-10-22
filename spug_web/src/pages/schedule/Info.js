@@ -36,7 +36,7 @@ class ComForm extends React.Component {
         footer={null}>
         <Spin spinning={this.state.loading}>
           <StatisticsCard loading={this.state.loading}>
-            <StatisticsCard.Item title="执行成功" value={<span style={{color: '#3f8600'}}>{success}</span>}/>
+            <StatisticsCard.Item title="执行成功" value={<span style={{color: 'var(--color-green-600)'}}>{success}</span>}/>
             <StatisticsCard.Item title="执行失败" value={<span style={{color: failure > 0 ? 'var(--color-red-600)' : 'var(--color-text-secondary)'}}>{failure}</span>}/>
             <StatisticsCard.Item bordered={false} title="平均耗时(秒)" value={<span style={{color: 'var(--color-primary)'}}>{duration}</span>}/>
           </StatisticsCard>
@@ -74,14 +74,14 @@ class ComForm extends React.Component {
 
                       <pre style={{
                         margin: 0,
-                        backgroundColor: '#f6f8fa',
+                        backgroundColor: 'var(--color-bg-secondary)',
                         borderRadius: 6,
                         padding: 12,
                         maxHeight: 180,
                         overflow: 'auto',
                         fontSize: 13,
                         lineHeight: 1.6,
-                        border: '1px solid #d0d7de',
+                        border: '1px solid var(--color-border-secondary)',
                         wordBreak: 'break-all',
                         whiteSpace: 'pre-wrap',
                       }}>{item.output}</pre>

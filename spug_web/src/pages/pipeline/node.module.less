@@ -18,12 +18,12 @@
   width: 0;
   height: 0;
   border: 8px solid transparent;
-  border-top-color: #b0c4de;
+  border-top-color: var(--color-border);
 }
 
 .node {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+  background: var(--color-bg-elevated);
   border: 2px solid transparent;
   border-radius: 10px;
   display: flex;
@@ -34,7 +34,7 @@
   transition: all 0.25s ease;
 
   &:hover {
-    box-shadow: 0 4px 16px rgba(37, 99, 252, 0.18);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
     .action {
       display: block;
@@ -56,25 +56,25 @@
     padding: 10px;
     margin-right: -8px;
     font-size: 18px;
-    color: #8c8c8c;
+    color: var(--color-text-secondary);
 
     &:hover {
-      color: #2563fc;
+      color: var(--color-primary);
     }
   }
 }
 
 .active {
-  border-color: #4d8ffd;
-  box-shadow: 0 4px 20px rgba(37, 99, 252, 0.25);
-  background-color: #f0f7ff;
+  border-color: var(--color-blue-400);
+  box-shadow: var(--shadow-lg);
+  background-color: var(--color-primary-bg);
 }
 
 .line {
   &:after {
     content: ' ';
     height: 2px;
-    background: #b0c4de;
+    background: var(--color-border);
     position: absolute;
     top: 34px;
     left: -24px;
@@ -93,7 +93,7 @@
   &:before {
     content: ' ';
     position: absolute;
-    background: #b0c4de;
+    background: var(--color-border);
     top: 34px;
     bottom: 34px;
     left: -24px;
@@ -104,7 +104,7 @@
   &:after {
     content: ' ';
     position: absolute;
-    background: #b0c4de;
+    background: var(--color-border);
     top: 34px;
     left: 119px;
     right: 119px;
@@ -122,7 +122,7 @@
 .arrow {
   &:after {
     content: ' ';
-    background: #b0c4de;
+    background: var(--color-border);
     position: absolute;
     top: 0;
     left: 119px;

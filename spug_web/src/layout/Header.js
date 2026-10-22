@@ -3,19 +3,27 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout, Dropdown, Avatar, Modal } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CodeOutlined, DownOutlined } from '@ant-design/icons';
+import { Layout, Dropdown, Avatar, Modal, Tooltip } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined, CodeOutlined, DownOutlined, BulbOutlined, MoonOutlined } from '@ant-design/icons';
 import { AuthDiv } from 'components';
 import Notification from './Notification';
 import styles from './layout.module.less';
 import http from '../libs/http';
 import history from '../libs/history';
 import { clearMenuCache } from '../libs/menu';
+import { getTheme, toggleTheme } from '../libs/theme';
 import avatar from './avatar.png';
 
 export default function (props) {
+  const [isDark, setIsDark] = useState(getTheme() === 'dark');
+
+  useEffect(() => {
+    const handler = (e) => setIsDark((e.detail || getTheme()) === 'dark');
+    window.addEventListener('theme-change', handler);
+    return () => window.removeEventListener('theme-change', handler);
+  }, []);
 
   function handleLogout() {
     clearMenuCache();
@@ -57,6 +65,18 @@ export default function (props) {
       </div>
       <div className={styles.right}>
         <Notification/>
+        <Tooltip title={isDark ? '切换亮色模式' : '切换暗色模式'}>
+          <div
+            className={styles.themeToggle}
+            onClick={() => toggleTheme()}
+            role="button"
+            aria-label={isDark ? '切换亮色模式' : '切换暗色模式'}
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') toggleTheme(); }}
+          >
+            {isDark ? <BulbOutlined/> : <MoonOutlined/>}
+          </div>
+        </Tooltip>
         <AuthDiv
           className={styles.terminal}
           auth="host.console.view|host.console.list"

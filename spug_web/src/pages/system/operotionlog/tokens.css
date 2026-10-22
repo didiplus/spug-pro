@@ -9,11 +9,11 @@
   --log-cost-error:  var(--color-red-500);
 
   /* 详情弹窗 Descriptions */
-  --log-desc-label-bg:    var(--color-gray-50);
+  --log-desc-label-bg:    var(--color-fill-quaternary);
   --log-desc-content-bg:  var(--color-card);
 
   /* 代码编辑器容器 */
-  --log-editor-bg:      var(--color-gray-100);
+  --log-editor-bg:      var(--color-bg-secondary);
   --log-editor-radius:  var(--radius-md);
 
   /* 请求路径字号 */

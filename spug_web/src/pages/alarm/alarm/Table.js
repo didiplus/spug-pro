@@ -111,7 +111,7 @@ class ComTable extends React.Component {
             <div style={{display: 'flex', alignItems: 'center'}}>
               <div>报警历史记录</div>
               <Tooltip title="每天自动清理，仅保留最近30天的报警记录。">
-                <QuestionCircleOutlined style={{color: '#999', marginLeft: 8}}/>
+                <QuestionCircleOutlined style={{color: 'var(--color-text-tertiary)', marginLeft: 8}}/>
               </Tooltip>
             </div>
           )}
@@ -125,7 +125,7 @@ class ComTable extends React.Component {
               <Radio.Button value="2">报警恢复</Radio.Button>
             </Radio.Group>,
             <React.Fragment>
-              <span style={{marginRight: 8, fontSize: 13, color: '#666'}}>归并展示</span>
+              <span style={{marginRight: 8, fontSize: 13, color: 'var(--color-text-secondary)'}}>归并展示</span>
               <Switch checked={store.f_grouped} onChange={this.handleToggleGrouped}/>
             </React.Fragment>
           ]}

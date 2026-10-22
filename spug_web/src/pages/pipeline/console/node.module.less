@@ -9,17 +9,17 @@
   bottom: -3px;
   width: 2px;
   height: 7px;
-  background: var(--color-gray-300);
+  background: var(--color-border);
   z-index: 0;
   border-radius: 1px;
 }
 
 .connectorSuccess {
-  background: rgba(82, 196, 26, 0.4);
+  background: color-mix(in srgb, var(--color-green-500) 40%, transparent);
 }
 
 .connectorError {
-  background: rgba(255, 77, 79, 0.4);
+  background: color-mix(in srgb, var(--color-red-500) 40%, transparent);
 }
 
 .node {
@@ -35,14 +35,14 @@
   z-index: 1;
 
   &:hover {
-    background: var(--color-gray-100);
+    background: var(--color-bg-secondary);
   }
 }
 
 .active {
-  background: var(--color-blue-50);
-  border-color: var(--color-blue-200);
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.12);
+  background: var(--color-primary-bg);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .activeBar {
@@ -61,19 +61,19 @@
   border-radius: var(--space-2);
   padding: 3px;
   transition: all var(--duration-normal) var(--ease-standard);
-  background: var(--color-gray-100);
+  background: var(--color-bg-secondary);
 }
 
 .iconSuccess {
-  box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.4);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-green-500) 40%, transparent);
   border-radius: 50%;
-  background: rgba(82, 196, 26, 0.06);
+  background: color-mix(in srgb, var(--color-green-500) 6%, transparent);
 }
 
 .iconError {
-  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.4);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-red-500) 40%, transparent);
   border-radius: 50%;
-  background: rgba(255, 77, 79, 0.06);
+  background: color-mix(in srgb, var(--color-red-500) 6%, transparent);
 }
 
 .info {
@@ -92,7 +92,7 @@
   font-size: 10px;
   font-weight: 700;
   color: var(--color-text-secondary);
-  background: var(--color-gray-200);
+  background: var(--color-border-secondary);
   padding: 1px 6px;
   border-radius: var(--space-2);
   flex-shrink: 0;

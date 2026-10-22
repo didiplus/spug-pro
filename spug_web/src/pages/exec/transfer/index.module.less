@@ -2,13 +2,13 @@
   display: flex;
   height: calc(100vh - 218px);
   min-height: 420px;
-  background-color: #fff;
+  background-color: var(--color-bg-elevated);
   overflow: hidden;
 
   .left {
     padding: 24px;
     width: 60%;
-    border-right: 1px solid var(--color-border-secondary, #dfdfdf);
+    border-right: 1px solid var(--color-border-secondary);
 
     .sourceActions {
       margin-bottom: 12px;
@@ -17,13 +17,13 @@
     .fileList {
       min-height: 80px;
       padding: 8px 12px;
-      border: 1px dashed var(--color-border, #d9d9d9);
+      border: 1px dashed var(--color-border);
       border-radius: 6px;
-      background-color: var(--color-fill-quaternary, #fafafa);
+      background-color: var(--color-bg-secondary);
       transition: border-color 0.2s;
 
       &:hover {
-        border-color: var(--color-primary, #1677ff);
+        border-color: var(--color-primary);
       }
 
       :global(.ant-empty-normal) {
@@ -45,7 +45,7 @@
     max-width: 600px;
     display: flex;
     flex-direction: column;
-    background-color: var(--color-fill-quaternary, #fafafa);
+    background-color: var(--color-bg-secondary);
     padding: 24px 24px 0 24px;
 
     .inner {
@@ -58,14 +58,14 @@
       padding: 10px 12px;
       margin-bottom: 8px;
       border-radius: 6px;
-      background-color: var(--color-bg-container, #fff);
-      border: 1px solid var(--color-border-secondary, #f0f0f0);
+      background-color: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-secondary);
       transition: all 0.2s;
       cursor: default;
 
       &:hover {
-        border-color: var(--color-primary, #1677ff);
-        box-shadow: 0 1px 4px rgba(22, 119, 255, 0.08);
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-sm);
       }
     }
   }
@@ -73,7 +73,7 @@
 
 .output {
   display: flex;
-  background-color: #fff;
+  background-color: var(--color-bg-elevated);
   height: 100%;
   overflow: hidden;
 
@@ -81,8 +81,8 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    border-right: 1px solid var(--color-border-secondary, #f0f0f0);
-    background-color: var(--color-fill-quaternary, #fafafa);
+    border-right: 1px solid var(--color-border-secondary);
+    background-color: var(--color-bg-secondary);
 
     .list {
       flex: 1;
@@ -95,13 +95,13 @@
         transition: all 0.2s;
 
         &.hostActive {
-          background: #e6f4ff;
-          border-right: 3px solid #1677ff;
+          background: var(--color-primary-bg);
+          border-right: 3px solid var(--color-primary);
         }
       }
 
       .hostItem:hover {
-        background: #f0f5ff;
+        background: var(--color-primary-bg);
       }
     }
   }

@@ -40,7 +40,7 @@ class AddSelect extends React.Component {
     const modalStyle = {
       display: 'flex',
       justifyContent: 'space-around',
-      backgroundColor: 'rgba(240, 242, 245, 1)',
+      backgroundColor: 'var(--color-bg-secondary)',
       padding: '80px 0'
     };
 

@@ -42,7 +42,7 @@
 }
 
 .searchItemActive {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
@@ -85,7 +85,7 @@
 /* ── 代码块（固定深色主题） ── */
 .codeBlock {
   background: var(--color-gray-900);
-  color: var(--color-gray-300);
+  color: var(--color-text-tertiary);
   padding: var(--space-3);
   border-radius: var(--radius-lg);
   font-size: var(--font-size-xs);
@@ -105,7 +105,7 @@
     border-color: var(--color-gray-900);
   }
   :global(:root:not([data-theme="light"])) .searchItemActive {
-    background: rgba(22, 119, 255, 0.15);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
 }
 
@@ -115,5 +115,5 @@
   border-color: var(--color-gray-900);
 }
 :global([data-theme="dark"]) .searchItemActive {
-  background: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
 }

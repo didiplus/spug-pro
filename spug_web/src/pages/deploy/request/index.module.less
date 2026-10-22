@@ -1,23 +1,23 @@
 .approve {
   :global(.ant-switch) {
-    background: #faad14;
+    background: var(--color-orange-500);
   }
 
   :global(.ant-switch-checked) {
-    background: #389e0d;
+    background: var(--color-green-600);
   }
 }
 
 .miniConsole {
   position: fixed;
-  bottom: 12px;
-  right: 24px;
+  bottom: var(--space-3);
+  right: var(--space-6);
   align-items: flex-end;
   z-index: 999;
 
   .item {
     width: 180px;
-    box-shadow: 0 0 4px rgba(0, 0, 0, .3);
+    box-shadow: var(--shadow-sm);
     border-radius: 5px;
 
     :global(.ant-progress-text) {
@@ -29,7 +29,7 @@
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
-      margin-bottom: 4px;
+      margin-bottom: var(--space-1);
 
       .title {
         width: 120px;
@@ -40,11 +40,11 @@
 
       .icon {
         font-size: 16px;
-        color: rgba(0, 0, 0, .45);
+        color: var(--color-text-tertiary);
       }
 
       .icon:hover {
-        color: #000;
+        color: var(--color-text);
       }
     }
   }
@@ -61,11 +61,11 @@
     line-height: 56px;
     text-align: center;
     cursor: pointer;
-    color: rgba(0, 0, 0, .45);
+    color: var(--color-text-tertiary);
     margin-right: 56px;
 
     :hover {
-      color: #000;
+      color: var(--color-text);
     }
   }
 
@@ -85,12 +85,12 @@
 
     .step {
       flex: 1;
-      margin-right: 16px;
+      margin-right: var(--space-4);
     }
 
     .codeIcon {
       font-size: 22px;
-      color: #1890ff;
+      color: var(--color-primary);
     }
   }
 }

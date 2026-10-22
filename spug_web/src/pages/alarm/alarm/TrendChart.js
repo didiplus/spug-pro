@@ -67,7 +67,7 @@ export default observer(function () {
 
       <Row gutter={16}>
         <Col span={16}>
-          <h4 style={{marginBottom: 8, color: '#666'}}>每小时告警/恢复趋势</h4>
+          <h4 style={{marginBottom: 8, color: 'var(--color-text-secondary)'}}>每小时告警/恢复趋势</h4>
           {hourlyData.length === 0 ? (
             <div style={{height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
               <Empty description="暂无数据"/>
@@ -83,7 +83,7 @@ export default observer(function () {
               <Axis
                 name="time"
                 label={{fontSize: 11, textAlign: 'center', autoRotate: true}}
-                tickLine={{lineWidth: 1, stroke: '#e8e8e8'}}
+                tickLine={{lineWidth: 1, stroke: 'var(--color-border-secondary)'}}
               />
               <Axis
                 name="count"
@@ -94,9 +94,9 @@ export default observer(function () {
               <Tooltip
                 crosshairs={{type: 'y'}}
                 containerStyle={{
-                  background: 'rgba(255,255,255,0.95)',
+                  background: 'var(--color-bg-elevated)',
                   borderRadius: 6,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  boxShadow: 'var(--shadow-md)',
                 }}
               />
               <Geom
@@ -109,7 +109,7 @@ export default observer(function () {
           )}
         </Col>
         <Col span={8}>
-          <h4 style={{marginBottom: 8, color: '#666'}}>TOP10 异常监控项</h4>
+          <h4 style={{marginBottom: 8, color: 'var(--color-text-secondary)'}}>TOP10 异常监控项</h4>
           <Table
             size="small"
             rowKey={(_, i) => i}

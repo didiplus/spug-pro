@@ -112,7 +112,7 @@ function NoticeIndex(props) {
             </List.Item>
           ))}
           {records.length === 0 && (
-            <div style={{marginTop: 12, color: '#999'}}>暂无公告信息</div>
+            <div style={{marginTop: 12, color: 'var(--color-text-tertiary)'}}>暂无公告信息</div>
           )}
         </List>
       )}

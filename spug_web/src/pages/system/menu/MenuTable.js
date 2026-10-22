@@ -26,9 +26,9 @@ export default function MenuTable({
       render: (text, record) => (
         <Space size={6}>
           {record.icon && IconRegistry[record.icon] ? (
-            <span style={{ color: '#2563fc' }}>{IconRegistry[record.icon]}</span>
+            <span style={{ color: 'var(--color-primary)' }}>{IconRegistry[record.icon]}</span>
           ) : record.icon ? (
-            <IconByName name={record.icon} style={{ color: '#2563fc' }} />
+            <IconByName name={record.icon} style={{ color: 'var(--color-primary)' }} />
           ) : null}
           <span style={{
             fontWeight: record.parent_id === 0 ? 600 : 400,
@@ -78,7 +78,7 @@ export default function MenuTable({
       width: 140,
       ellipsis: true,
       render: (v) => v
-        ? <Text style={{ fontSize: 12, color: '#595959', fontFamily: 'monospace' }}>{v}</Text>
+        ? <Text style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>{v}</Text>
         : <Text type="secondary" style={{ fontSize: 12 }}>-</Text>,
     },
     {

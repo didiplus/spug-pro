@@ -13,17 +13,17 @@
 }
 
 .statusRunning {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
 .statusSuccess {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .statusFailed {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
   color: var(--color-red-600);
 }
 
@@ -61,22 +61,22 @@
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .statusRunning {
-    background: rgba(22, 119, 255, 0.15);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .statusSuccess {
-    background: rgba(82, 196, 26, 0.15);
+    background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .statusFailed {
-    background: rgba(255, 77, 79, 0.15);
+    background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   }
 }
 
 :global([data-theme="dark"]) .statusRunning {
-  background: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 :global([data-theme="dark"]) .statusSuccess {
-  background: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .statusFailed {
-  background: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
 }

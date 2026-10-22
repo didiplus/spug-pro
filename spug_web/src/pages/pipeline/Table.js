@@ -73,7 +73,7 @@ function ComTable() {
         render={info => (
           <Space>
             <Badge status={info.is_active ? 'processing' : 'default'}/>
-            <span style={{fontWeight: 500, color: info.is_active ? 'inherit' : '#bbb'}}>
+            <span style={{fontWeight: 500, color: info.is_active ? 'inherit' : 'var(--color-text-tertiary)'}}>
               {info.name}
             </span>
           </Space>
@@ -83,7 +83,7 @@ function ComTable() {
         title={t('描述')}
         dataIndex="desc"
         width={220}
-        render={text => text ? <span style={{color: '#888'}}>{text}</span> : <span style={{color: '#ccc'}}>-</span>}/>
+        render={text => text ? <span style={{color: 'var(--color-text-secondary)'}}>{text}</span> : <span style={{color: 'var(--color-text-tertiary)'}}>-</span>}/>
       <Table.Column
         width={90}
         align="center"
@@ -99,21 +99,21 @@ function ComTable() {
               style={{margin: 0, marginRight: 4}}>
               {STATUS_TEXTS[info.latest_status] || '-'}
             </Tag>
-            <span style={{color: '#999', fontSize: 12}}>{info.latest_at}</span>
+            <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{info.latest_at}</span>
           </div>
-        ) : <span style={{color: '#ccc'}}>{t('未执行')}</span>}/>
+        ) : <span style={{color: 'var(--color-text-tertiary)'}}>{t('未执行')}</span>}/>
       <Table.Column
         width={120}
         title={t('创建人')}
         dataIndex="created_by_user"
         hide
-        render={text => text ? <span style={{color: '#666'}}>{text}</span> : '-'}/>
+        render={text => text ? <span style={{color: 'var(--color-text-secondary)'}}>{text}</span> : '-'}/>
       <Table.Column
         width={160}
         title={t('创建时间')}
         dataIndex="created_at"
         hide
-        render={text => <Tooltip title={text}><span style={{color: '#999', fontSize: 12}}>{text}</span></Tooltip>}/>
+        render={text => <Tooltip title={text}><span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{text}</span></Tooltip>}/>
       <Table.Column
         width={100}
         align="center"

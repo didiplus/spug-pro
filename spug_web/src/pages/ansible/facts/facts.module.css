@@ -30,17 +30,17 @@
 }
 
 .overviewIconBlue {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
 .overviewIconGreen {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .overviewIconOrange {
-  background: rgba(250, 140, 22, 0.1);
+  background: color-mix(in srgb, var(--color-orange-500) 10%, transparent);
   color: var(--color-orange-600);
 }
 

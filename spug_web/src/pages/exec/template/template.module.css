@@ -7,42 +7,42 @@
   --template-section-border-width: 3px;
   --template-section-gap: var(--space-4);
 
-  --template-type-bg: var(--color-blue-50);
-  --template-type-empty-bg: var(--color-gray-100);
+  --template-type-bg: var(--color-primary-bg);
+  --template-type-empty-bg: var(--color-bg-secondary);
   --template-type-empty-fg: var(--color-text-tertiary);
 
-  --template-lang-shell-bg: rgba(82, 196, 26, 0.1);
+  --template-lang-shell-bg: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   --template-lang-shell-fg: var(--color-green-600);
-  --template-lang-python-bg: rgba(114, 46, 209, 0.1);
+  --template-lang-python-bg: color-mix(in srgb, var(--color-purple-500) 10%, transparent);
   --template-lang-python-fg: var(--color-purple-600);
 
-  --template-view-meta-bg: var(--color-gray-50);
+  --template-view-meta-bg: var(--color-fill-quaternary);
   --template-view-meta-border: var(--color-border-secondary);
-  --template-param-tag-bg: var(--color-blue-50);
+  --template-param-tag-bg: var(--color-primary-bg);
   --template-editor-border: var(--color-border-secondary);
 }
 
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) {
-    --template-type-bg: rgba(22, 119, 255, 0.15);
+    --template-type-bg: color-mix(in srgb, var(--color-primary) 15%, transparent);
     --template-type-empty-bg: var(--color-gray-800);
-    --template-lang-shell-bg: rgba(82, 196, 26, 0.15);
-    --template-lang-python-bg: rgba(114, 46, 209, 0.15);
+    --template-lang-shell-bg: color-mix(in srgb, var(--color-green-500) 15%, transparent);
+    --template-lang-python-bg: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
     --template-view-meta-bg: var(--color-gray-900);
     --template-view-meta-border: var(--color-gray-800);
-    --template-param-tag-bg: rgba(22, 119, 255, 0.15);
+    --template-param-tag-bg: color-mix(in srgb, var(--color-primary) 15%, transparent);
     --template-editor-border: var(--color-gray-800);
   }
 }
 
 :global([data-theme="dark"]) {
-  --template-type-bg: rgba(22, 119, 255, 0.15);
+  --template-type-bg: color-mix(in srgb, var(--color-primary) 15%, transparent);
   --template-type-empty-bg: var(--color-gray-800);
-  --template-lang-shell-bg: rgba(82, 196, 26, 0.15);
-  --template-lang-python-bg: rgba(114, 46, 209, 0.15);
+  --template-lang-shell-bg: color-mix(in srgb, var(--color-green-500) 15%, transparent);
+  --template-lang-python-bg: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
   --template-view-meta-bg: var(--color-gray-900);
   --template-view-meta-border: var(--color-gray-800);
-  --template-param-tag-bg: rgba(22, 119, 255, 0.15);
+  --template-param-tag-bg: color-mix(in srgb, var(--color-primary) 15%, transparent);
   --template-editor-border: var(--color-gray-800);
 }
 

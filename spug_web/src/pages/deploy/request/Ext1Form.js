@@ -185,7 +185,7 @@ export default observer(function () {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>{`${tag} ${info.author} ${info.message}`}</span>
-                        <span style={{color: '#999', fontSize: 12}}>{info['date']} </span>
+                        <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{info['date']} </span>
                       </div>
                     </Select.Option>
                   ))
@@ -195,7 +195,7 @@ export default observer(function () {
                                    disabled={type === '2' && item.id >= rb_id}>
                       <div style={{display: 'flex', justifyContent: 'space-between'}}>
                         <span>{item.version}</span>
-                        <span style={{color: '#999', fontSize: 12}}>构建于 {dayjs(item.created_at).fromNow()}</span>
+                        <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>构建于 {dayjs(item.created_at).fromNow()}</span>
                       </div>
                     </Select.Option>
                   ))
@@ -220,7 +220,7 @@ export default observer(function () {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>{item.id.substr(0, 6)} {item['author']} {item['message']}</span>
-                    <span style={{color: '#999', fontSize: 12}}>{item['date']} </span>
+                    <span style={{color: 'var(--color-text-tertiary)', fontSize: 12}}>{item['date']} </span>
                   </div>
                 </Select.Option>
               )) : null}
@@ -245,7 +245,7 @@ export default observer(function () {
               format="YYYY-MM-DD HH:mm"
               placeholder="请设置发布时间"
               onChange={setPlan}/>
-            {plan ? <span style={{marginLeft: 24, fontSize: 12, color: '#888'}}>大约 {plan.fromNow()}</span> : null}
+            {plan ? <span style={{marginLeft: 24, fontSize: 12, color: 'var(--color-text-tertiary)'}}>大约 {plan.fromNow()}</span> : null}
           </Form.Item>
         )}
       </Form>

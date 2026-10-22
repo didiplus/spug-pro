@@ -6,7 +6,7 @@ import ConsoleNode from './Node';
 import css from './sider.module.less';
 
 const FILTERS = [
-  { key: 'all', label: '全部', color: 'var(--color-gray-500)' },
+  { key: 'all', label: '全部', color: 'var(--color-text-secondary)' },
   { key: 'success', label: '成功', color: 'var(--color-green-500)' },
   { key: 'error', label: '失败', color: 'var(--color-red-500)' },
   { key: 'doing', label: '执行中', color: 'var(--color-primary)' },
@@ -54,26 +54,6 @@ function Sider(props) {
         {filteredNodes.length === 0 && (
           <div className={css.empty}>无匹配节点</div>
         )}
-      </div>
-
-      <div className={css.footer}>
-        <div className={css.statRow}>
-          <div className={`${css.statItem} ${css.statSuccess}`}>
-            <span className={css.statDot}/>
-            <span className={css.statNum}>{props.successCount}</span>
-            <span className={css.statLabel}>成功</span>
-          </div>
-          <div className={`${css.statItem} ${css.statError}`}>
-            <span className={css.statDot}/>
-            <span className={css.statNum}>{props.errorCount}</span>
-            <span className={css.statLabel}>失败</span>
-          </div>
-          <div className={`${css.statItem} ${css.statDoing}`}>
-            <span className={css.statDot}/>
-            <span className={css.statNum}>{props.doingCount}</span>
-            <span className={css.statLabel}>执行中</span>
-          </div>
-        </div>
       </div>
     </div>
   )

@@ -93,6 +93,27 @@
     }
   }
 
+  .themeToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 var(--space-3);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--duration-normal) var(--ease-standard);
+
+    &:hover {
+      background: var(--color-bg-secondary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+  }
+
   .user {
     height: 100%;
 

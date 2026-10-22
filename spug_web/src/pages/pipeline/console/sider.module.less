@@ -37,7 +37,7 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-primary);
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   padding: 2px var(--space-3);
   border-radius: var(--space-2);
   min-width: 22px;
@@ -46,35 +46,38 @@
 
 .filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  flex-wrap: nowrap;
+  gap: 4px;
   padding: 0 var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
 .filterTag {
+  flex: 1;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 4px;
   font-size: 11px;
   border-radius: var(--space-3);
   cursor: pointer;
   color: var(--color-text-secondary);
-  background: var(--color-gray-100);
+  background: var(--color-bg-secondary);
   border: 1px solid transparent;
   transition: all var(--duration-fast) var(--ease-standard);
   user-select: none;
+  white-space: nowrap;
 
   &:hover {
     color: var(--color-primary);
-    background: var(--color-blue-50);
+    background: var(--color-primary-bg);
   }
 }
 
 .filterDot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -87,10 +90,10 @@
 .filterCount {
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
-  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  background: var(--color-fill-quaternary);
   border-radius: var(--space-2);
-  min-width: 16px;
+  min-width: 14px;
   text-align: center;
   line-height: 12px;
   color: inherit;
@@ -98,8 +101,8 @@
 
 .filterActive {
   color: var(--color-primary);
-  background: var(--color-blue-50);
-  border-color: var(--color-blue-200);
+  background: var(--color-primary-bg);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
 
   .filterCount {
     background: var(--color-primary);
@@ -130,7 +133,7 @@
 .footer {
   padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--color-border-secondary);
-  background: var(--color-gray-50);
+  background: var(--color-bg-secondary);
 }
 
 .statRow {
@@ -163,24 +166,24 @@
 }
 
 .statSuccess {
-  background: rgba(82, 196, 26, 0.06);
-  border-color: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   .statDot { background: var(--color-green-500); }
-  &:hover { background: rgba(82, 196, 26, 0.1); }
+  &:hover { background: color-mix(in srgb, var(--color-green-500) 10%, transparent); }
 }
 
 .statError {
-  background: rgba(255, 77, 79, 0.06);
-  border-color: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   .statDot { background: var(--color-red-500); }
-  &:hover { background: rgba(255, 77, 79, 0.1); }
+  &:hover { background: color-mix(in srgb, var(--color-red-500) 10%, transparent); }
 }
 
 .statDoing {
-  background: rgba(22, 119, 255, 0.06);
-  border-color: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
   .statDot { background: var(--color-primary); }
-  &:hover { background: rgba(22, 119, 255, 0.1); }
+  &:hover { background: color-mix(in srgb, var(--color-primary) 10%, transparent); }
 }
 
 .statNum {

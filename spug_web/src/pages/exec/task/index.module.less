@@ -2,23 +2,23 @@
   display: flex;
   height: calc(100vh - 218px);
   min-height: 420px;
-  background-color: #fff;
+  background-color: var(--color-bg-elevated);
   overflow: hidden;
 
   .left {
     padding: 24px;
     width: 60%;
-    border-right: 1px solid #dfdfdf;
+    border-right: 1px solid var(--color-border);
 
     .tips {
       position: absolute;
       top: 10px;
       left: 180px;
-      color: #999;
+      color: var(--color-text-tertiary);
     }
 
     .tips:hover {
-      color: #777;
+      color: var(--color-text-secondary);
     }
 
     .editor {
@@ -32,7 +32,7 @@
     max-width: 600px;
     display: flex;
     flex-direction: column;
-    background-color: #fafafa;
+    background-color: var(--color-bg-secondary);
     padding: 24px 24px 0 24px;
 
     .title {
@@ -58,22 +58,22 @@
         height: 20px;
         line-height: 20px;
         text-align: center;
-        color: #fff;
+        color: var(--color-text-light);
         font-weight: 500;
         border-radius: 2px;
-        background-color: #1890ff;
+        background-color: var(--color-primary);
       }
 
       .python {
         display: flex;
         justify-content: center;
         align-items: center;
-        color: #fff;
+        color: var(--color-text-light);
         width: 20px;
         height: 20px;
         font-weight: 500;
         border-radius: 2px;
-        background-color: #dca900;
+        background-color: var(--color-gold-600);
       }
 
       .number {
@@ -82,7 +82,7 @@
         margin-left: 12px;
         border-radius: 2px;
         font-weight: 500;
-        background-color: #dfdfdf;
+        background-color: var(--color-border);
       }
 
       .command {
@@ -99,26 +99,26 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         margin: 0 12px;
-        background-color: #d2e7fd;
+        background-color: var(--color-primary-bg);
         padding: 0 8px;
         border-radius: 2px;
       }
 
       .desc {
-        color: #999;
+        color: var(--color-text-tertiary);
       }
     }
 
     .item:hover {
-      border-color: #1890ff;
-      background-color: #e6f7ff;
+      border-color: var(--color-primary);
+      background-color: var(--color-primary-bg);
     }
   }
 }
 
 .output {
   display: flex;
-  background-color: #fff;
+  background-color: var(--color-bg-elevated);
   height: 100%;
   overflow: hidden;
 
@@ -126,8 +126,8 @@
     display: flex;
     flex-direction: column;
     width: 280px;
-    border-right: 1px solid #f0f0f0;
-    background-color: #fafafa;
+    border-right: 1px solid var(--color-border-secondary);
+    background-color: var(--color-bg-secondary);
 
     .list {
       flex: 1;
@@ -140,13 +140,13 @@
         transition: all 0.2s;
 
         &.hostActive {
-          background: #e6f4ff;
-          border-right: 3px solid #1677ff;
+          background: var(--color-primary-bg);
+          border-right: 3px solid var(--color-primary);
         }
       }
 
       .hostItem:hover {
-        background: #f0f5ff;
+        background: var(--color-primary-bg);
       }
     }
   }

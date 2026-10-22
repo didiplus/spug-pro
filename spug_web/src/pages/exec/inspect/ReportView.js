@@ -103,7 +103,7 @@ export default observer(function () {
 
           <div style={{marginBottom: 16}}>
             <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 4}}>
-              <span style={{fontSize: 13, color: '#595959'}}>通过率</span>
+              <span style={{fontSize: 13, color: 'var(--color-text-secondary)'}}>通过率</span>
               <span style={{color: passColor, fontWeight: 600, fontSize: 13}}>{passRate}%</span>
             </div>
             <Progress percent={passRate} strokeColor={passColor} showInfo={false}/>

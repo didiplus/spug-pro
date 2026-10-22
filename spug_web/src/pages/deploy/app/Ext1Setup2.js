@@ -25,7 +25,7 @@ export default observer(function () {
       <span>
         文件过滤规则 &nbsp;
         <Tooltip title="请输入相对于项目根目录的文件路径，根据包含或排除规则进行打包。">
-          <QuestionCircleOutlined style={{color: 'rgba(0, 0, 0, 0.45)'}}/>
+          <QuestionCircleOutlined style={{color: 'var(--color-text-secondary)'}}/>
         </Tooltip>
       </span>
       <Radio.Group

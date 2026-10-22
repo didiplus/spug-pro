@@ -48,13 +48,13 @@ function ComTable() {
     let value = moment(props.value)
     const days = value.diff(moment(), 'days')
     if (days > 30) {
-      return <span>剩余 <b style={{ color: '#389e0d' }}>{days}</b> 天</span>
+      return <span>剩余 <b style={{ color: 'var(--color-green-600)' }}>{days}</b> 天</span>
     } else if (days > 7) {
       return <span>剩余 <b style={{ color: 'var(--color-gold-500)' }}>{days}</b> 天</span>
     } else if (days >= 0) {
-      return <span>剩余 <b style={{ color: '#d9363e' }}>{days}</b> 天</span>
+        return <span>剩余 <b style={{ color: 'var(--color-red-600)' }}>{days}</b> 天</span>
     } else {
-      return <span>过期 <b style={{ color: '#d9363e' }}>{Math.abs(days)}</b> 天</span>
+      return <span>过期 <b style={{ color: 'var(--color-red-600)' }}>{Math.abs(days)}</b> 天</span>
     }
   }
 

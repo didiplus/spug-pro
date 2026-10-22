@@ -78,7 +78,7 @@
 
 .notifyModeActive {
   border-color: var(--color-primary);
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
   font-weight: var(--font-weight-medium);
 }
@@ -88,13 +88,13 @@
   padding: var(--space-2) var(--space-3);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-gray-50);
+  background: var(--color-fill-quaternary);
 }
 
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .notifyModeActive {
-    background: rgba(22, 119, 255, 0.12);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
   :global(:root:not([data-theme="light"])) .hostSelector {
     background: var(--color-gray-900);
@@ -102,7 +102,7 @@
 }
 
 :global([data-theme="dark"]) .notifyModeActive {
-  background: rgba(22, 119, 255, 0.12);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 :global([data-theme="dark"]) .hostSelector {
   background: var(--color-gray-900);

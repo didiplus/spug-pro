@@ -90,7 +90,7 @@ class PagePerm extends React.Component {
         <span>
           <span style={{ fontWeight: isTopLevel ? 600 : 400 }}>{node.title}</span>
           {total > 0 && (
-            <span style={{ marginLeft: 8, color: '#999', fontSize: '12px' }}>
+            <span style={{ marginLeft: 8, color: 'var(--color-text-tertiary)', fontSize: '12px' }}>
               ({checked}/{total})
             </span>
           )}

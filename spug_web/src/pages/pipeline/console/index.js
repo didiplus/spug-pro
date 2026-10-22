@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Tag } from 'antd';
-import { CloseOutlined } from '@ant-design/icons';
+import { Drawer, Tag } from 'antd';
 import S from './store';
 import Sider from './Sider';
 import Body from './Body';
@@ -37,28 +36,26 @@ function Console() {
   }
 
   return (
-    <Modal
+    <Drawer
       open={!!S.token}
-      width={1200}
+      width="min(92vw, 1600px)"
       footer={null}
       maskClosable={false}
       className={css.console}
-      onCancel={handleClose}
-      style={{top: 20, paddingBottom: 0}}
+      onClose={handleClose}
       styles={{body: {padding: 0}}}
       title={
         <div className={css.header}>
           <span className={css.titleName}>执行控制台</span>
           {S.recordD?.name && <span className={css.pipeName}>{S.recordD.name}</span>}
           <Tag color={overallCfg.color} className={css.statusTag}>{overallCfg.text}</Tag>
-          <CloseOutlined className={css.close} onClick={handleClose}/>
         </div>
       }>
       <div className={css.body}>
         <Sider successCount={successCount} errorCount={errorCount} doingCount={doingCount} total={total}/>
         <Body progress={progress} successCount={successCount} errorCount={errorCount} total={total}/>
       </div>
-    </Modal>
+    </Drawer>
   )
 }
 

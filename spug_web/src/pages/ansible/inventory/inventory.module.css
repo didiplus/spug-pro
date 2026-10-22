@@ -97,7 +97,7 @@
 }
 
 .tagBlue {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
@@ -142,10 +142,10 @@
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .tagBlue {
-    background: rgba(22, 119, 255, 0.15);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
 }
 
 :global([data-theme="dark"]) .tagBlue {
-  background: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
 }

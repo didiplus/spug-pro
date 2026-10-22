@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Table, Tag, Button } from 'antd';
+import { Drawer, Table, Tag, Button } from 'antd';
 import { t } from 'libs';
 import S, { STATUS_COLORS, STATUS_TEXTS } from './store';
 
@@ -10,11 +10,11 @@ function Record() {
   }
 
   return (
-    <Modal
+    <Drawer
       open={S.historyVisible}
-      width={800}
+      width="min(80vw, 1000px)"
       title={t('执行记录')}
-      onCancel={() => S.historyVisible = false}
+      onClose={() => S.historyVisible = false}
       footer={null}>
       <Table
         rowKey="id"
@@ -32,7 +32,7 @@ function Record() {
           <Button type="link" onClick={() => handleShow(info)}>{t('查看')}</Button>
         )}/>
       </Table>
-    </Modal>
+    </Drawer>
   )
 }
 

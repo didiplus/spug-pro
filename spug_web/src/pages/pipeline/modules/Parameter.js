@@ -228,7 +228,7 @@ function Parameter(props) {
           <div key={idx} className={css.row}>
             <Input style={{width: 200}} value={item[0]} placeholder={t('输入变量名')}
                    onChange={e => handleStaticEdit(e, idx, 0)}/>
-            <div style={{margin: '0 10px', color: '#999'}}>=</div>
+            <div style={{margin: '0 10px', color: 'var(--color-text-tertiary)'}}>=</div>
             <Input value={item[1]} placeholder={t('输入变量值')} onChange={e => handleStaticEdit(e, idx, 1)}/>
             <Popconfirm title={t('确定要删除该参数吗？')} onConfirm={() => handleStaticDel(idx)}>
               <DeleteOutlined/>

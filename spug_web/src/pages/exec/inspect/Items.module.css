@@ -22,22 +22,22 @@
 }
 
 .statIconBlue {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
 .statIconGreen {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .statIconRed {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
   color: var(--color-red-600);
 }
 
 .statIconPurple {
-  background: rgba(114, 46, 209, 0.1);
+  background: color-mix(in srgb, var(--color-purple-500) 10%, transparent);
   color: var(--color-purple-600);
 }
 
@@ -74,32 +74,32 @@
 }
 
 .catSystem {
-  background: var(--color-blue-50);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
 .catDisk {
-  background: rgba(19, 194, 194, 0.1);
+  background: color-mix(in srgb, var(--color-cyan-500) 10%, transparent);
   color: #13c2c2;
 }
 
 .catNetwork {
-  background: rgba(114, 46, 209, 0.1);
+  background: color-mix(in srgb, var(--color-purple-500) 10%, transparent);
   color: var(--color-purple-600);
 }
 
 .catService {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .catMemory {
-  background: rgba(250, 140, 22, 0.1);
+  background: color-mix(in srgb, var(--color-orange-500) 10%, transparent);
   color: var(--color-orange-600);
 }
 
 .catCustom {
-  background: var(--color-gray-100);
+  background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
 }
 
@@ -115,23 +115,23 @@
 }
 
 .matchPass {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .matchFail {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
   color: var(--color-red-600);
 }
 
 /* ── 期望结果标签 ── */
 .expectWarning {
-  background: rgba(250, 140, 22, 0.1);
+  background: color-mix(in srgb, var(--color-orange-500) 10%, transparent);
   color: var(--color-orange-600);
 }
 
 .expectError {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
   color: var(--color-red-600);
 }
 
@@ -140,7 +140,7 @@
   font-size: var(--font-size-xs);
   padding: 0 var(--space-1);
   border-radius: var(--radius-sm);
-  background: var(--color-gray-100);
+  background: var(--color-bg-secondary);
   color: var(--color-text-tertiary);
 }
 
@@ -171,129 +171,129 @@
 }
 
 .testPass {
-  background: rgba(82, 196, 26, 0.1);
+  background: color-mix(in srgb, var(--color-green-500) 10%, transparent);
   color: var(--color-green-600);
 }
 
 .testWarning {
-  background: rgba(250, 140, 22, 0.1);
+  background: color-mix(in srgb, var(--color-orange-500) 10%, transparent);
   color: var(--color-orange-600);
 }
 
 .testFail {
-  background: rgba(255, 77, 79, 0.1);
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
   color: var(--color-red-600);
 }
 
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .statIconBlue {
-    background: rgba(22, 119, 255, 0.15);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .statIconGreen {
-    background: rgba(82, 196, 26, 0.15);
+    background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .statIconRed {
-    background: rgba(255, 77, 79, 0.15);
+    background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .statIconPurple {
-    background: rgba(114, 46, 209, 0.15);
+    background: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catSystem {
-    background: rgba(22, 119, 255, 0.15);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catDisk {
-    background: rgba(19, 194, 194, 0.15);
+    background: color-mix(in srgb, var(--color-cyan-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catNetwork {
-    background: rgba(114, 46, 209, 0.15);
+    background: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catService {
-    background: rgba(82, 196, 26, 0.15);
+    background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catMemory {
-    background: rgba(250, 140, 22, 0.15);
+    background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .catCustom {
     background: var(--color-gray-800);
   }
   :global(:root:not([data-theme="light"])) .matchPass {
-    background: rgba(82, 196, 26, 0.15);
+    background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .matchFail {
-    background: rgba(255, 77, 79, 0.15);
+    background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .expectWarning {
-    background: rgba(250, 140, 22, 0.15);
+    background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .expectError {
-    background: rgba(255, 77, 79, 0.15);
+    background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .inactiveTag {
     background: var(--color-gray-800);
   }
   :global(:root:not([data-theme="light"])) .testPass {
-    background: rgba(82, 196, 26, 0.15);
+    background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .testWarning {
-    background: rgba(250, 140, 22, 0.15);
+    background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
   }
   :global(:root:not([data-theme="light"])) .testFail {
-    background: rgba(255, 77, 79, 0.15);
+    background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
   }
 }
 
 :global([data-theme="dark"]) .statIconBlue {
-  background: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 :global([data-theme="dark"]) .statIconGreen {
-  background: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .statIconRed {
-  background: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .statIconPurple {
-  background: rgba(114, 46, 209, 0.15);
+  background: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .catSystem {
-  background: rgba(22, 119, 255, 0.15);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 :global([data-theme="dark"]) .catDisk {
-  background: rgba(19, 194, 194, 0.15);
+  background: color-mix(in srgb, var(--color-cyan-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .catNetwork {
-  background: rgba(114, 46, 209, 0.15);
+  background: color-mix(in srgb, var(--color-purple-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .catService {
-  background: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .catMemory {
-  background: rgba(250, 140, 22, 0.15);
+  background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .catCustom {
   background: var(--color-gray-800);
 }
 :global([data-theme="dark"]) .matchPass {
-  background: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .matchFail {
-  background: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .expectWarning {
-  background: rgba(250, 140, 22, 0.15);
+  background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .expectError {
-  background: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .inactiveTag {
   background: var(--color-gray-800);
 }
 :global([data-theme="dark"]) .testPass {
-  background: rgba(82, 196, 26, 0.15);
+  background: color-mix(in srgb, var(--color-green-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .testWarning {
-  background: rgba(250, 140, 22, 0.15);
+  background: color-mix(in srgb, var(--color-orange-500) 15%, transparent);
 }
 :global([data-theme="dark"]) .testFail {
-  background: rgba(255, 77, 79, 0.15);
+  background: color-mix(in srgb, var(--color-red-500) 15%, transparent);
 }

@@ -12,7 +12,7 @@ function Empty(props) {
     props.setHandler(undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.node])
-  return <div style={{padding: 24, color: '#999'}}>{t('请选择节点模块')}</div>
+  return <div style={{padding: 24, color: 'var(--color-text-tertiary)'}}>{t('请选择节点模块')}</div>
 }
 
 function ModuleConfig(props) {
