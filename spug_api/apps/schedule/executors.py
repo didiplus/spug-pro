@@ -140,7 +140,80 @@ def db_backup_executor(command, created_by_id=None):
     return code, round(time.time() - now, 3), out
 
 
+def inspect_executor(command, created_by_id=None):
+    from apps.exec.models import InspectTask, InspectResult, InspectItem
+    from apps.exec.inspect import build_combined_script
+    from apps.host.models import Host
+    from django_redis import get_redis_connection
+    from libs import human_datetime
+    import uuid
+
+    code, out, now = 1, None, time.time()
+    try:
+        data = json.loads(command)
+        task_id = data['inspect_task_id']
+        task = InspectTask.objects.filter(pk=task_id).first()
+        if not task:
+            return 1, round(time.time() - now, 3), f'巡检任务 {task_id} 不存在'
+
+        host_ids = json.loads(task.host_ids)
+        item_ids = json.loads(task.item_ids)
+        if not host_ids:
+            return 1, round(time.time() - now, 3), '未配置目标主机'
+        if not item_ids:
+            return 1, round(time.time() - now, 3), '未关联巡检项'
+
+        token = uuid.uuid4().hex
+        batch_id = uuid.uuid4().hex
+        rds = get_redis_connection()
+        run_at = human_datetime()
+        items = list(InspectItem.objects.filter(id__in=item_ids, is_active=True).order_by('id'))
+        if not items:
+            return 1, round(time.time() - now, 3), '无可用巡检项'
+
+        InspectResult.objects.filter(task_id=task.id, status='running').update(
+            status='error', output='执行被中断（定时任务触发新执行）'
+        )
+
+        for host in Host.objects.filter(id__in=host_ids):
+            for item in items:
+                InspectResult.objects.create(
+                    task_id=task.id,
+                    batch_id=batch_id,
+                    host_id=host.id,
+                    item_id=item.id,
+                    item_name=item.name,
+                    status='running',
+                    run_at=run_at,
+                )
+            combined_command = build_combined_script(items)
+            dispatch_data = dict(
+                key=host.id,
+                name=host.name,
+                token=token,
+                interpreter='sh',
+                hostname=host.hostname,
+                port=host.port,
+                username=host.username,
+                command=combined_command,
+                pkey=host.private_key,
+                term=None,
+                inspect_task_id=task.id,
+                inspect_batch_id=batch_id,
+                inspect_item_ids=[item.id for item in items],
+            )
+            rds.rpush(settings.EXEC_WORKER_KEY, json.dumps(dispatch_data))
+
+        code = 0
+        out = f'巡检任务 "{task.name}" 已触发，批次: {batch_id[:8]}'
+    except Exception as e:
+        out = f'inspect_executor error: {str(e)}'
+    return code, round(time.time() - now, 3), out
+
+
 def dispatch_job(host_id, interpreter, command, created_by_id=None):
+    if interpreter == 'inspect':
+        return inspect_executor(command, created_by_id=created_by_id)
     if interpreter == 'db_backup':
         return db_backup_executor(command, created_by_id=created_by_id)
     if interpreter == 'python':

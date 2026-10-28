@@ -6,17 +6,21 @@
 
 .spanButton {
   cursor: pointer;
-  margin-right: var(--space-6);
   color: var(--range-btn-color);
-  transition: color var(--duration-fast) var(--ease-standard);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-standard);
 }
 
 .spanButtonActive {
   cursor: pointer;
-  margin-right: var(--space-6);
   color: var(--range-btn-active-color);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-bg);
 }
 
 .spanButton:hover {
   color: var(--range-btn-active-color);
+  background: var(--color-primary-bg);
 }

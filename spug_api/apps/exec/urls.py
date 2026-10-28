@@ -7,7 +7,7 @@ from apps.exec.views import *
 from apps.exec.transfer import TransferView
 from apps.exec.inspect import (
     InspectItemView, InspectItemTestView, InspectTaskView,
-    InspectRunView, InspectResultView, InspectReportView,
+    InspectRunView, InspectResultView, InspectReportView, InspectScheduleView,
 )
 
 urlpatterns = [
@@ -20,4 +20,5 @@ urlpatterns = [
     re_path(r"inspect/run/$", InspectRunView.as_view()),
     re_path(r"inspect/result/$", InspectResultView.as_view()),
     re_path(r"inspect/report/$", InspectReportView.as_view()),
+    re_path(r"inspect/schedule/$", InspectScheduleView.as_view()),
 ]

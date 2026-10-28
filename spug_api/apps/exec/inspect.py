@@ -239,7 +239,7 @@ def build_combined_script(items):
     lines = []
     for item in items:
         marker_start = f'###SPUG_START:{item.id}###'
-        marker_exit = f'###SPUG_EXIT:$?:{item.id}###'
+
         marker_end = f'###SPUG_END:{item.id}###'
         if item.interpreter == 'python':
             cmd = f'python3 << PYEOF\n# -*- coding: UTF-8 -*-\n{item.command}\nPYEOF'
@@ -247,13 +247,14 @@ def build_combined_script(items):
             cmd = item.command
         lines.append(f'echo "{marker_start}"')
         lines.append(cmd)
-        lines.append(f'echo "{marker_exit}"')
+        lines.append(f'__spug_rc=$?; echo; echo "###SPUG_EXIT:$__spug_rc:{item.id}###"')
         lines.append(f'echo "{marker_end}"')
     return '\n'.join(lines)
 
 
 def parse_combined_output(output, item_ids):
     results = {}
+    output = (output or '').replace('\r\n', '\n').replace('\r', '\n')
     for item_id in item_ids:
         start_marker = f'###SPUG_START:{item_id}###'
         end_marker = f'###SPUG_END:{item_id}###'
@@ -272,9 +273,14 @@ def parse_combined_output(output, item_ids):
         exit_code = -1
         content_lines = []
         for line in lines:
-            if line.startswith(exit_prefix):
+            if exit_prefix in line:
+                idx = line.find(exit_prefix)
+                content = line[:idx].strip()
+                if content:
+                    content_lines.append(content)
                 try:
-                    parts = line.strip().split(':')
+                    exit_part = line[idx:]
+                    parts = exit_part.strip().split(':')
                     exit_code = int(parts[1])
                 except (ValueError, IndexError):
                     pass
@@ -428,3 +434,91 @@ class InspectReportView(View):
         response = HttpResponse(html, content_type='text/html; charset=utf-8')
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
+
+class InspectScheduleView(View):
+    @auth('exec.inspect.view')
+    def get(self, request):
+        form, error = JsonParser(
+            Argument('task_id', type=int, help='请指定巡检任务')
+        ).parse(request.GET)
+        if error is not None:
+            return json_response(error=error)
+        from apps.schedule.models import Task as ScheduleTask
+        command = json.dumps({'inspect_task_id': form.task_id})
+        task = ScheduleTask.objects.filter(type='inspect', interpreter='inspect', command=command).first()
+        return json_response(task.to_dict() if task else None)
+
+    @auth('exec.inspect.edit')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('task_id', type=int, help='请指定巡检任务'),
+            Argument('trigger', filter=lambda x: x in ['cron', 'interval', 'date'], help='请选择触发器类型'),
+            Argument('trigger_args', help='请输入触发器参数'),
+            Argument('is_active', type=bool, default=False),
+        ).parse(request.body)
+        if error is not None:
+            return json_response(error=error)
+
+        from apps.schedule.models import Task as ScheduleTask
+        from apscheduler.triggers.cron import CronTrigger
+
+        inspect_task = InspectTask.objects.filter(pk=form.task_id).first()
+        if not inspect_task:
+            return json_response(error='巡检任务不存在')
+
+        command = json.dumps({'inspect_task_id': form.task_id})
+        name = f'巡检: {inspect_task.name}'
+
+        if form.trigger == 'cron':
+            args = json.loads(form.trigger_args)['rule'].split()
+            if len(args) != 5:
+                return json_response(error='无效的执行规则，请更正后再试')
+            minute, hour, day, month, week = args
+            week = '0' if week == '7' else week
+            try:
+                CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=week)
+            except ValueError:
+                return json_response(error='无效的执行规则，请更正后再试')
+
+        existing = ScheduleTask.objects.filter(type='inspect', interpreter='inspect', command=command).first()
+        if existing:
+            existing.trigger = form.trigger
+            existing.trigger_args = form.trigger_args
+            existing.is_active = form.is_active
+            existing.updated_at = human_datetime()
+            existing.updated_by = request.user
+            existing.save()
+            schedule_task = existing
+        else:
+            schedule_task = ScheduleTask.objects.create(
+                name=name, type='inspect', interpreter='inspect', command=command,
+                targets='[]', trigger=form.trigger, trigger_args=form.trigger_args,
+                is_active=form.is_active, created_by=request.user,
+            )
+
+        rds_cli = get_redis_connection()
+        if form.is_active:
+            message = {'id': schedule_task.id, 'action': 'add', 'interpreter': schedule_task.interpreter,
+                       'trigger': schedule_task.trigger, 'trigger_args': schedule_task.trigger_args,
+                       'command': schedule_task.command, 'targets': []}
+        else:
+            message = {'id': schedule_task.id, 'action': 'remove'}
+        rds_cli.lpush(settings.SCHEDULE_KEY, json.dumps(message))
+        return json_response(schedule_task.to_dict())
+
+    @auth('exec.inspect.del')
+    def delete(self, request):
+        form, error = JsonParser(
+            Argument('task_id', type=int, help='请指定巡检任务')
+        ).parse(request.GET)
+        if error is not None:
+            return json_response(error=error)
+        from apps.schedule.models import Task as ScheduleTask
+        command = json.dumps({'inspect_task_id': form.task_id})
+        task = ScheduleTask.objects.filter(type='inspect', interpreter='inspect', command=command).first()
+        if task:
+            if task.is_active:
+                rds_cli = get_redis_connection()
+                rds_cli.lpush(settings.SCHEDULE_KEY, json.dumps({'id': task.id, 'action': 'remove'}))
+            task.delete()
+        return json_response(error=error)

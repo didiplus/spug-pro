@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Table, Modal, Tooltip } from 'antd';
+import { Table, Modal, Tooltip, Space } from 'antd';
 import {
   PlusOutlined,
   ThunderboltOutlined,
@@ -11,6 +11,14 @@ import {
   CloseCircleFilled,
   ClockCircleFilled,
   SyncOutlined,
+  ScheduleOutlined,
+  SafetyCertificateOutlined,
+  DesktopOutlined,
+  UnorderedListOutlined,
+  PauseCircleFilled,
+  EditOutlined,
+  DeleteOutlined,
+  ProfileOutlined,
 } from '@ant-design/icons';
 import { http, hasPermission } from 'libs';
 import { Action, TableCard, AuthButton } from 'components';
@@ -36,12 +44,54 @@ function StatusTag({ status }) {
   );
 }
 
-function CountCell({ count, unit }) {
+function Capsule({ icon, count, unit }) {
   return (
-    <span className={styles.count}>
-      <span className={styles.countNum}>{count}</span>
-      <span className={styles.countUnit}>{unit}</span>
+    <span className={styles.capsule}>
+      {icon}
+      <span className={styles.capsuleNum}>{count}</span>
+      <span className={styles.capsuleUnit}>{unit}</span>
     </span>
+  );
+}
+
+function formatScheduleRule(trigger, args) {
+  if (!trigger) return null;
+  if (trigger === 'cron') {
+    let parsed;
+    try { parsed = typeof args === 'string' ? JSON.parse(args) : args; } catch { parsed = null; }
+    return parsed?.rule || 'Cron';
+  }
+  if (trigger === 'interval') {
+    const seconds = parseInt(args);
+    if (isNaN(seconds)) return '间隔执行';
+    if (seconds >= 86400 && seconds % 86400 === 0) return `每 ${seconds / 86400} 天`;
+    if (seconds >= 3600 && seconds % 3600 === 0) return `每 ${seconds / 3600} 小时`;
+    if (seconds >= 60 && seconds % 60 === 0) return `每 ${seconds / 60} 分钟`;
+    return `每 ${seconds} 秒`;
+  }
+  if (trigger === 'date') return args || '一次性';
+  return null;
+}
+
+function ScheduleCell({ active, trigger, args }) {
+  if (!trigger) return <span className={styles.scheduleEmpty}>未配置</span>;
+  const rule = formatScheduleRule(trigger, args);
+  if (!active) {
+    return (
+      <Tooltip title={`已配置: ${rule}（已禁用）`}>
+        <span className={`${styles.scheduleBadge} ${styles.scheduleDisabled}`}>
+          <PauseCircleFilled style={{ fontSize: 10 }} /> 已禁用
+        </span>
+      </Tooltip>
+    );
+  }
+  const label = trigger === 'cron' ? 'Cron' : trigger === 'interval' ? '间隔' : '定时';
+  return (
+    <Tooltip title={`${label}: ${rule}`}>
+      <span className={`${styles.scheduleBadge} ${styles.scheduleActive}`}>
+        <SyncOutlined style={{ fontSize: 10 }} /> {rule && rule.length <= 12 ? rule : label}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -130,56 +180,95 @@ class ComTable extends React.Component {
           pageSizeOptions: ['10', '20', '50', '100'],
         }}
       >
-        <Table.Column title="任务名称" dataIndex="name" width={180} ellipsis={{ showTitle: true }} />
+        <Table.Column
+          title="任务名称"
+          dataIndex="name"
+          width={200}
+          ellipsis={{ showTitle: true }}
+          render={(name) => (
+            <Space size={6} className={styles.nameCell}>
+              <SafetyCertificateOutlined className={styles.nameIcon} />
+              <span className={styles.nameText}>{name}</span>
+            </Space>
+          )}
+        />
         <Table.Column
           title="巡检项"
           dataIndex="items"
-          width={120}
+          width={110}
           align="center"
-          render={v => <CountCell count={v ? v.length : 0} unit="项" />}
+          render={v => <Capsule icon={<UnorderedListOutlined style={{ fontSize: 12 }} />} count={v ? v.length : 0} unit="项" />}
         />
         <Table.Column
           title="目标主机"
           dataIndex="host_ids"
-          width={150}
+          width={110}
           align="center"
-          render={v => <CountCell count={v ? v.length : 0} unit="台" />}
+          render={v => <Capsule icon={<DesktopOutlined style={{ fontSize: 12 }} />} count={v ? v.length : 0} unit="台" />}
         />
         <Table.Column
           title="最近状态"
           dataIndex="latest_status"
-          width={150}
+          width={120}
           align="center"
           render={v => <StatusTag status={v} />}
         />
         <Table.Column
-          title="执行时间"
-          dataIndex="latest_run_at"
-          width={200}
-          render={v => v
-            ? <span className={styles.time}>{v}</span>
-            : <span className={styles.timeEmpty}>-</span>}
+          title="定时"
+          dataIndex="schedule_active"
+          width={110}
+          align="center"
+          render={(active, record) => (
+            <ScheduleCell
+              active={active}
+              trigger={record.schedule_trigger}
+              args={record.schedule_args}
+            />
+          )}
         />
         <Table.Column
+          title="最近执行"
+          dataIndex="latest_run_at"
+          width={180}
+          render={v => v
+            ? <span className={styles.time}>{v}</span>
+            : <span className={styles.timeEmpty}>未执行</span>}
+        />
+        {/* <Table.Column
           ellipsis={{ showTitle: true }}
           title="描述"
           dataIndex="desc"
+          width={180}
           render={v => v
             ? <Tooltip title={v} placement="topLeft"><span className={styles.desc}>{v}</span></Tooltip>
             : <span className={styles.timeEmpty}>-</span>}
-        />
+        /> */}
         {hasPermission('exec.inspect.do|exec.inspect.view|exec.inspect.edit|exec.inspect.del') && (
           <Table.Column
             title="操作"
-            width={320}
+            width={200}
             fixed="right"
+            align="center"
             render={info => (
               <Action>
-                <Action.Button auth="exec.inspect.do" icon={<ThunderboltOutlined />} onClick={() => this.handleRun(info)}>执行</Action.Button>
-                <Action.Button auth="exec.inspect.view" onClick={() => store.showResult(info)}>结果</Action.Button>
-                <Action.Button auth="exec.inspect.view" icon={<FileTextOutlined />} onClick={() => this.handleReport(info)}>报告</Action.Button>
-                <Action.Button auth="exec.inspect.edit" onClick={() => store.showForm(info)}>编辑</Action.Button>
-                <Action.Button danger auth="exec.inspect.del" onClick={() => this.handleDelete(info)}>删除</Action.Button>
+                <Tooltip title="执行">
+                  <Action.Button auth="exec.inspect.do" icon={<ThunderboltOutlined />} onClick={() => this.handleRun(info)} />
+                </Tooltip>
+                <Tooltip title="结果">
+                  <Action.Button auth="exec.inspect.view" icon={<ProfileOutlined />} onClick={() => store.showResult(info)} />
+                </Tooltip>
+                <Tooltip title="定时">
+                  <Action.Button auth="exec.inspect.edit" icon={<ScheduleOutlined />} onClick={() => { store.record = info; store.scheduleVisible = true; }} />
+                </Tooltip>
+                <Tooltip title="报告">
+                  <Action.Button auth="exec.inspect.view" icon={<FileTextOutlined />} onClick={() => this.handleReport(info)} />
+                </Tooltip>
+                <Tooltip title="编辑">
+                  <Action.Button auth="exec.inspect.edit" icon={<EditOutlined />} onClick={() => store.showForm(info)} />
+                </Tooltip>
+                <Tooltip title="删除">
+                  <Action.Button danger auth="exec.inspect.del" icon={<DeleteOutlined />} onClick={() => this.handleDelete(info)} />
+                </Tooltip>
               </Action>
             )}
           />

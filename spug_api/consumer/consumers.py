@@ -62,6 +62,7 @@ class SSHConsumer(BaseConsumer):
         self._session = None
         self._recording_file = None
         self._session_start = 0
+        self._loop_thread = None
         super().connect()
 
     def _write_record(self, event_type, data):
@@ -100,9 +101,15 @@ class SSHConsumer(BaseConsumer):
                     text = data.decode(errors="ignore")
 
             if not is_ready:
-                self.send(text_data="\033[2J\033[3J\033[1;1H")
+                try:
+                    self.send(text_data="\033[2J\033[3J\033[1;1H")
+                except Exception:
+                    break
                 is_ready = True
-            self.send(text_data=text)
+            try:
+                self.send(text_data=text)
+            except Exception:
+                break
             self._write_record('o', text)
             data = b""
 
@@ -119,6 +126,8 @@ class SSHConsumer(BaseConsumer):
 
     def disconnect(self, code):
         self._closed = True
+        if self._loop_thread and self._loop_thread.is_alive():
+            self._loop_thread.join(timeout=3)
         if self.chan:
             try:
                 self.chan.close()
@@ -163,11 +172,20 @@ class SSHConsumer(BaseConsumer):
             except Exception as e:
                 return self.close_with_message(f"连接主机失败: {e}")
 
-            self.chan = self.ssh.invoke_shell(term="xterm")
-            self.chan.transport.set_keepalive(30)
+            try:
+                self.chan = self.ssh.invoke_shell(term="xterm")
+                self.chan.transport.set_keepalive(30)
+            except Exception as e:
+                try:
+                    self.ssh.close()
+                except Exception:
+                    pass
+                self.ssh = None
+                return self.close_with_message(f"打开交互式终端失败: {e}")
 
             self._start_recording(host)
-            Thread(target=self.loop_read, daemon=True).start()
+            self._loop_thread = Thread(target=self.loop_read, daemon=True)
+            self._loop_thread.start()
         else:
             self.close_with_message("你当前无权限操作该主机，请联系管理员授权。")
 

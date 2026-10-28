@@ -64,6 +64,18 @@ class Scheduler:
         self.scheduler.add_job(auto_run_by_minute, 'interval', minutes=1)
 
     def _dispatch(self, task_id, interpreter, command, targets):
+        if interpreter == 'inspect':
+            from apps.schedule.executors import dispatch_job
+            code, duration, out = dispatch_job(None, interpreter, command)
+            history = History.objects.create(
+                task_id=task_id,
+                status='1' if code == 0 else '2',
+                run_time=human_datetime(),
+                output=json.dumps({'inspect': [code, duration, out]})
+            )
+            Task.objects.filter(pk=task_id).update(latest_id=history.id)
+            connections.close_all()
+            return
         output = {x: None for x in targets}
         history = History.objects.create(
             task_id=task_id,

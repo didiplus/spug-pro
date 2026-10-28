@@ -163,6 +163,20 @@ class InspectTask(models.Model, ModelMixin):
             tmp["latest_status"] = 'pending'
             tmp["latest_run_at"] = None
             tmp["latest_batch_id"] = None
+
+        from apps.schedule.models import Task as ScheduleTask
+        command = json.dumps({'inspect_task_id': self.id})
+        schedule = ScheduleTask.objects.filter(
+            type='inspect', interpreter='inspect', command=command
+        ).first()
+        if schedule:
+            tmp["schedule_active"] = schedule.is_active
+            tmp["schedule_trigger"] = schedule.trigger
+            tmp["schedule_args"] = schedule.trigger_args
+        else:
+            tmp["schedule_active"] = False
+            tmp["schedule_trigger"] = None
+            tmp["schedule_args"] = None
         return tmp
 
     class Meta:

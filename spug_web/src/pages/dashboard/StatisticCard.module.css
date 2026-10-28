@@ -24,9 +24,16 @@
 }
 
 .icon {
-  font-size: var(--stat-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--item-color, var(--color-primary)) 10%, transparent);
+  font-size: 24px;
   color: var(--item-color, var(--color-primary));
-  line-height: 1;
+  flex-shrink: 0;
 }
 
 .content {

@@ -133,6 +133,7 @@
   position: relative;
   z-index: 1;
   max-width: 380px;
+  text-align: center;
   animation: brandFadeIn var(--duration-slow) var(--ease-standard) both;
 }
 
@@ -142,35 +143,50 @@
 }
 
 /* 开源徽章 */
+.brandHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
 .brandBadge {
-  display: inline-block;
-  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
   border-radius: 100px;
   background: var(--login-brand-glass-hover);
   border: 1px solid var(--login-brand-glass-border);
   color: var(--login-brand-text);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  margin-bottom: var(--space-5);
+  letter-spacing: 0.06em;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 .brandTitle {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--login-brand-text);
-  line-height: 1.2;
+  line-height: 1.1;
   letter-spacing: -0.03em;
-  margin-bottom: var(--space-2);
 }
 
 .brandSubtitle {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--login-brand-text-secondary);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.brandDesc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--login-brand-text-tertiary);
+  margin-bottom: var(--space-5);
+
 }
 
 /* ───────── 架构示意图 ───────── */
@@ -194,15 +210,9 @@
   to   { width: 100%; }
 }
 
-@keyframes resultFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-
-@keyframes sshPulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.03); }
+@keyframes typingResult {
+  from { max-width: 0; }
+  to   { max-width: 220px; }
 }
 
 @keyframes serverFadeIn {
@@ -385,6 +395,7 @@
   font-family: 'Source Code Pro', 'Consolas', 'Monaco', monospace;
   font-size: 11px;
   line-height: 1.8;
+  text-align: left;
 }
 
 .termCmd {
@@ -409,12 +420,14 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  opacity: 0;
-  animation: resultFadeIn 0.4s var(--ease-standard) both;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  animation: typingResult 0.5s steps(20, end) both;
 
-  &:nth-of-type(1) { animation-delay: 1.4s; }
-  &:nth-of-type(2) { animation-delay: 1.6s; }
-  &:nth-of-type(3) { animation-delay: 1.8s; }
+  &:nth-of-type(2) { animation-delay: 1.4s; }
+  &:nth-of-type(3) { animation-delay: 1.6s; }
+  &:nth-of-type(4) { animation-delay: 1.8s; }
 }
 
 .termCheck {
@@ -434,8 +447,7 @@
 .termResultActive {
   background: var(--login-brand-glass-hover);
   border-radius: 4px;
-  padding: 2px 4px;
-  margin: -2px -4px;
+
 }
 
 /* 流水线竖线 */
@@ -480,6 +492,9 @@
 
 /* SSH 标签 */
 .sshTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 14px;
   border-radius: 100px;
   background: var(--login-brand-glass-bg);
@@ -489,7 +504,6 @@
   font-weight: 500;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  animation: sshPulse 2.5s ease-in-out infinite;
 }
 
 /* 服务器节点 */
@@ -746,24 +760,42 @@
 .footer {
   position: relative;
   z-index: 1;
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
   text-align: center;
-  color: var(--login-footer-text);
-  font-size: var(--font-size-sm);
 }
 
 .footerLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
   margin-bottom: var(--space-2);
 }
 
 .footerLinks a {
-  margin: 0 var(--space-4);
-  color: var(--color-link);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   transition: color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    color: var(--color-primary);
+  }
 }
 
-.footerLinks a:hover {
-  color: var(--color-link-hover);
+.footerDivider {
+  width: 1px;
+  height: 12px;
+  background: var(--color-border-secondary);
+  flex-shrink: 0;
+}
+
+.footerCopyright {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--color-text-tertiary);
+  font-size: 11px;
 }
 
 /* ───────── 安全警告弹窗 ───────── */
@@ -817,7 +849,7 @@
   .termResult,
   .archArrow,
   .archArrowFlow,
-  .sshTag,
+
   .serverNode,
   .serverStatus,
   .brand,

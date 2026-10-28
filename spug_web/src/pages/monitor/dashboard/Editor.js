@@ -8,8 +8,10 @@ import store from './store';
 
 const PANEL_TYPES = [
   {value: 'timeseries', label: '时间序列'},
+  {value: 'line', label: '折线图'},
   {value: 'stat', label: '单值统计'},
   {value: 'gauge', label: '仪表盘'},
+  {value: 'liquid', label: '水位图'},
   {value: 'table', label: '表格'},
   {value: 'bar', label: '柱状图'},
 ];

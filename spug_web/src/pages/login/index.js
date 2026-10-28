@@ -27,7 +27,7 @@ import './tokens.css';
 import history from 'libs/history';
 import { http, updatePermissions } from 'libs';
 import { getTheme, toggleTheme } from 'libs/theme';
-import logo from 'layout/logo-spug-txt.png';
+import logo from 'layout/logo-spug.png';
 import envStore from 'pages/config/environment/store';
 import appStore from 'pages/config/app/store';
 import requestStore from 'pages/deploy/request/store';
@@ -135,9 +135,12 @@ export default function () {
         <div className={styles.brandOrb1} />
         <div className={styles.brandOrb2} />
         <div className={styles.brandContent}>
-          <div className={styles.brandBadge}>OPEN SOURCE</div>
-          <div className={styles.brandTitle}>Spug Pro</div>
+          <div className={styles.brandHeading}>
+            <div className={styles.brandBadge}>OPEN SOURCE</div>
+            <div className={styles.brandTitle}>Spug Pro</div>
+          </div>
           <div className={styles.brandSubtitle}>轻量级自动化运维平台</div>
+          <div className={styles.brandDesc}>SSH 原生无 Agent，开箱即用的全栈自动化运维平台</div>
           <div className={styles.archDiagram}>
             <div className={styles.archIcons}>
               <div className={styles.archIconWrap}><BellOutlined className={styles.archIconItem} /></div>
@@ -151,7 +154,7 @@ export default function () {
                 <span className={styles.termDot} />
                 <span className={styles.termDot} />
                 <span className={styles.termBatch}><ThunderboltOutlined /> batch</span>
-                <span className={styles.termSpug}>spug</span>
+                <span className={styles.termSpug}>spug  pro</span>
               </div>
               <div className={styles.termBody}>
                 <div className={styles.termSidebar}>
@@ -163,17 +166,17 @@ export default function () {
                 <div className={styles.termMain}>
                   <div className={styles.termCmd}>$ spug exec -g web uptime<span className={styles.termCursor} /></div>
                   <div className={`${styles.termResult} ${hoveredServer === 0 ? styles.termResultActive : ''}`}>
-                    <span className={styles.termCheck}>✓</span>
+                     <span className={styles.serverStatus} />
                     <span className={styles.termIp}>10.0.1.11</span>
                     <span className={styles.termLoad}>· load 0.42</span>
                   </div>
                   <div className={`${styles.termResult} ${hoveredServer === 1 ? styles.termResultActive : ''}`}>
-                    <span className={styles.termCheck}>✓</span>
+                   <span className={styles.serverStatus} />
                     <span className={styles.termIp}>10.0.1.12</span>
                     <span className={styles.termLoad}>· load 0.38</span>
                   </div>
                   <div className={`${styles.termResult} ${hoveredServer === 2 ? styles.termResultActive : ''}`}>
-                    <span className={styles.termCheck}>✓</span>
+                    <span className={styles.serverStatus} />
                     <span className={styles.termIp}>10.0.2.31</span>
                     <span className={styles.termLoad}>· load 0.51</span>
                   </div>
@@ -184,7 +187,7 @@ export default function () {
               <span className={styles.archArrowLine} />
               <span className={styles.archArrowFlow} />
             </div>
-            <div className={styles.sshTag}>SSH :22 · no agent</div>
+            <div className={styles.sshTag}><LockOutlined /> SSH :22 · no agent</div>
             <div className={`${styles.archArrow} ${styles.archArrowDelayed}`}>
               <span className={styles.archArrowLine} />
               <span className={styles.archArrowFlow} />
@@ -308,14 +311,15 @@ export default function () {
         <footer className={styles.footer}>
           <div className={styles.footerLinks}>
             <a href="https://spug.cc" target="_blank" rel="noopener noreferrer">官网</a>
-            <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer"
-              aria-label="GitHub 仓库">
+            <span className={styles.footerDivider} />
+            <a href="https://github.com/openspug/spug" target="_blank" rel="noopener noreferrer" aria-label="GitHub 仓库">
               <GithubOutlined />
             </a>
+            <span className={styles.footerDivider} />
             <a href="https://ops.spug.cc/docs/about-spug/" target="_blank" rel="noopener noreferrer">文档</a>
           </div>
-          <div>
-            Copyright <CopyrightOutlined /> {new Date().getFullYear()} By OpenSpug
+          <div className={styles.footerCopyright}>
+            <CopyrightOutlined /> {new Date().getFullYear()} OpenSpug
           </div>
         </footer>
       </div>

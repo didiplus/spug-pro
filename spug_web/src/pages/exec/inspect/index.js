@@ -6,6 +6,7 @@ import ComTable from './Table';
 import ComForm from './TaskForm';
 import ResultView from './ResultView';
 import ReportView from './ReportView';
+import ScheduleForm from './ScheduleForm';
 import ItemManage from './items';
 import store from './store';
 
@@ -51,6 +52,7 @@ export default observer(function () {
       {store.formVisible && <ComForm/>}
       {store.resultVisible && <ResultView/>}
       {store.reportVisible && <ReportView/>}
+      {store.scheduleVisible && <ScheduleForm/>}
     </AuthDiv>
   );
 })

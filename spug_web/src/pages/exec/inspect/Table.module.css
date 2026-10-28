@@ -1,20 +1,56 @@
 /* Table 组件令牌 — 巡检任务列表 */
 
-/* ── 数量展示 ── */
-.count {
+/* ── 任务名称 ── */
+.nameCell {
+  display: inline-flex;
+  align-items: center;
+}
+
+.nameIcon {
+  color: var(--color-primary);
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.nameText {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+/* ── 胶囊标签（巡检项/目标主机数量） ── */
+.capsule {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  transition: all var(--duration-fast) var(--ease-standard);
 }
 
-.countNum {
+.capsule:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.capsuleNum {
   font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.capsule:hover .capsuleNum {
   color: var(--color-primary);
 }
 
-.countUnit {
+.capsuleUnit {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
 }
@@ -24,11 +60,12 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 2px var(--space-2);
+  padding: 3px var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .statusSuccess {
@@ -72,6 +109,48 @@
   50% { opacity: 0.3; }
 }
 
+/* ── 定时标签 ── */
+.scheduleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scheduleEmpty {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.scheduleActive {
+  background: color-mix(in srgb, var(--color-blue-500) 10%, transparent);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.scheduleActive :global(.anticon) {
+  animation: spin 3s linear infinite;
+}
+
+.scheduleDisabled {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  opacity: 0.7;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── 描述文本 ── */
 .desc {
   color: var(--color-text-secondary);
@@ -82,10 +161,12 @@
 .time {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .timeEmpty {
   color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
 }
 
 /* ── 深色模式 ── */
@@ -105,6 +186,16 @@
   :global(:root:not([data-theme="light"])) .statusRunning {
     background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
+  :global(:root:not([data-theme="light"])) .capsule {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-800);
+  }
+  :global(:root:not([data-theme="light"])) .scheduleActive {
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  }
+  :global(:root:not([data-theme="light"])) .scheduleDisabled {
+    background: var(--color-gray-900);
+  }
 }
 
 :global([data-theme="dark"]) .statusSuccess {
@@ -121,4 +212,13 @@
 }
 :global([data-theme="dark"]) .statusRunning {
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+:global([data-theme="dark"]) .capsule {
+  background: var(--color-gray-900);
+  border-color: var(--color-gray-800);
+}
+:global([data-theme="dark"]) .scheduleActive {
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}:global([data-theme="dark"]) .scheduleDisabled {
+  background: var(--color-gray-900);
 }

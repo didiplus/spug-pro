@@ -8,6 +8,7 @@ class Store {
   @observable formVisible = false;
   @observable resultVisible = false;
   @observable reportVisible = false;
+  @observable scheduleVisible = false;
   @observable results = [];
   @observable f_name;
   @observable f_status;

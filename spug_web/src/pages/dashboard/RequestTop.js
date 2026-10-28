@@ -58,17 +58,17 @@ export default function () {
       loading={loading}
       title={<span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-base)', color: 'var(--chart-card-title-color)' }}>发布申请Top20</span>}
       style={{
-        marginTop: 'var(--space-5)',
+
         borderRadius: 'var(--chart-card-radius)',
         boxShadow: 'var(--chart-card-shadow)',
         border: '1px solid var(--chart-card-border)',
       }}
       styles={{
-        header: { borderBottom: '1px solid var(--chart-card-header-border)', padding: 'var(--space-4) var(--space-6)' },
-        body: { height: 353 },
+        header: { borderBottom: '1px solid var(--chart-card-header-border)', padding: 'var(--space-4) var(--space-5)' },
+        body: { height: 353, padding: 'var(--space-3) var(--space-5) var(--space-5)' },
       }}
       extra={(
-        <div style={{display: 'flex', alignItems: 'center'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: 'var(--space-3)'}}>
           <span className={range === 'day' ? styles.spanButtonActive : styles.spanButton}
                 onClick={() => handleClick('day')}>今日</span>
           <span className={range === 'week' ? styles.spanButtonActive : styles.spanButton}
@@ -78,12 +78,14 @@ export default function () {
           <DatePicker.RangePicker allowClear={false} style={{width: 250}} value={duration} onChange={handleClick}/>
         </div>
       )}>
-      <Chart height={300} data={res} padding={[10, 0, 30, 35]} scale={{count: {alias: '发布申请数量'}}} forceFit>
+      <div style={{width: '100%'}}>
+      <Chart height={300} data={res} padding={[10, 5, 30, 35]} scale={{count: {alias: '发布申请数量'}}} forceFit>
         <Axis name="name" label={{ fontSize: 12, fill: theme.axis }}/>
         <Axis name="count" title label={{ fontSize: 12, fill: theme.axis }} grid={{ lineStyle: { stroke: theme.grid, lineDash: [4, 4] } }}/>
         <Tooltip containerStyle={{ background: theme.tooltipBg, color: theme.tooltipText, borderRadius: 'var(--radius-md)', boxShadow: theme.tooltipShadow }}/>
         <Geom type="interval" position="name*count" color={theme.line}/>
       </Chart>
+      </div>
     </Card>
   )
 }

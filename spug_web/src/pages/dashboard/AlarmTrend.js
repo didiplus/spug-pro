@@ -15,7 +15,7 @@ const cardStyle = {
   borderRadius: 'var(--chart-card-radius)',
   boxShadow: 'var(--chart-card-shadow)',
   border: '1px solid var(--chart-card-border)',
-  marginBottom: 'var(--space-6)',
+  marginBottom: 'var(--space-5)',
 };
 
 const cascaderStyle = {
@@ -80,8 +80,8 @@ export default function AlarmTrend() {
       }
       style={cardStyle}
       styles={{
-        header: { borderBottom: '1px solid var(--chart-card-header-border)', padding: 'var(--space-4) var(--space-6)' },
-        body: { padding: 'var(--space-4) var(--space-6) var(--space-6)' },
+        header: { borderBottom: '1px solid var(--chart-card-header-border)', padding: 'var(--space-4) var(--space-5)' },
+        body: { padding: 'var(--space-3) var(--space-5) var(--space-5)' },
       }}
     >
       {res.length === 0 ? (
@@ -89,10 +89,11 @@ export default function AlarmTrend() {
           <Empty description="暂无报警数据" />
         </div>
       ) : (
+        <div style={{width: '100%'}}>
         <Chart
           height={300}
           data={res}
-          padding={[20, 20, 40, 50]}
+          padding={[16, 10, 36, 45]}
           scale={{ value: { alias: '报警次数', min: 0 } }}
           forceFit
         >
@@ -131,6 +132,7 @@ export default function AlarmTrend() {
             style={{ stroke: theme.tooltipBg, lineWidth: 1 }}
           />
         </Chart>
+        </div>
       )}
     </Card>
   );
