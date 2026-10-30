@@ -21,5 +21,12 @@ urlpatterns = [
     path('test/', test_connection_databases),
     path('execute/', execute_sql),
 
+    path('clusters/', cluster_list),
+    path('clusters/auto-discover/', cluster_auto_discover),
+    path('clusters/<str:cluster_name>/topology/', cluster_topology),
+    path('clusters/<str:cluster_name>/discover/', cluster_discover),
+    path('clusters/<str:cluster_name>/health/', cluster_health),
 
+    path('instances/health-check/', health_check),
+    path('instances/<int:instance_id>/test/', instance_test),
 ]

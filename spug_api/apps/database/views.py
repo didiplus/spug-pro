@@ -5,8 +5,8 @@ import json
 import os
 import uuid
 from threading import Thread
-from apps.database.utils import TEST_FETCHERS, DETAIL_FETCHERS, SQL_EXECUTORS, SLOW_QUERY_FETCHERS, BACKUP_CREATORS, run_backup_async, cleanup_old_backups
-from apps.database.models import DatabaseInstance, DatabaseBackup, SQLExecutionHistory, RetentionPolicy
+from apps.database.utils import TEST_FETCHERS, DETAIL_FETCHERS, SQL_EXECUTORS, SLOW_QUERY_FETCHERS, BACKUP_CREATORS, run_backup_async, cleanup_old_backups, discover_topology, auto_discover_clusters, run_health_check, check_instance
+from apps.database.models import DatabaseInstance, DatabaseBackup, SQLExecutionHistory, RetentionPolicy, DatabaseCluster
 from apps.setting.models import StorageConfig
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.decorators import method_decorator
@@ -67,7 +67,17 @@ class DatabaseInstanceView(View):
                 data['live_error'] = str(e)
             return json_response(data)
         else:
+            from django.db.models import Q
             queryset = DatabaseInstance.objects.all()
+            search = request.GET.get('search', '').strip()
+            if search:
+                queryset = queryset.filter(Q(name__icontains=search) | Q(host__icontains=search))
+            db_type = request.GET.get('type', '').strip()
+            if db_type:
+                queryset = queryset.filter(type=db_type)
+            status = request.GET.get('status', '').strip()
+            if status:
+                queryset = queryset.filter(status=int(status))
             data = [self._serialize(inst) for inst in queryset]
             online = queryset.filter(status=0).count()
             type_counts = {}
@@ -143,7 +153,7 @@ class DatabaseInstanceView(View):
         if error:
             return error
 
-        required = ['name', 'type', 'host', 'port', 'username', 'password']
+        required = ['name', 'type', 'host', 'port', 'username']
         missing = [f for f in required if f not in data]
         if missing:
             return json_response(error=f'Missing fields for full update: {", ".join(missing)}')
@@ -246,23 +256,26 @@ def execute_sql(request):
     import re
     sql_lower = sql.lower()
     sql_clean = re.sub(r'--.*?$|/\*.*?\*/|#.*?$', '', sql_lower, flags=re.MULTILINE | re.DOTALL)
+    sql_clean = re.sub(r'/\*!\d*.*?\*/', '', sql_clean, flags=re.DOTALL)
     sql_clean = re.sub(r'\s+', ' ', sql_clean).strip()
+    if ';' in sql_clean.rstrip(';'):
+        return json_response(error='禁止执行多条语句（检测到分号）')
     tokens = re.findall(r"[a-zA-Z_]+", sql_clean)
 
     DANGEROUS_KEYWORDS = {
         'drop', 'truncate', 'shutdown', 'kill', 'alter', 'grant', 'revoke',
-        'load_file', 'outfile', 'dumpfile', 'create', 'rename', 'replace',
-        'insert', 'update', 'delete', 'merge', 'call', 'exec', 'execute',
-        'handler', 'lock', 'unlock', 'flush', 'reset', 'purge', 'set',
+        'load_file', 'outfile', 'dumpfile', 'rename',
+        'merge', 'call', 'exec', 'execute',
+        'handler', 'flush', 'reset', 'purge',
     }
     for token in tokens:
         if token in DANGEROUS_KEYWORDS:
             return json_response(error=f'包含危险关键字: {token}，禁止执行')
 
-    ALLOWED_COMMANDS = {'select', 'show', 'describe', 'desc', 'explain'}
+    ALLOWED_COMMANDS = {'select', 'show', 'describe', 'desc', 'explain', 'with'}
     first_word = tokens[0] if tokens else ''
     if first_word not in ALLOWED_COMMANDS:
-        return json_response(error='仅允许执行查询类语句 (SELECT, SHOW, DESCRIBE, EXPLAIN)')
+        return json_response(error='仅允许执行查询类语句 (SELECT, SHOW, DESCRIBE, EXPLAIN, WITH)')
 
     import time
     start = time.time()
@@ -478,7 +491,7 @@ def backup_list(request, instance_id):
             created_by=request.user,
         )
 
-        Thread(target=run_backup_async, args=(backup.id,)).start()
+        Thread(target=run_backup_async, args=(backup.id,), daemon=True).start()
         return json_response(backup.to_dict())
 
     return json_response(error='Method not allowed')
@@ -577,5 +590,256 @@ def backup_detail(request, instance_id, backup_id):
         return json_response(data={'message': '删除成功'})
 
     return json_response(error='Method not allowed')
+
+
+# ==================== 集群拓扑管理 ====================
+
+@csrf_exempt
+@auth('database.instance.view')
+@require_GET
+def cluster_list(request):
+    """集群列表 — 合并 DatabaseCluster 记录与按 cluster 字段动态分组的实例"""
+    clusters = {}
+    for inst in DatabaseInstance.objects.all().exclude(cluster__isnull=True).exclude(cluster=''):
+        cname = inst.cluster
+        if cname not in clusters:
+            clusters[cname] = {'name': cname, 'db_type': inst.type, 'instances': [], 'online': 0}
+        clusters[cname]['instances'].append(inst.id)
+        if inst.status == 0:
+            clusters[cname]['online'] += 1
+
+    result = []
+    for cname, info in clusters.items():
+        try:
+            record = DatabaseCluster.objects.get(name=cname)
+            result.append({
+                'name': cname,
+                'db_type': info['db_type'],
+                'topology_type': record.topology_type,
+                'health_status': record.health_status,
+                'node_count': record.node_count,
+                'online': info['online'],
+                'total': len(info['instances']),
+                'last_discovered_at': record.last_discovered_at,
+                'description': record.description,
+            })
+        except DatabaseCluster.DoesNotExist:
+            result.append({
+                'name': cname,
+                'db_type': info['db_type'],
+                'topology_type': 'unknown',
+                'health_status': 'unknown',
+                'node_count': len(info['instances']),
+                'online': info['online'],
+                'total': len(info['instances']),
+                'last_discovered_at': None,
+                'description': None,
+            })
+
+    standalone_count = DatabaseInstance.objects.filter(cluster__isnull=True).count() + \
+        DatabaseInstance.objects.filter(cluster='').count()
+    return json_response({
+        'count': len(result),
+        'results': result,
+        'standalone_count': standalone_count,
+    })
+
+
+@csrf_exempt
+@auth('database.instance.view')
+@require_GET
+def cluster_topology(request, cluster_name):
+    """获取集群拓扑数据 — 60s 缓存"""
+    import time
+    cache_key = f'_topo_cache_{cluster_name}'
+    cache = getattr(cluster_topology, '_cache', {})
+    cached = cache.get(cache_key)
+    if cached and time.time() - cached['ts'] < 10:
+        return json_response(data=cached['data'])
+
+    instances = list(DatabaseInstance.objects.filter(cluster=cluster_name).order_by('id'))
+    if not instances:
+        return json_response(error='集群不存在或无实例')
+
+    topology = discover_topology(instances)
+    if not topology:
+        return json_response(error='拓扑发现失败')
+
+    if not hasattr(cluster_topology, '_cache'):
+        cluster_topology._cache = {}
+    cluster_topology._cache[cache_key] = {'data': topology, 'ts': time.time()}
+    return json_response(data=topology)
+
+
+@csrf_exempt
+@auth('database.instance.view')
+def cluster_discover(request, cluster_name):
+    """手动触发拓扑发现 — POST 执行发现并持久化结果"""
+    if request.method != 'POST':
+        return json_response(error='Method not allowed')
+
+    instances = list(DatabaseInstance.objects.filter(cluster=cluster_name).order_by('id'))
+    if not instances:
+        return json_response(error='集群不存在或无实例')
+
+    topology = discover_topology(instances)
+    if not topology:
+        return json_response(error='拓扑发现失败')
+
+    for inst in instances:
+        for node in topology['nodes']:
+            if node['id'] == inst.id:
+                inst.cluster_role = node['role']
+                inst.cluster_parent_id = node.get('parent_id')
+                inst.replication_lag = node['metrics'].get('lag')
+                inst.save(update_fields=['cluster_role', 'cluster_parent_id', 'replication_lag'])
+                break
+
+    record, _ = DatabaseCluster.objects.update_or_create(
+        name=cluster_name,
+        defaults={
+            'topology_type': topology['topology_type'],
+            'db_type': topology['db_type'],
+            'health_status': topology['health_status'],
+            'node_count': topology['node_count'],
+            'last_discovered_at': human_datetime(),
+        },
+    )
+
+    topology['last_discovered_at'] = record.last_discovered_at
+
+    cache = getattr(cluster_topology, '_cache', {})
+    cache.pop(f'_topo_cache_{cluster_name}', None)
+
+    return json_response(data=topology)
+
+
+@csrf_exempt
+@auth('database.instance.view')
+@require_GET
+def cluster_health(request, cluster_name):
+    """集群健康检查 — 返回各节点状态与整体健康度"""
+    instances = list(DatabaseInstance.objects.filter(cluster=cluster_name).order_by('id'))
+    if not instances:
+        return json_response(error='集群不存在或无实例')
+
+    topology = discover_topology(instances)
+    if not topology:
+        return json_response(error='健康检查失败')
+
+    nodes_health = []
+    for node in topology['nodes']:
+        nodes_health.append({
+            'id': node['id'],
+            'name': node['name'],
+            'role': node['role'],
+            'status': node['status'],
+            'lag': node['metrics'].get('lag'),
+            'version': node['metrics'].get('version'),
+            'connections': node['metrics'].get('connections'),
+        })
+
+    return json_response({
+        'cluster_name': cluster_name,
+        'health_status': topology['health_status'],
+        'topology_type': topology['topology_type'],
+        'nodes': nodes_health,
+    })
+
+
+@csrf_exempt
+@auth('database.instance.view')
+def cluster_auto_discover(request):
+    """自动发现集群 — 基于复制关系的连通分量分析
+
+    POST: 触发自动发现，将结果写回实例的 cluster 字段
+    GET: 返回自动发现的预览结果（不写回）
+    """
+    all_instances = list(DatabaseInstance.objects.all().order_by('id'))
+    if not all_instances:
+        return json_response(error='无数据库实例')
+
+    cluster_map, standalone_ids, diagnostics = auto_discover_clusters(all_instances)
+
+    if request.method == 'POST':
+        id_to_instance = {inst.id: inst for inst in all_instances}
+        updated = 0
+        for cluster_name, inst_ids in cluster_map.items():
+            for inst_id in inst_ids:
+                inst = id_to_instance.get(inst_id)
+                if not inst:
+                    continue
+                current = (inst.cluster or '').strip()
+                if current != cluster_name:
+                    inst.cluster = cluster_name
+                    inst.save(update_fields=['cluster'])
+                    updated += 1
+        return json_response(data={
+            'message': f'自动发现完成，更新 {updated} 个实例',
+            'clusters': cluster_map,
+            'standalone_count': len(standalone_ids),
+            'updated_count': updated,
+            'diagnostics': diagnostics,
+        })
+
+    result = []
+    id_to_inst = {inst.id: inst for inst in all_instances}
+    for cluster_name, inst_ids in cluster_map.items():
+        insts = [id_to_inst[i] for i in inst_ids if i in id_to_inst]
+        if not insts:
+            continue
+        online = sum(1 for i in insts if i.status == 0)
+        result.append({
+            'name': cluster_name,
+            'db_type': insts[0].type,
+            'topology_type': 'unknown',
+            'health_status': 'unknown',
+            'node_count': len(insts),
+            'online': online,
+            'total': len(insts),
+            'last_discovered_at': None,
+            'description': '自动发现' if cluster_name.startswith('auto-') else None,
+        })
+
+    return json_response(data={
+        'count': len(result),
+        'results': result,
+        'standalone_count': len(standalone_ids),
+    })
+
+
+@csrf_exempt
+@auth('database.instance.view')
+@require_GET
+def health_check(request):
+    """批量健康检查所有实例 — 手动触发"""
+    from threading import Thread
+    Thread(target=run_health_check, daemon=True).start()
+    return json_response(data={'message': '健康检查已启动'})
+
+
+@csrf_exempt
+@auth('database.instance.view')
+@require_GET
+def instance_test(request, instance_id):
+    """测试单个实例连通性 — 返回实时结果"""
+    instance, error = DatabaseInstanceView()._get_instance_or_404(instance_id)
+    if error:
+        return error
+    is_online, version, latency = check_instance(instance)
+    new_status = 0 if is_online else 1
+    need_save = instance.status != new_status
+    if version and version != instance.version:
+        instance.version = version
+        need_save = True
+    if need_save:
+        instance.status = new_status
+        instance.save(update_fields=['status', 'version'])
+    return json_response(data={
+        'online': is_online,
+        'status': new_status,
+        'version': version or instance.version,
+        'latency': latency,
+    })
 
 

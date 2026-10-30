@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
 import { AuthDiv, Breadcrumb } from 'components';
 import {
-    Card, Statistic, Row, Col, Tag,
+    Card, Tag, Tabs, Space, Typography,
 } from 'antd';
 import {
     DatabaseOutlined, CheckCircleOutlined,
+    ApartmentOutlined, UnorderedListOutlined,
 } from '@ant-design/icons';
 
 import store from './store';
@@ -14,56 +15,71 @@ import DatabaseTable from "./components/DatabaseTable";
 import DatabaseDrawer from './components/DatabaseDrawer';
 import DatabaseDetail from './components/DatabaseDetail';
 import SqlTerminal from './components/SqlTerminal';
+import ClusterTopology from './components/ClusterTopology';
+
+const { Text } = Typography;
 
 export default observer(function DatabaseDashboard() {
+    const [activeTab, setActiveTab] = useState('instances');
+
     useEffect(() => {
         store.loadData();
     }, []);
 
-    const typeCards = Object.entries(DB_TYPES)
-        .filter(([key]) => store.typeCounts[key])
-        .slice(0, 4)
-        .map(([key, conf]) => (
-            <Col key={key} xs={24} sm={12} lg={6}>
-                <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
-                    <Statistic
-                        title={<Tag color={conf.tagColor} style={{ margin: 0 }}>{conf.label}</Tag>}
-                        value={store.typeCounts[key] || 0}
-                        prefix={<DatabaseOutlined style={{ color: conf.hexColor }} />}
-                        valueStyle={{ color: conf.hexColor }}
-                    />
-                </Card>
-            </Col>
-        ));
+    const typeEntries = Object.entries(DB_TYPES)
+        .filter(([key]) => store.typeCounts[key]);
 
     return (
         <>
             <AuthDiv auth="database.instance.view">
                 <Breadcrumb items={['首页', '数据库管理']} />
-                <Row gutter={[16, 16]} style={{marginBottom: '20px'}}>
-                    <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
-                            <Statistic
-                                title="数据库总数"
-                                value={store.total || 0}
-                                prefix={<DatabaseOutlined style={{ color: 'var(--color-primary)' }} />}
-                                valueStyle={{ color: 'var(--color-primary)' }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                        <Card hoverable style={{ boxShadow: 'var(--shadow-sm)' }}>
-                            <Statistic
-                                title="在线实例"
-                                value={store.online || 0}
-                                prefix={<CheckCircleOutlined style={{ color: 'var(--color-green-600)' }} />}
-                                valueStyle={{ color: 'var(--color-green-600)' }}
-                            />
-                        </Card>
-                    </Col>
-                    {typeCards}
-                </Row>
-                <DatabaseTable />
+                <Card size="small" style={{ marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+                    <Space size="large" wrap>
+                        <Space size={6}>
+                            <DatabaseOutlined style={{ color: 'var(--color-primary)' }} />
+                            <Text strong>总数</Text>
+                            <Text strong style={{ color: 'var(--color-primary)', fontSize: 16 }}>{store.total || 0}</Text>
+                        </Space>
+                        <Space size={6}>
+                            <CheckCircleOutlined style={{ color: 'var(--color-green-600)' }} />
+                            <Text type="secondary">在线</Text>
+                            <Text strong style={{ color: 'var(--color-green-600)', fontSize: 16 }}>{store.online || 0}</Text>
+                        </Space>
+                        {typeEntries.map(([key, conf]) => (
+                            <Space key={key} size={6}>
+                                <Tag color={conf.tagColor} style={{ margin: 0 }}>{conf.label}</Tag>
+                                <Text strong style={{ color: conf.hexColor, fontSize: 15 }}>{store.typeCounts[key] || 0}</Text>
+                            </Space>
+                        ))}
+                    </Space>
+                </Card>
+                <Tabs
+                    activeKey={activeTab}
+                    onChange={setActiveTab}
+                    style={{ marginBottom: 16 }}
+                    items={[
+                        {
+                            key: 'instances',
+                            label: (
+                                <Space size={4}>
+                                    <UnorderedListOutlined />
+                                    <span>实例列表</span>
+                                </Space>
+                            ),
+                            children: <DatabaseTable />,
+                        },
+                        {
+                            key: 'topology',
+                            label: (
+                                <Space size={4}>
+                                    <ApartmentOutlined />
+                                    <span>集群拓扑</span>
+                                </Space>
+                            ),
+                            children: <ClusterTopology />,
+                        },
+                    ]}
+                />
             </AuthDiv>
             {store.formVisible && <DatabaseDrawer/>}
             {store.detailVisible && <DatabaseDetail/>}

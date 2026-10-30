@@ -320,7 +320,10 @@ class Job:
                 duration = int(time.time() - self._start_time) if hasattr(self, '_start_time') else 0
 
                 if self.inspect_item_ids:
+                    logger.warning(f'Inspect raw_output len={len(raw_output)}, item_ids={self.inspect_item_ids}')
+                    logger.warning(f'Inspect raw_output content (first 2000 chars):\n{raw_output[:2000]}')
                     parsed = parse_combined_output(raw_output, self.inspect_item_ids)
+                    logger.warning(f'Inspect parsed result: {parsed}')
                     for item_id in self.inspect_item_ids:
                         result = InspectResult.objects.filter(
                             task_id=self.inspect_task_id, host_id=self.key,

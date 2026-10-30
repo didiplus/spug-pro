@@ -1,31 +1,44 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
-import { Tag, Space, Button, Popconfirm, message } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, InfoCircleOutlined, LinkOutlined } from '@ant-design/icons';
+import { Tag, Space, Button, Popconfirm, message, Input, Select, Tooltip } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined, InfoCircleOutlined, LinkOutlined, SearchOutlined, ApiOutlined } from '@ant-design/icons';
+import { http } from 'libs';
 import store from '../store';
 import { TableCard, AuthButton } from 'components';
 import { hasPermission } from 'libs';
-import { getDbTypeConfig } from '../dbTypes';
-// 状态颜色映射
+import { getDbTypeConfig, DB_TYPE_OPTIONS } from '../dbTypes';
+
 const statusMap = {
   0: { text: '在线', color: 'green' },
   1: { text: '离线', color: 'red' },
 };
 
 const DatabaseTable = observer(() => {
-  // 组件挂载时加载数据（如果 store 未初始加载）
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState(undefined);
+  const [filterStatus, setFilterStatus] = useState(undefined);
+
+  const doSearch = () => {
+    store.pagination.current = 1;
+    store.loadData({ search, type: filterType, status: filterStatus });
+  };
+
   useEffect(() => {
     if (!store.list.length) {
-      void store.loadData?.();  // 明确忽略返回值
+      void store.loadData?.();
     }
-  }, []);
+    const timer = setInterval(() => {
+      store.loadData({ search, type: filterType, status: filterStatus });
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [search, filterType, filterStatus]);
 
-  // 表格列定义
   const columns = [
     {
       title: '名称',
       dataIndex: 'name',
       width: 150,
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: '类型',
@@ -54,12 +67,28 @@ const DatabaseTable = observer(() => {
         return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
       },
       width: 100,
+      sorter: (a, b) => a.status - b.status,
     },
     {
       title: '操作',
-      width: 220,
+      width: 260,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="测试连接">
+            <Button type="link" icon={<ApiOutlined />} size="small" onClick={async () => {
+              try {
+                const res = await http.get(`/api/db/instances/${record.id}/test/`);
+                if (res.online) {
+                  message.success(`连接成功${res.latency ? ` (${res.latency}ms)` : ''}`);
+                } else {
+                  message.error('连接失败');
+                }
+                store.loadData({ search, type: filterType, status: filterStatus });
+              } catch {
+                message.error('测试失败');
+              }
+            }} />
+          </Tooltip>
           <Button type="link" icon={<InfoCircleOutlined />} size="small" onClick={() => store.showDetail(record)}>
             详情
           </Button>
@@ -100,7 +129,6 @@ const DatabaseTable = observer(() => {
     }
   };
 
-  // 分页配置（从 store 获取，若无则默认为空）
   const pagination = store.pagination
     ? {
       current: store.pagination.current,
@@ -110,7 +138,7 @@ const DatabaseTable = observer(() => {
       showQuickJumper: true,
       onChange: (page, pageSize) => {
         void store.setPagination?.({ current: page, pageSize });
-        void store.loadData?.();  // 明确忽略返回值
+        store.loadData({ search, type: filterType, status: filterStatus });
       },
     }
     : false;
@@ -123,10 +151,41 @@ const DatabaseTable = observer(() => {
       dataSource={store.list}
       loading={store.loading}
       actions={[
-        <AuthButton type="primary" icon={<PlusOutlined/>} auth="database.instance.add" onClick={() => store.showForm()}>新建连接</AuthButton>
+        <Space key="filter" size="small">
+          <Input
+            placeholder="搜索名称/地址"
+            allowClear
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onPressEnter={doSearch}
+            style={{ width: 180 }}
+            prefix={<SearchOutlined style={{ color: 'var(--color-text-tertiary)' }} />}
+          />
+          <Select
+            placeholder="类型"
+            allowClear
+            value={filterType}
+            onChange={(v) => { setFilterType(v); }}
+            style={{ width: 120 }}
+            options={DB_TYPE_OPTIONS}
+          />
+          <Select
+            placeholder="状态"
+            allowClear
+            value={filterStatus}
+            onChange={(v) => { setFilterStatus(v); }}
+            style={{ width: 90 }}
+            options={[
+              { value: 0, label: '在线' },
+              { value: 1, label: '离线' },
+            ]}
+          />
+          <Button  icon={<SearchOutlined />} onClick={doSearch}>筛选</Button>
+        </Space>,
+        <AuthButton key="add" type="primary" icon={<PlusOutlined/>} auth="database.instance.add" onClick={() => store.showForm()}>新建连接</AuthButton>
       ]}
       pagination={pagination}
-      onReload={() => store.loadData()}
+      onReload={() => store.loadData({ search, type: filterType, status: filterStatus })}
       tKey="db_instances"
     />
   );

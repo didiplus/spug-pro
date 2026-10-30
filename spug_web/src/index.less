@@ -25,3 +25,111 @@ code {
   color: #2563fc;
   cursor: pointer;
 }
+/* Pagination 全站统一样式 */
+.ant-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .ant-pagination-item {
+    border-radius: 6px;
+    border-color: var(--color-border-secondary);
+    background-color: transparent;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+    line-height: 30px;
+    margin: 0 4px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ant-pagination-item:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: var(--color-primary-bg);
+  }
+
+  .ant-pagination-item-active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.35);
+  }
+
+  .ant-pagination-item-active a {
+    color: #fff;
+  }
+
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    margin: 0 4px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ant-pagination-prev .ant-pagination-item-link,
+  .ant-pagination-next .ant-pagination-item-link {
+    border-radius: 6px;
+    border-color: var(--color-border-secondary);
+    background-color: transparent;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+    line-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ant-pagination-prev:hover .ant-pagination-item-link,
+  .ant-pagination-next:hover .ant-pagination-item-link {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: var(--color-primary-bg);
+  }
+
+  .ant-pagination-jump-prev,
+  .ant-pagination-jump-next {
+    margin: 0 4px !important;
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+  }
+
+  .ant-pagination-options {
+    margin-left: 12px !important;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ant-pagination-options-size-changer {
+    margin-right: 12px;
+
+    .ant-select-selector {
+      border-radius: 6px !important;
+      border-color: var(--color-border-secondary) !important;
+      height: 32px !important;
+    }
+  }
+
+  .ant-pagination-options-quick-jumper {
+    display: inline-flex;
+    align-items: center;
+
+    input {
+      border-radius: 6px;
+      border-color: var(--color-border-secondary);
+      transition: all 0.2s ease;
+      height: 32px;
+    }
+
+    input:hover,
+    input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-bg);
+    }
+  }
+}

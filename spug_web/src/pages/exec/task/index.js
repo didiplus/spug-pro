@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { PlusOutlined, ThunderboltOutlined, BulbOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import { Form, Button, Radio, Tooltip, Flex, Typography, Tag, Card, Empty, Drawer } from 'antd';
+import { PlusOutlined, ThunderboltOutlined, BulbOutlined, QuestionCircleOutlined, DesktopOutlined } from '@ant-design/icons';
+import { Form, Button, Radio, Tooltip, Flex, Typography, Tag, Card, Empty, Drawer, Pagination } from 'antd';
 import { ACEditor, AuthDiv, Breadcrumb } from 'components';
 import HostSelector from 'pages/host/Selector';
 import TemplateSelector from './TemplateSelector';
@@ -23,6 +23,10 @@ function TaskIndex() {
   const [histories, setHistories] = useState([])
   const [parameters, setParameters] = useState([])
   const [visible, setVisible] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const pagedHistories = histories.slice((page - 1) * pageSize, page * pageSize)
 
   useEffect(() => {
     if (!loading) {
@@ -78,37 +82,58 @@ function TaskIndex() {
     <AuthDiv auth="exec.task.do">
       <Breadcrumb items={['首页', '批量执行', '执行任务']} />
       <div className={style.index}>
-        <Form layout="vertical" className={style.left}>
-          <Form.Item required label="目标主机">
-            <HostSelector type="button" value={store.host_ids} onChange={ids => store.host_ids = ids}/>
-          </Form.Item>
+        <div className={style.left}>
+          <Form layout="vertical" className={style.form}>
+            <div className={style.section}>
+              <Flex align="center" justify="space-between" className={style.sectionLabel}>
+                <Flex align="center" gap={8}>
+                  <DesktopOutlined className={style.sectionIcon} />
+                  <Text strong>目标主机</Text>
+                </Flex>
+                <Tag color={store.host_ids.length > 0 ? 'processing' : 'default'} bordered={false}
+                     className={style.hostCount}>
+                  {store.host_ids.length > 0 ? `${store.host_ids.length} 台已选` : '未选择'}
+                </Tag>
+              </Flex>
+              <Form.Item required className={style.hostItem}>
+                <HostSelector type="button" value={store.host_ids} onChange={ids => store.host_ids = ids}/>
+              </Form.Item>
+            </div>
 
-          <Form.Item required label="执行命令">
-            <Flex align="center" justify="space-between" style={{ marginBottom: 8 }}>
+            <div className={style.section}>
+              <Flex align="center" justify="space-between" className={style.sectionLabel}>
+                <Text strong>执行命令</Text>
+                <Flex gap={8} align="center">
+                  <Tooltip title="使用全局变量？">
+                    <a href="https://ops.spug.cc/docs/batch-exec" target="_blank" rel="noopener noreferrer"
+                       className={style.varLink}>
+                      <BulbOutlined /> 变量
+                    </a>
+                  </Tooltip>
+                  <Button size="small" icon={<PlusOutlined />} onClick={store.switchTemplate}>从模版选择</Button>
+                </Flex>
+              </Flex>
               <Radio.Group
                 buttonStyle="solid"
                 value={interpreter}
-                onChange={e => setInterpreter(e.target.value)}>
-                <Radio.Button value="sh" style={{ width: 80, textAlign: 'center' }}>Shell</Radio.Button>
-                <Radio.Button value="python" style={{ width: 80, textAlign: 'center' }}>Python</Radio.Button>
+                onChange={e => setInterpreter(e.target.value)}
+                className={style.interpreter}
+              >
+                <Radio.Button value="sh">Shell</Radio.Button>
+                <Radio.Button value="python">Python</Radio.Button>
               </Radio.Group>
-              <Flex gap={8}>
-                <Tooltip title="使用全局变量？">
-                  <a href="https://ops.spug.cc/docs/batch-exec" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>
-                    <BulbOutlined /> 变量
-                  </a>
-                </Tooltip>
-                <Button size="small" icon={<PlusOutlined />} onClick={store.switchTemplate}>从模版选择</Button>
-              </Flex>
-            </Flex>
-            <ACEditor className={style.editor} mode={interpreter} value={command} width="100%" onChange={setCommand}/>
-          </Form.Item>
-          <Button loading={loading} icon={<ThunderboltOutlined />} type="primary" block size="large"
-                  onClick={() => handleSubmit()}>开始执行</Button>
-        </Form>
+              <ACEditor className={style.editor} mode={interpreter} value={command} width="100%" onChange={setCommand}/>
+            </div>
+          </Form>
+          <div className={style.actionBar}>
+            <Button loading={loading} icon={<ThunderboltOutlined />} type="primary" block size="large"
+                    className={style.runBtn}
+                    onClick={() => handleSubmit()}>开始执行</Button>
+          </div>
+        </div>
 
         <div className={style.right}>
-          <Flex align="center" justify="space-between" style={{ marginBottom: 12 }}>
+          <Flex align="center" justify="space-between" className={style.rightHeader}>
             <Flex align="center" gap={8}>
               <Text strong>执行记录</Text>
               <Tooltip title="多次相同的执行记录将会合并展示，每天自动清理，保留最近30条记录。">
@@ -119,14 +144,14 @@ function TaskIndex() {
           </Flex>
           <div className={style.inner}>
             {histories.length === 0 ? (
-              <Empty description="暂无执行记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="暂无执行记录" image={Empty.PRESENTED_IMAGE_SIMPLE} className={style.empty} />
             ) : (
-              histories.map((item, index) => (
+              pagedHistories.map((item, index) => (
                 <Card
                   key={index}
                   size="small"
                   hoverable
-                  style={{ marginBottom: 8, cursor: 'pointer' }}
+                  className={style.recordCard}
                   onClick={() => handleClick(item)}
                 >
                   <Flex align="center" gap={8}>
@@ -145,6 +170,18 @@ function TaskIndex() {
               ))
             )}
           </div>
+          {histories.length > 0 && (
+            <Pagination
+              className={style.pagination}
+              size="small"
+              current={page}
+              pageSize={pageSize}
+              total={histories.length}
+              showSizeChanger
+              pageSizeOptions={[10, 20, 50]}
+              onChange={(p, ps) => { setPage(p); setPageSize(ps) }}
+            />
+          )}
         </div>
       </div>
       <Drawer

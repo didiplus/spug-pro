@@ -243,6 +243,112 @@ showEdit = (record) => {
   async testStorageConfig(values) {
     return await http.post('/api/setting/storage-configs/test/', values);
   }
+
+  // ========== 集群拓扑 ==========
+  @observable clusters = [];
+  @observable clustersLoading = false;
+  @observable activeCluster = null;
+  @observable topologyData = null;
+  @observable topologyLoading = false;
+  @observable clusterHealth = null;
+  @observable healthLoading = false;
+
+  @action
+  async loadClusters() {
+    this.clustersLoading = true;
+    try {
+      const res = await http.get('/api/db/clusters/');
+      runInAction(() => {
+        this.clusters = Array.isArray(res) ? res : (res.results || []);
+        if (this.clusters.length > 0 && !this.activeCluster) {
+          this.loadTopology(this.clusters[0].name);
+        }
+      });
+    } catch (error) {
+      console.error('加载集群列表失败:', error);
+    } finally {
+      runInAction(() => {
+        this.clustersLoading = false;
+      });
+    }
+  }
+
+  @action
+  async loadTopology(clusterName) {
+    this.topologyLoading = true;
+    this.activeCluster = clusterName;
+    try {
+      const res = await http.get(`/api/db/clusters/${encodeURIComponent(clusterName)}/topology/`);
+      runInAction(() => {
+        this.topologyData = res;
+      });
+    } catch (error) {
+      console.error('加载拓扑数据失败:', error);
+      runInAction(() => {
+        this.topologyData = null;
+      });
+    } finally {
+      runInAction(() => {
+        this.topologyLoading = false;
+      });
+    }
+  }
+
+  @action
+  async discoverCluster(clusterName) {
+    const res = await http.post(`/api/db/clusters/${encodeURIComponent(clusterName)}/discover/`);
+    runInAction(() => {
+      this.topologyData = res;
+    });
+    await this.loadClusters();
+    return res;
+  }
+
+  @action
+  async loadClusterHealth(clusterName) {
+    this.healthLoading = true;
+    try {
+      const res = await http.get(`/api/db/clusters/${encodeURIComponent(clusterName)}/health/`);
+      runInAction(() => {
+        this.clusterHealth = res;
+      });
+    } catch (error) {
+      console.error('加载健康检查失败:', error);
+    } finally {
+      runInAction(() => {
+        this.healthLoading = false;
+      });
+    }
+  }
+
+  @action
+  clearTopology() {
+    this.topologyData = null;
+    this.activeCluster = null;
+    this.clusterHealth = null;
+  }
+
+  @observable autoDiscoverLoading = false;
+
+  @action
+  async autoDiscoverClusters() {
+    this.autoDiscoverLoading = true;
+    try {
+      const res = await http.post('/api/db/clusters/auto-discover/');
+      runInAction(() => {
+        this.autoDiscoverLoading = false;
+        this.activeCluster = null;
+        this.topologyData = null;
+      });
+      await this.loadClusters();
+      return res;
+    } catch (error) {
+      runInAction(() => {
+        this.autoDiscoverLoading = false;
+      });
+      throw error;
+    }
+  }
 }
 
 export default new DatabaseStore();

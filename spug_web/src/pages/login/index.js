@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { message } from 'libs/message';
-import { Form, Input, Button, Tabs, Modal } from 'antd';
+import { Form, Input, Button, Tabs, Modal, Tooltip } from 'antd';
 import {
   UserOutlined,
   LockOutlined,
@@ -52,6 +52,10 @@ export default function () {
   }, []);
 
   useEffect(() => {
+    if (localStorage.getItem('token')) {
+      history.replace('/');
+      return;
+    }
     envStore.records = [];
     appStore.records = [];
     requestStore.records = [];
@@ -123,66 +127,86 @@ export default function () {
 
   return (
     <div className={styles.container}>
-      <button
-        className={styles.themeToggle}
-        onClick={() => toggleTheme()}
-        aria-label={isDark ? '切换亮色模式' : '切换暗色模式'}
-      >
-        {isDark ? <BulbOutlined/> : <MoonOutlined/>}
-      </button>
+      <Tooltip title={isDark ? '切换亮色模式' : '切换暗色模式'} placement="left">
+        <button
+          className={styles.themeToggle}
+          onClick={() => toggleTheme()}
+          aria-label={isDark ? '切换亮色模式' : '切换暗色模式'}
+        >
+          <span className={styles.themeToggleIcon}>
+            {isDark ? <BulbOutlined/> : <MoonOutlined/>}
+          </span>
+        </button>
+      </Tooltip>
       <aside className={styles.brand}>
         <div className={styles.brandGrid} />
         <div className={styles.brandOrb1} />
         <div className={styles.brandOrb2} />
         <div className={styles.brandContent}>
-          <div className={styles.brandHeading}>
+          <div className={styles.brandHeader}>
             <div className={styles.brandBadge}>OPEN SOURCE</div>
             <div className={styles.brandTitle}>Spug Pro</div>
+            <div className={styles.brandTitleBar} />
           </div>
           <div className={styles.brandSubtitle}>轻量级自动化运维平台</div>
           <div className={styles.brandDesc}>SSH 原生无 Agent，开箱即用的全栈自动化运维平台</div>
-          <div className={styles.archDiagram}>
-            <div className={styles.archIcons}>
-              <div className={styles.archIconWrap}><BellOutlined className={styles.archIconItem} /></div>
-              <div className={styles.archIconWrap}><CalendarOutlined className={styles.archIconItem} /></div>
-              <div className={styles.archIconWrap}><SettingOutlined className={styles.archIconItem} /></div>
-              <div className={styles.archIconWrap}><BarChartOutlined className={styles.archIconItem} /></div>
+
+          <div className={styles.featureGrid}>
+            <div className={styles.featureItem}>
+              <div className={styles.featureIcon}><BellOutlined /></div>
+              <span className={styles.featureLabel}>告警通知</span>
             </div>
-            <div className={styles.terminal}>
-              <div className={styles.termTitlebar}>
-                <span className={styles.termDot} />
-                <span className={styles.termDot} />
-                <span className={styles.termDot} />
-                <span className={styles.termBatch}><ThunderboltOutlined /> batch</span>
-                <span className={styles.termSpug}>spug  pro</span>
+            <div className={styles.featureItem}>
+              <div className={styles.featureIcon}><CalendarOutlined /></div>
+              <span className={styles.featureLabel}>任务调度</span>
+            </div>
+            <div className={styles.featureItem}>
+              <div className={styles.featureIcon}><SettingOutlined /></div>
+              <span className={styles.featureLabel}>配置管理</span>
+            </div>
+            <div className={styles.featureItem}>
+              <div className={styles.featureIcon}><BarChartOutlined /></div>
+              <span className={styles.featureLabel}>监控分析</span>
+            </div>
+          </div>
+
+          <div className={styles.terminal}>
+            <div className={styles.termTitlebar}>
+              <span className={styles.termDot} />
+              <span className={styles.termDot} />
+              <span className={styles.termDot} />
+              <span className={styles.termBatch}><ThunderboltOutlined /> batch</span>
+              <span className={styles.termSpug}>spug  pro</span>
+            </div>
+            <div className={styles.termBody}>
+              <div className={styles.termSidebar}>
+                <div className={styles.termSidebarLine} />
+                <div className={styles.termSidebarLine} />
+                <div className={styles.termSidebarLine} />
+                <div className={styles.termSidebarLineShort} />
               </div>
-              <div className={styles.termBody}>
-                <div className={styles.termSidebar}>
-                  <div className={styles.termSidebarLine} />
-                  <div className={styles.termSidebarLine} />
-                  <div className={styles.termSidebarLine} />
-                  <div className={styles.termSidebarLineShort} />
+              <div className={styles.termMain}>
+                <div className={styles.termCmd}>$ spug exec -g web uptime<span className={styles.termCursor} /></div>
+                <div className={`${styles.termResult} ${hoveredServer === 0 ? styles.termResultActive : ''}`}>
+                  <span className={styles.serverStatus} />
+                  <span className={styles.termIp}>10.0.1.11</span>
+                  <span className={styles.termLoad}>· load 0.42</span>
                 </div>
-                <div className={styles.termMain}>
-                  <div className={styles.termCmd}>$ spug exec -g web uptime<span className={styles.termCursor} /></div>
-                  <div className={`${styles.termResult} ${hoveredServer === 0 ? styles.termResultActive : ''}`}>
-                     <span className={styles.serverStatus} />
-                    <span className={styles.termIp}>10.0.1.11</span>
-                    <span className={styles.termLoad}>· load 0.42</span>
-                  </div>
-                  <div className={`${styles.termResult} ${hoveredServer === 1 ? styles.termResultActive : ''}`}>
-                   <span className={styles.serverStatus} />
-                    <span className={styles.termIp}>10.0.1.12</span>
-                    <span className={styles.termLoad}>· load 0.38</span>
-                  </div>
-                  <div className={`${styles.termResult} ${hoveredServer === 2 ? styles.termResultActive : ''}`}>
-                    <span className={styles.serverStatus} />
-                    <span className={styles.termIp}>10.0.2.31</span>
-                    <span className={styles.termLoad}>· load 0.51</span>
-                  </div>
+                <div className={`${styles.termResult} ${hoveredServer === 1 ? styles.termResultActive : ''}`}>
+                  <span className={styles.serverStatus} />
+                  <span className={styles.termIp}>10.0.1.12</span>
+                  <span className={styles.termLoad}>· load 0.38</span>
+                </div>
+                <div className={`${styles.termResult} ${hoveredServer === 2 ? styles.termResultActive : ''}`}>
+                  <span className={styles.serverStatus} />
+                  <span className={styles.termIp}>10.0.2.31</span>
+                  <span className={styles.termLoad}>· load 0.51</span>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className={styles.archFlow}>
             <div className={styles.archArrow}>
               <span className={styles.archArrowLine} />
               <span className={styles.archArrowFlow} />
@@ -192,35 +216,36 @@ export default function () {
               <span className={styles.archArrowLine} />
               <span className={styles.archArrowFlow} />
             </div>
-            <div className={styles.serverNodes}>
-              <div className={styles.serverConnectLine} />
-              <div
-                className={styles.serverNode}
-                onMouseEnter={() => setHoveredServer(0)}
-                onMouseLeave={() => setHoveredServer(null)}
-              >
-                <DesktopOutlined className={styles.serverIcon} />
-                <span className={styles.serverStatus} />
-                <span className={styles.serverIp}>10.0.1.11</span>
-              </div>
-              <div
-                className={styles.serverNode}
-                onMouseEnter={() => setHoveredServer(1)}
-                onMouseLeave={() => setHoveredServer(null)}
-              >
-                <DesktopOutlined className={styles.serverIcon} />
-                <span className={styles.serverStatus} />
-                <span className={styles.serverIp}>10.0.1.12</span>
-              </div>
-              <div
-                className={styles.serverNode}
-                onMouseEnter={() => setHoveredServer(2)}
-                onMouseLeave={() => setHoveredServer(null)}
-              >
-                <DesktopOutlined className={styles.serverIcon} />
-                <span className={styles.serverStatus} />
-                <span className={styles.serverIp}>10.0.2.31</span>
-              </div>
+          </div>
+
+          <div className={styles.serverNodes}>
+            <div className={styles.serverConnectLine} />
+            <div
+              className={`${styles.serverNode} ${hoveredServer === 0 ? styles.serverNodeActive : ''}`}
+              onMouseEnter={() => setHoveredServer(0)}
+              onMouseLeave={() => setHoveredServer(null)}
+            >
+              <DesktopOutlined className={styles.serverIcon} />
+              <span className={styles.serverStatus} />
+              <span className={styles.serverIp}>10.0.1.11</span>
+            </div>
+            <div
+              className={`${styles.serverNode} ${hoveredServer === 1 ? styles.serverNodeActive : ''}`}
+              onMouseEnter={() => setHoveredServer(1)}
+              onMouseLeave={() => setHoveredServer(null)}
+            >
+              <DesktopOutlined className={styles.serverIcon} />
+              <span className={styles.serverStatus} />
+              <span className={styles.serverIp}>10.0.1.12</span>
+            </div>
+            <div
+              className={`${styles.serverNode} ${hoveredServer === 2 ? styles.serverNodeActive : ''}`}
+              onMouseEnter={() => setHoveredServer(2)}
+              onMouseLeave={() => setHoveredServer(null)}
+            >
+              <DesktopOutlined className={styles.serverIcon} />
+              <span className={styles.serverStatus} />
+              <span className={styles.serverIp}>10.0.2.31</span>
             </div>
           </div>
         </div>

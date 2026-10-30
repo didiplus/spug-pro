@@ -1,0 +1,116 @@
+#!/bin/bash
+set -e
+
+# 生成 SECRET_KEY（如果未提供）
+if [ -z "$SECRET_KEY" ]; then
+    SECRET_KEY=$(python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())")
+    echo "[entrypoint] 自动生成 SECRET_KEY"
+fi
+
+# ── 数据库配置（必须使用外部数据库） ──
+DB_ENGINE="${DB_ENGINE:-mysql}"
+DB_NAME="${DB_NAME:-${MYSQL_DATABASE:-spug}}"
+DB_USER="${DB_USER:-${MYSQL_USER:-spug}}"
+DB_PASSWORD="${DB_PASSWORD:-${MYSQL_PASSWORD:-}}"
+DB_HOST="${DB_HOST:-${MYSQL_HOST:-}}"
+DB_PORT="${DB_PORT:-${MYSQL_PORT:-3306}}"
+
+if [ -z "$DB_HOST" ]; then
+    echo "[entrypoint] 错误: 外部数据库模式必须设置 DB_HOST / MYSQL_HOST 环境变量"
+    exit 1
+fi
+
+# ── Redis 配置（必须使用外部 Redis） ──
+REDIS_HOST="${REDIS_HOST:-}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+REDIS_DB="${REDIS_DB:-1}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+if [ -z "$REDIS_HOST" ]; then
+    echo "[entrypoint] 错误: 外部 Redis 模式必须设置 REDIS_HOST 环境变量"
+    exit 1
+fi
+
+# Channels Redis 配置（默认回退到普通 Redis）
+CHANNELS_REDIS_HOST="${CHANNELS_REDIS_HOST:-${REDIS_HOST}}"
+CHANNELS_REDIS_PORT="${CHANNELS_REDIS_PORT:-${REDIS_PORT}}"
+CHANNELS_REDIS_PASSWORD="${CHANNELS_REDIS_PASSWORD:-${REDIS_PASSWORD}}"
+
+# 写入 .env
+cat > /data/spug/spug_api/.env << EOF
+SPUG_ENV=prod
+SECRET_KEY=${SECRET_KEY}
+DEBUG=false
+ALLOWED_HOSTS=*
+DB_ENGINE=${DB_ENGINE}
+DB_NAME=${DB_NAME}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+REDIS_HOST=${REDIS_HOST}
+REDIS_PORT=${REDIS_PORT}
+REDIS_DB=${REDIS_DB}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+CHANNELS_REDIS_HOST=${CHANNELS_REDIS_HOST}
+CHANNELS_REDIS_PORT=${CHANNELS_REDIS_PORT}
+CHANNELS_REDIS_PASSWORD=${CHANNELS_REDIS_PASSWORD}
+TOKEN_TTL=28800
+SECURE_SSL=${SECURE_SSL:-false}
+EOF
+
+# 等待外部数据库就绪
+echo "[entrypoint] 等待外部数据库 ${DB_HOST}:${DB_PORT} ..."
+for i in $(seq 1 30); do
+    if python3 -c "
+import socket, sys
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.settimeout(1)
+try:
+    s.connect(('${DB_HOST}', ${DB_PORT}))
+    s.close()
+except:
+    sys.exit(1)
+" 2>/dev/null; then
+        echo "[entrypoint] 数据库已就绪"
+        break
+    fi
+    echo "  等待中... ($i/30)"
+    sleep 1
+done
+
+# 等待外部 Redis 就绪
+echo "[entrypoint] 等待外部 Redis ${REDIS_HOST}:${REDIS_PORT} ..."
+for i in $(seq 1 30); do
+    if python3 -c "
+import socket, sys
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.settimeout(1)
+try:
+    s.connect(('${REDIS_HOST}', ${REDIS_PORT}))
+    s.close()
+except:
+    sys.exit(1)
+" 2>/dev/null; then
+        echo "[entrypoint] Redis 已就绪"
+        break
+    fi
+    echo "  等待中... ($i/30)"
+    sleep 1
+done
+
+# 初始化数据库（首次启动）
+if [ ! -f /data/spug/.initialized ]; then
+    echo "[entrypoint] 初始化数据库..."
+    cd /data/spug/spug_api
+    python3 manage.py updatedb
+    if [ -n "$SPUG_ADMIN_USER" ] && [ -n "$SPUG_ADMIN_PASS" ]; then
+        python3 manage.py user add -u "$SPUG_ADMIN_USER" -p "$SPUG_ADMIN_PASS" -s -n 管理员
+        echo "[entrypoint] 管理员账户已创建: $SPUG_ADMIN_USER"
+    fi
+    touch /data/spug/.initialized
+    echo "[entrypoint] 初始化完成"
+fi
+
+echo "[entrypoint] 启动 supervisord..."
+exec supervisord -c /etc/supervisor/conf.d/spug.conf

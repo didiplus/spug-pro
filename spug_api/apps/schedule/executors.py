@@ -3,6 +3,7 @@
 # Released under the AGPL-3.0 License.
 from libs.ssh import AuthenticationException
 from django.db import close_old_connections, transaction
+from django.conf import settings
 from apps.host.models import Host
 from apps.schedule.models import History, Task
 from apps.schedule.utils import send_fail_notify

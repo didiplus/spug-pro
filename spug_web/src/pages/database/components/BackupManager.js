@@ -2,15 +2,16 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react';
 import {
   Table, Button, Space, Tag, Popconfirm, Modal, Form, Select, Input, message, Progress,
-  Flex, Typography, Alert, Card, Statistic, Row, Col, Tooltip, Switch, InputNumber, Divider,
+  Flex, Typography, Alert, Card, Statistic, Row, Col, Tooltip, Switch, InputNumber, Divider, DatePicker, Drawer,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, ReloadOutlined, DownloadOutlined, FileZipOutlined,
-  SettingOutlined, ClearOutlined, CloudUploadOutlined,
+  SettingOutlined, ClearOutlined, CloudUploadOutlined, CloudOutlined,
 } from '@ant-design/icons';
 import { http, X_TOKEN } from 'libs';
 import { hasPermission } from 'libs';
 import store from '../store';
+import StorageConfig from './StorageConfig';
 
 
 const { Text } = Typography;
@@ -44,6 +45,10 @@ export default observer(function BackupManager() {
   const [formVisible, setFormVisible] = useState(false);
   const [form] = Form.useForm();
   const [policyVisible, setPolicyVisible] = useState(false);
+  const [storageVisible, setStorageVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [dateRange, setDateRange] = useState(null);
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const [policyForm] = Form.useForm();
   const [policySaving, setPolicySaving] = useState(false);
   const [, setPollingIds] = useState(new Set());
@@ -164,6 +169,31 @@ export default observer(function BackupManager() {
       message.error('删除失败');
     }
   };
+
+  const handleBatchDelete = async () => {
+    setBatchDeleting(true);
+    let ok = 0, fail = 0;
+    for (const id of selectedRowKeys) {
+      try {
+        await http.delete(`/api/db/instances/${record.id}/backups/${id}/`);
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    setBatchDeleting(false);
+    setSelectedRowKeys([]);
+    if (fail === 0) message.success(`已删除 ${ok} 个备份`);
+    else message.warning(`成功 ${ok} 个，失败 ${fail} 个`);
+    fetchData();
+  };
+
+  const filteredRecords = dateRange && dateRange[0] && dateRange[1]
+    ? records.filter(r => {
+        const t = new Date(r.created_at).getTime();
+        return t >= dateRange[0].valueOf() && t <= dateRange[1].valueOf();
+      })
+    : records;
 
   const [downloadState, setDownloadState] = useState({ visible: false, percent: 0, name: '', size: 0, loaded: 0 });
   const downloadAbortRef = useRef(null);
@@ -359,8 +389,23 @@ export default observer(function BackupManager() {
 
       {/* 操作栏 */}
       <Flex justify="space-between" align="center" wrap="wrap" gap="small">
-        <Text type="secondary">共 {total} 条备份记录</Text>
+        <Flex align="center" gap="small">
+          <Text type="secondary">共 {total} 条备份记录</Text>
+          <DatePicker.RangePicker
+            size="small"
+            value={dateRange}
+            onChange={setDateRange}
+            placeholder={['开始日期', '结束日期']}
+          />
+        </Flex>
         <Space>
+          {selectedRowKeys.length > 0 && (
+            <Popconfirm title={`确认删除选中的 ${selectedRowKeys.length} 个备份？`} onConfirm={handleBatchDelete}>
+              <Button danger size="middle" icon={<DeleteOutlined />} loading={batchDeleting}>
+                批量删除({selectedRowKeys.length})
+              </Button>
+            </Popconfirm>
+          )}
           {hasPermission('database.instance.backup_add') && (
             <Button type="primary" size="middle" icon={<PlusOutlined />} onClick={() => setFormVisible(true)}>
               新建备份
@@ -371,6 +416,9 @@ export default observer(function BackupManager() {
               保留策略
             </Button>
           )}
+          <Button size="middle" icon={<CloudOutlined />} onClick={() => setStorageVisible(true)}>
+            存储配置
+          </Button>
 
           {hasPermission('database.instance.backup_del') && (
             <Popconfirm title="确认按保留策略清理过期备份？" onConfirm={handleCleanup}>
@@ -398,11 +446,15 @@ export default observer(function BackupManager() {
       {/* 表格 */}
       <Table
         columns={columns}
-        dataSource={records}
+        dataSource={filteredRecords}
         rowKey="id"
         size="middle"
         bordered
         loading={loading}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
         scroll={{ x: 1300 }}
         pagination={total > 20 ? {
           current: page,
@@ -539,6 +591,17 @@ export default observer(function BackupManager() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 存储配置抽屉 */}
+      <Drawer
+        title={<Flex align="center" gap={8}><CloudOutlined />远程存储配置</Flex>}
+        open={storageVisible}
+        onClose={() => setStorageVisible(false)}
+        width={1100}
+        styles={{ body: { padding: '16px 24px' } }}
+      >
+        <StorageConfig />
+      </Drawer>
 
     </Flex>
   );

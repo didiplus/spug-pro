@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react';
 import {
   Drawer, Button, Table, Select, Space, Tag, Alert, Spin, message, Tooltip, Divider, Flex, Typography, Popconfirm, Empty,
@@ -7,7 +7,7 @@ import {
   PlayCircleOutlined, ClearOutlined, HistoryOutlined,
   DatabaseOutlined, ThunderboltOutlined, ClockCircleOutlined,
   CheckCircleOutlined, CloseCircleOutlined, ConsoleSqlOutlined,
-  DeleteOutlined, ReloadOutlined, CopyOutlined,
+  DeleteOutlined, ReloadOutlined, CopyOutlined, DownloadOutlined,
 } from '@ant-design/icons';
 import { http } from 'libs';
 import { ACEditor } from 'components';
@@ -180,6 +180,9 @@ export default observer(function SqlTerminal() {
       .finally(() => setExecuting(false));
   }, [sql, database, record.id]);
 
+  const handleExecuteRef = useRef(handleExecute);
+  handleExecuteRef.current = handleExecute;
+
   if (!store.sqlVisible) return null;
 
   const handleUseHistory = (sqlText, db) => {
@@ -267,6 +270,13 @@ export default observer(function SqlTerminal() {
               mode="sql"
               value={sql}
               onChange={(val) => setSql(val)}
+              onLoad={(editor) => {
+                editor.commands.addCommand({
+                  name: 'execute',
+                  bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
+                  exec: () => handleExecuteRef.current()
+                });
+              }}
               placeholder="输入 SQL 语句，Ctrl+Enter 执行..."
               height="180px"
               width="100%"
@@ -298,6 +308,34 @@ export default observer(function SqlTerminal() {
               )}
               {result?.truncated && (
                 <Tag icon={<CloseCircleOutlined />} color="warning">结果已截断</Tag>
+              )}
+              {result && result.columns.length > 0 && (
+                <Tooltip title="导出 CSV">
+                  <Button
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    onClick={() => {
+                      const cols = result.columns;
+                      const lines = [cols.join(',')];
+                      for (const row of result.rows) {
+                        lines.push(cols.map(c => {
+                          const v = row[c];
+                          if (v === null || v === undefined) return '';
+                          const s = String(v);
+                          return s.includes(',') || s.includes('"') || s.includes('\n')
+                            ? `"${s.replace(/"/g, '""')}"` : s;
+                        }).join(','));
+                      }
+                      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `query_result_${Date.now()}.csv`;
+                      link.click();
+                      URL.revokeObjectURL(link.href);
+                      message.success('已导出 CSV');
+                    }}
+                  />
+                </Tooltip>
               )}
             </Space>
           </div>

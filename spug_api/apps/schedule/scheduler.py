@@ -62,6 +62,11 @@ class Scheduler:
     def _init_builtin_jobs(self):
         self.scheduler.add_job(auto_run_by_day, 'cron', hour=1, minute=20)
         self.scheduler.add_job(auto_run_by_minute, 'interval', minutes=1)
+        try:
+            from apps.database.utils import run_health_check
+            self.scheduler.add_job(run_health_check, 'interval', seconds=60, id='db_health_check')
+        except Exception as e:
+            logging.warning(f"Failed to register db health check job: {e}")
 
     def _dispatch(self, task_id, interpreter, command, targets):
         if interpreter == 'inspect':

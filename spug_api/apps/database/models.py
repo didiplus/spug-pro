@@ -48,7 +48,7 @@ class DatabaseInstance(models.Model,ModelMixin):
         verbose_name="密码",
     )
     version = models.CharField(
-        max_length=50,
+        max_length=200,
         blank=True,
         verbose_name="版本号",
     )
@@ -67,6 +67,22 @@ class DatabaseInstance(models.Model,ModelMixin):
         blank=True,
         verbose_name="集群名称",
     )
+    cluster_role = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="集群角色",
+    )
+    cluster_parent_id = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="主节点ID",
+    )
+    replication_lag = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name="复制延迟(秒)",
+    )
     created_at = models.CharField(
         max_length=20,
         default=human_datetime,
@@ -75,6 +91,37 @@ class DatabaseInstance(models.Model,ModelMixin):
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
     class Meta:
         db_table = "database_instance"
+
+
+class DatabaseCluster(models.Model, ModelMixin):
+    TOPOLOGY_CHOICES = (
+        ("master_slave", "主从"),
+        ("master_master", "双主"),
+        ("replica_set", "副本集"),
+        ("sharded", "分片集群"),
+        ("galera", "Galera集群"),
+        ("mha", "MHA高可用"),
+        ("unknown", "未知"),
+    )
+    HEALTH_CHOICES = (
+        ("healthy", "健康"),
+        ("warning", "告警"),
+        ("critical", "严重"),
+        ("unknown", "未知"),
+    )
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="集群名称")
+    topology_type = models.CharField(max_length=20, choices=TOPOLOGY_CHOICES, default="unknown", verbose_name="拓扑类型")
+    db_type = models.CharField(max_length=20, null=True, blank=True, verbose_name="数据库类型")
+    description = models.TextField(null=True, blank=True, verbose_name="描述")
+    health_status = models.CharField(max_length=20, choices=HEALTH_CHOICES, default="unknown", verbose_name="健康状态")
+    node_count = models.IntegerField(default=0, verbose_name="节点数")
+    last_discovered_at = models.CharField(max_length=20, null=True, blank=True, verbose_name="最后发现时间")
+    created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
+
+    class Meta:
+        db_table = "database_cluster"
+        ordering = ("name",)
 
 
 class DatabaseBackup(models.Model, ModelMixin):

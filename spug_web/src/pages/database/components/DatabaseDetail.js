@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import {
-  Drawer, Button, Tag, Row, Col, Card, Tabs, Descriptions, Table, Space, Tooltip, Spin, message, Flex, Typography, Statistic, Alert,
+  Drawer, Button, Tag, Row, Col, Card, Tabs, Descriptions, Table, Space, Tooltip, Spin, message, Flex, Typography, Statistic, Alert, Switch,
 } from 'antd';
 import {
   CopyOutlined, ReloadOutlined,
-  DatabaseOutlined, ThunderboltOutlined, SafetyOutlined,
+  DatabaseOutlined, ThunderboltOutlined,
   ApiOutlined, ClockCircleOutlined, CodeOutlined,
-  DesktopOutlined,
+  InfoCircleOutlined, HeartOutlined, SyncOutlined,
 } from '@ant-design/icons';
 import { hasPermission } from 'libs';
 import store from '../store';
@@ -28,8 +28,8 @@ const iconComponentMap = {
   thunderbolt: <ThunderboltOutlined />,
   clock: <ClockCircleOutlined />,
   database: <DatabaseOutlined />,
-  desktop: <DesktopOutlined />,
-  safety: <SafetyOutlined />,
+  info: <InfoCircleOutlined />,
+  heart: <HeartOutlined />,
 };
 
 function MetricCard({ label, value, color, icon }) {
@@ -165,6 +165,7 @@ function BasicTab({ record }) {
 
 export default observer(function DatabaseDetail() {
   const [activeTab, setActiveTab] = useState('basic');
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   useEffect(() => {
     if (store.detailVisible && store.detailRecord) {
@@ -172,6 +173,14 @@ export default observer(function DatabaseDetail() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.detailVisible]);
+
+  useEffect(() => {
+    if (!autoRefresh || !store.detailVisible) return;
+    const id = store.detailRecord?.id;
+    if (!id) return;
+    const timer = setInterval(() => store.fetchDetail(id), 30000);
+    return () => clearInterval(timer);
+  }, [autoRefresh, store.detailVisible, store.detailRecord?.id]);
 
   if (!store.detailVisible) return null;
 
@@ -238,7 +247,7 @@ export default observer(function DatabaseDetail() {
 
   return (
     <Drawer
-      width={1000}
+      width={1100}
       placement="right"
       onClose={() => { store.detailVisible = false; }}
       open={store.detailVisible}
@@ -259,6 +268,12 @@ export default observer(function DatabaseDetail() {
           {hasPermission('database.instance.execute') && (
             <Button icon={<CodeOutlined />} size="middle" onClick={handleOpenSql}>SQL终端</Button>
           )}
+          <Tooltip title="每30秒自动刷新指标">
+            <Space size={4}>
+              <SyncOutlined spin={autoRefresh} style={{ fontSize: 13, color: autoRefresh ? 'var(--color-primary)' : 'var(--color-text-tertiary)' }} />
+              <Switch size="small" checked={autoRefresh} onChange={setAutoRefresh} />
+            </Space>
+          </Tooltip>
           <Button icon={<ReloadOutlined />} size="middle" onClick={handleRefresh}>刷新</Button>
         </Space>
       }

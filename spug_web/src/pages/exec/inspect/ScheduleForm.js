@@ -34,7 +34,7 @@ export default observer(function () {
           form.setFieldsValue({ trigger: 'cron', trigger_args: { rule: '0 * * * *', start: null, stop: null }, is_active: false });
         });
     }
-  }, [record.id]);
+  }, [record.id, form]);
 
   function handleSubmit() {
     form.validateFields().then(values => {

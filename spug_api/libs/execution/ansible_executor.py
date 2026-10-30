@@ -151,6 +151,7 @@ class AnsibleExecutor(BaseExecutor):
             return -1, f"\r\n\x1b[36m### Ansible 开始执行: {event_data.get('host', '')}\x1b[0m\r\n"
         elif event_type == 'runner_on_ok':
             stdout = res.get('stdout', '')
+            logger.warning(f'Ansible runner_on_ok: res keys={list(res.keys())}, stdout_len={len(stdout)}, stdout (first 500)={stdout[:500]!r}')
             if stdout:
                 return 0, self._normalize_output(stdout) + '\r\n'
             return 0, None
@@ -159,6 +160,7 @@ class AnsibleExecutor(BaseExecutor):
             stdout = res.get('stdout', '')
             stderr = res.get('stderr', '')
             msg = res.get('msg', '')
+            logger.warning(f'Ansible runner_on_failed: res keys={list(res.keys())}, stdout_len={len(stdout)}, stderr_len={len(stderr)}, msg={msg}')
             self.last_error = msg or ''
             if not self.last_error:
                 self.last_error = str(res)

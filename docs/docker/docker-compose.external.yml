@@ -1,0 +1,35 @@
+version: "3.3"
+services:
+  spug:
+    build:
+      context: ../..
+      dockerfile: docs/docker/Dockerfile.external
+    container_name: spug
+    restart: always
+    volumes:
+      - /data/spug/storage:/data/spug/storage
+      - /data/repos:/data/repos
+    ports:
+      - "80:80"
+    environment:
+      # 外部数据库配置（必填）
+      - DB_ENGINE=${DB_ENGINE:-mysql}
+      - DB_HOST=${DB_HOST:?请在 .env 中设置 DB_HOST}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_NAME=${DB_NAME:-spug}
+      - DB_USER=${DB_USER:?请在 .env 中设置 DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD}
+      # 外部 Redis 配置（必填）
+      - REDIS_HOST=${REDIS_HOST:?请在 .env 中设置 REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-1}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      # Channels Redis（可选，默认回退到普通 Redis）
+      - CHANNELS_REDIS_HOST=${CHANNELS_REDIS_HOST:-}
+      - CHANNELS_REDIS_PORT=${CHANNELS_REDIS_PORT:-}
+      - CHANNELS_REDIS_PASSWORD=${CHANNELS_REDIS_PASSWORD:-}
+      # 管理员账户（可选，首次启动时创建）
+      - SPUG_ADMIN_USER=${SPUG_ADMIN_USER:-admin}
+      - SPUG_ADMIN_PASS=${SPUG_ADMIN_PASS:-spug.dev}
+      # SSL 配置（可选）
+      - SECURE_SSL=${SECURE_SSL:-false}
