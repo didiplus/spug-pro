@@ -17,8 +17,13 @@ const STATUS_MAP = {
 function Body(props) {
   const termRef = useRef()
   const [wsConnected, setWsConnected] = useState(false)
+  const [wsReconnecting, setWsReconnecting] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const reconnectTimerRef = useRef(null)
+  const retryCountRef = useRef(0)
+  const socketRef = useRef(null)
+  const intentionalCloseRef = useRef(false)
 
   useEffect(() => {
     if (!S.node?.id) return
@@ -36,43 +41,83 @@ function Body(props) {
 
   useEffect(() => {
     if (!S.token || S.readonly) return
-    setWsConnected(false)
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const channel = `spug:pipeline:log:${S.token}`
-    const socket = new WebSocket(`${protocol}//${window.location.host}/api/ws/subscribe/${channel}/?x-token=${localStorage.getItem('token')}`)
+    const MAX_RETRIES = 10
+    const BASE_DELAY = 1000
+    let mounted = true
 
-    socket.onopen = () => {
-      setWsConnected(true)
-      socket.send('ok')
-    }
-    socket.onmessage = e => {
-      if (e.data === 'pong') {
-        socket.send('ping')
-      } else {
-        try {
-          const msg = JSON.parse(e.data)
-          const { key, data, status } = msg
-          if (S.outputs[key]) {
-            if (data !== undefined) {
-              S.outputs[key].data = (S.outputs[key].data || '') + data
-              if (String(S.node?.id) === key) {
-                const term = termRef.current
-                if (term) {
-                  term.write(data)
-                  term.scrollToBottom()
+    function connect() {
+      if (!mounted) return
+      setWsConnected(false)
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const channel = `spug:pipeline:log:${S.token}`
+      const socket = new WebSocket(`${protocol}//${window.location.host}/api/ws/subscribe/${channel}/?x-token=${localStorage.getItem('token')}`)
+      socketRef.current = socket
+
+      socket.onopen = () => {
+        if (!mounted) return
+        retryCountRef.current = 0
+        setWsConnected(true)
+        setWsReconnecting(false)
+        socket.send('ok')
+      }
+      socket.onmessage = e => {
+        if (!mounted) return
+        if (e.data === 'pong') {
+          socket.send('ping')
+        } else {
+          try {
+            const msg = JSON.parse(e.data)
+            const { key, data, status } = msg
+            if (S.outputs[key]) {
+              if (data !== undefined) {
+                S.outputs[key].data = (S.outputs[key].data || '') + data
+                if (String(S.node?.id) === key) {
+                  const term = termRef.current
+                  if (term) {
+                    term.write(data)
+                    term.scrollToBottom()
+                  }
                 }
               }
+              if (status !== undefined) {
+                S.outputs[key].status = status
+              }
             }
-            if (status !== undefined) {
-              S.outputs[key].status = status
-            }
+          } catch {
           }
-        } catch {
         }
       }
+      socket.onclose = () => {
+        if (!mounted || intentionalCloseRef.current) return
+        setWsConnected(false)
+        if (retryCountRef.current < MAX_RETRIES) {
+          setWsReconnecting(true)
+          const delay = Math.min(BASE_DELAY * Math.pow(2, retryCountRef.current), 30000)
+          retryCountRef.current += 1
+          reconnectTimerRef.current = setTimeout(connect, delay)
+        }
+      }
+      socket.onerror = () => {
+        if (!mounted) return
+        setWsConnected(false)
+      }
     }
-    socket.onclose = () => setWsConnected(false)
-    return () => socket.close()
+
+    intentionalCloseRef.current = false
+    connect()
+
+    return () => {
+      mounted = false
+      intentionalCloseRef.current = true
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
+      if (socketRef.current) {
+        socketRef.current.close()
+        socketRef.current = null
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [S.token])
 
@@ -115,7 +160,7 @@ function Body(props) {
           <div className={`${css.wsStatus} ${wsConnected ? css.wsConnected : ''}`}>
             <span className={`${css.dot} ${wsConnected ? css.online : css.offline}`}/>
             <span className={wsConnected ? css.wsOnline : css.wsOffline}>
-              {wsConnected ? t('已连接') : t('未连接')}
+              {wsConnected ? t('已连接') : wsReconnecting ? t('重连中') : t('未连接')}
             </span>
           </div>
           <Tooltip title={copied ? t('已复制') : t('复制日志')}>

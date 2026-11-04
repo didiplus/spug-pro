@@ -286,6 +286,7 @@ def run_playbook(data: dict) -> None:
             timeout = playbook.timeout or 0
 
             final_code = -1
+            canceled = False
             for host_name, code, output in executor.exec_playbook_batch(
                 pb_content,
                 extra_vars=extra_vars,
@@ -295,6 +296,10 @@ def run_playbook(data: dict) -> None:
                 forks=forks,
                 timeout=timeout,
             ):
+                if _is_canceled(rds, token):
+                    canceled = True
+                    send({'status': 'running', 'message': '\r\n\x1b[33m### 收到取消信号，停止执行\x1b[0m\r\n'})
+                    break
                 if output:
                     send({'status': 'running', 'message': output})
                     if host_name and host_name in host_output_parts:
@@ -303,6 +308,15 @@ def run_playbook(data: dict) -> None:
                     if host_name and host_name in host_status:
                         host_status[host_name] = code
                     final_code = code
+
+            if canceled:
+                duration = int(time.time() - start_time)
+                human_time = human_seconds_time(duration)
+                send({'status': 'canceled', 'message': f'\r\n\x1b[33m### 任务已取消，总耗时：{human_time}\x1b[0m\r\n', 'code': 130, 'duration': duration})
+                _update_run_status(run_id, 'canceled', duration)
+                rds.delete(f'spug:pb:cancel:{token}')
+                rds.expire(f'spug:pb:log:{token}', 14 * 24 * 60 * 60)
+                return
 
             initial_stats = dict(executor.stats or {})
 
@@ -355,6 +369,11 @@ def _update_run_status(run_id: int, status: str, duration: int, stats: dict = No
         PlaybookRun.objects.filter(pk=run_id).update(**updates)
     except Exception as e:
         logger.error(f'更新执行记录失败: {e}')
+
+
+def _is_canceled(rds, token: str) -> bool:
+    """检查任务是否被用户取消"""
+    return bool(rds.exists(f'spug:pb:cancel:{token}'))
 
 
 def _detect_python_version_failures(host_status: dict, host_output_parts: dict, ansible_last_error: str) -> list:
@@ -417,15 +436,15 @@ def _retry_playbook_with_python_override(
 
     return retry_stats
 
-def compensate_stale_runs(timeout_hours: int = 6) -> int:
-    """补偿函数：将超过 timeout_hours 小时仍为 running 的 PlaybookRun 标记为 failed
+def compensate_stale_runs(timeout_minutes: int = 30) -> int:
+    """补偿函数：将超过 timeout_minutes 分钟仍为 running 的 PlaybookRun 标记为 failed
     应由 worker 定期调用，防止进程异常退出导致状态永久卡死
     返回修正的记录数
     """
     from django.utils import timezone
     from datetime import timedelta
 
-    cutoff = timezone.now() - timedelta(hours=timeout_hours)
+    cutoff = timezone.now() - timedelta(minutes=timeout_minutes)
     stale_runs = PlaybookRun.objects.filter(
         status='running',
         created_at__lt=cutoff.strftime('%Y-%m-%d %H:%M:%S'),

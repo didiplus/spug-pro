@@ -25,6 +25,9 @@ function Record() {
         <Table.Column title={t('状态')} width={100} render={info => (
           <Tag color={STATUS_COLORS[info.status]}>{info.status_alias || STATUS_TEXTS[info.status]}</Tag>
         )}/>
+        <Table.Column title={t('触发方式')} width={100} render={info => (
+          <Tag>{info.trigger_alias || info.trigger_type || t('手动')}</Tag>
+        )}/>
         <Table.Column title={t('触发用户')} dataIndex="created_by_name" width={120}/>
         <Table.Column title={t('开始时间')} dataIndex="started_at" width={180}/>
         <Table.Column title={t('完成时间')} dataIndex="finished_at" width={180}/>

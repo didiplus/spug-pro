@@ -80,14 +80,7 @@ function PushWebhook(props) {
           <Radio.Button value="always">{t('总是')}</Radio.Button>
         </Radio.Group>
       </Form.Item>
-      <Form.Item required name="condition" label={t('执行条件')}
-                 tooltip={t('当该节点为流程的起始节点时（无上游节点），该条件将会被忽略。')}>
-        <Radio.Group>
-          <Radio.Button value="success">{t('上游执行成功时')}</Radio.Button>
-          <Radio.Button value="error">{t('上游执行失败时')}</Radio.Button>
-          <Radio.Button value="always">{t('总是执行')}</Radio.Button>
-        </Radio.Group>
-      </Form.Item>
+
       <Form.Item required name="url" label={t('{} 机器人 Webhook 地址', conf.label())}>
         <Input placeholder={conf.placeholder}/>
       </Form.Item>

@@ -3,11 +3,12 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import { observable, computed, toJS } from 'mobx';
-import { http, includes } from 'libs';
+import { observable, computed } from 'mobx';
+import { http } from 'libs';
 import { message } from 'libs/message';
+import HostBaseStore from './baseStore';
 
-class Store {
+class Store extends HostBaseStore {
   @observable rawTreeData = [];
   @observable rawRecords = [];
   @observable groups = {};
@@ -27,18 +28,6 @@ class Store {
   @observable f_word;
   @observable f_status = '';
 
-  @computed get records() {
-    let records = this.rawRecords;
-    if (this.f_word) {
-      records = records.filter(x => {
-        if (includes(x.name, this.f_word)) return true
-        if (x.public_ip_address && includes(x.public_ip_address[0], this.f_word)) return true
-        return !!(x.private_ip_address && includes(x.private_ip_address[0], this.f_word));
-      });
-    }
-    return records
-  }
-
   @computed get dataSource() {
     let records = [];
     if (this.group.key) {
@@ -47,31 +36,6 @@ class Store {
     }
     if (this.f_status !== '') records = records.filter(x => this.f_status === x.is_verified);
     return records
-  }
-
-  @computed get counter() {
-    const counter = {}
-    for (let host of this.records) {
-      for (let id of host.group_ids) {
-        if (counter[id]) {
-          counter[id].add(host.id)
-        } else {
-          counter[id] = new Set([host.id])
-        }
-      }
-    }
-    for (let item of this.rawTreeData) {
-      this._handler_counter(item, counter)
-    }
-    return counter
-  }
-
-  @computed get treeData() {
-    let treeData = toJS(this.rawTreeData)
-    if (this.f_word) {
-      treeData = this._handle_filter_group(treeData)
-    }
-    return treeData
   }
 
   fetchRecords = () => {
@@ -87,8 +51,16 @@ class Store {
   };
 
   fetchExtend = (id) => {
-    http.put('/api/host/', {id})
-      .then(() => this.fetchRecords())
+    return http.put('/api/host/', {id})
+      .then(res => {
+        if (res) {
+          const idx = this.rawRecords.findIndex(x => x.id === id);
+          if (idx >= 0) {
+            this.rawRecords[idx] = {...this.rawRecords[idx], ...res};
+            this.rawRecords = [...this.rawRecords];
+          }
+        }
+      })
   }
 
   fetchGroups = () => {
@@ -145,26 +117,6 @@ class Store {
   showSelector = (addByCopy) => {
     this.addByCopy = addByCopy;
     this.selectorVisible = true;
-  }
-
-  _handler_counter = (item, counter) => {
-    if (!counter[item.key]) counter[item.key] = new Set()
-    for (let child of item.children) {
-      this._handler_counter(child, counter)
-      counter[child.key].forEach(x => counter[item.key].add(x))
-    }
-  }
-
-  _handle_filter_group = (treeData) => {
-    const data = []
-    for (let item of treeData) {
-      const host_ids = this.counter[item.key]
-      if (host_ids.size > 0 || item.key === this.group.key) {
-        item.children = this._handle_filter_group(item.children)
-        data.push(item)
-      }
-    }
-    return data
   }
 }
 

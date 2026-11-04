@@ -1,34 +1,33 @@
 import lds from 'lodash'
 
-let response = []
-let nodes = {}
-let layer = 0
-
-function loop(keys) {
-  const tmp = []
-  let downKeys = []
-  for (let key of keys) {
-    const node = nodes[key]
-    tmp.push(node.id)
-    for (let item of node.downstream || []) {
-      downKeys.push(item)
-    }
-  }
-  response[layer] = tmp
-  layer += 1
-  if (downKeys.length) {
-    loop(downKeys)
-  }
-}
-
 export function transfer(data) {
   if (data.length === 0) return []
-  response = []
-  nodes = {}
-  layer = 0
-  for (let item of data) {
+
+  const nodes = {}
+  for (const item of data) {
     nodes[item.id] = item
   }
+
+  let response = []
+  let layer = 0
+
+  function loop(keys) {
+    const tmp = []
+    let downKeys = []
+    for (const key of keys) {
+      const node = nodes[key]
+      tmp.push(node.id)
+      for (const item of node.downstream || []) {
+        downKeys.push(item)
+      }
+    }
+    response[layer] = tmp
+    layer += 1
+    if (downKeys.length) {
+      loop(downKeys)
+    }
+  }
+
   loop([data[0].id])
 
   let idx = response.length - 2
@@ -39,7 +38,7 @@ export function transfer(data) {
       const node = nodes[currentRow[cIdx]]
       if (node.downstream) {
         const downRow = response[idx + 1]
-        for (let sKey of node.downstream) {
+        for (const sKey of node.downstream) {
           let dIdx = downRow.indexOf(sKey)
           while (dIdx < cIdx) {
             let tIdx = idx + 1
@@ -68,8 +67,8 @@ export function transfer(data) {
     idx -= 1
   }
 
-  for (let row of response) {
-    for (let idx in row) {
+  for (const row of response) {
+    for (const idx in row) {
       const key = row[idx]
       row[idx] = nodes[key] || key
     }
@@ -78,7 +77,7 @@ export function transfer(data) {
   idx = 1
   while (idx < response.length) {
     const nRow = []
-    for (let item of response[idx]) {
+    for (const item of response[idx]) {
       if (item.id) {
         nRow.push(' |')
       } else {

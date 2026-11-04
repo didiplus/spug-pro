@@ -9,7 +9,7 @@ class Store {
   @observable resultVisible = false;
   @observable reportVisible = false;
   @observable scheduleVisible = false;
-  @observable results = [];
+
   @observable f_name;
   @observable f_status;
 
@@ -35,10 +35,7 @@ class Store {
   showResult = (record) => {
     this.resultVisible = true;
     this.record = record;
-    const params = { task_id: record.id };
-    if (record.latest_batch_id) params.batch_id = record.latest_batch_id;
-    http.get('/api/exec/inspect/result/', { params })
-      .then(res => this.results = res)
+
   };
 
   showReport = (record) => {

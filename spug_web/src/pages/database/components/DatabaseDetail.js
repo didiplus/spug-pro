@@ -174,13 +174,13 @@ export default observer(function DatabaseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.detailVisible]);
 
+  const detailId = store.detailRecord?.id;
   useEffect(() => {
     if (!autoRefresh || !store.detailVisible) return;
-    const id = store.detailRecord?.id;
-    if (!id) return;
-    const timer = setInterval(() => store.fetchDetail(id), 30000);
+    if (!detailId) return;
+    const timer = setInterval(() => store.fetchDetail(detailId), 30000);
     return () => clearInterval(timer);
-  }, [autoRefresh, store.detailVisible, store.detailRecord?.id]);
+  }, [autoRefresh, detailId]);
 
   if (!store.detailVisible) return null;
 

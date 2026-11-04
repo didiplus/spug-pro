@@ -98,6 +98,14 @@ class PlaybookIndex extends React.Component {
                 {value: 'inactive', label: '停用'},
               ]}/>
           </SearchForm.Item>
+          <SearchForm.Item span={6} title="标签">
+            <Select
+              allowClear
+              value={store.f_tag}
+              onChange={v => store.f_tag = v}
+              placeholder="全部"
+              options={store.allTags.map(t => ({value: t, label: t}))}/>
+          </SearchForm.Item>
         </SearchForm>
         <TableCard
           tKey="pb"

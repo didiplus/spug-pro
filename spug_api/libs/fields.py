@@ -6,6 +6,9 @@
 """
 from django.db import models
 from .crypto import encrypt, decrypt
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EncryptedTextField(models.TextField):
@@ -17,7 +20,19 @@ class EncryptedTextField(models.TextField):
         return encrypt(value)
 
     def from_db_value(self, value, expression, connection):
-        return decrypt(value)
+        if value is None:
+            return None
+        try:
+            return decrypt(value)
+        except Exception:
+            logger.warning("字段解密异常，已返回空字符串", exc_info=True)
+            return ''
 
     def to_python(self, value):
-        return decrypt(value)
+        if value is None:
+            return None
+        try:
+            return decrypt(value)
+        except Exception:
+            logger.warning("字段解密异常，已返回空字符串", exc_info=True)
+            return ''

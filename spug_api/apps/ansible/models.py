@@ -189,14 +189,16 @@ class RoleSource(models.Model, ModelMixin):
     installed_commit = models.CharField(max_length=40, null=True, verbose_name="已安装commit")
     install_status = models.CharField(max_length=20, default="pending", choices=STATUS_CHOICES, verbose_name="安装状态")
     install_error = models.TextField(null=True, verbose_name="安装错误信息")
+    install_log = models.TextField(null=True, verbose_name="安装日志")
     is_active = models.BooleanField(default=True, verbose_name="启用状态")
 
     created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+", verbose_name="创建人")
     updated_at = models.CharField(max_length=20, null=True, verbose_name="更新时间")
 
+
     def to_view(self):
-        tmp = self.to_dict(excludes=("platforms", "dependencies", "variables_schema", "readme", "install_error"))
+        tmp = self.to_dict(excludes=("platforms", "dependencies", "variables_schema", "readme", "install_error", "install_log"))
         tmp["platforms"] = _safe_json(self.platforms, [])
         tmp["dependencies"] = _safe_json(self.dependencies, [])
         tmp["variables_schema"] = _safe_json(self.variables_schema, [])

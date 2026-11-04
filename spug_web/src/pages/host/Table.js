@@ -3,11 +3,11 @@
  * Copyright (c) <spug.dev@gmail.com>
  * Released under the AGPL-3.0 License.
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
 import { message } from 'libs/message';
-import { Table, Modal, Dropdown, Button, Avatar, Tooltip, Space, Tag, Radio, Input } from 'antd';
-import { PlusOutlined, CodeOutlined,DownOutlined, SyncOutlined, FormOutlined } from '@ant-design/icons';
+import { Table, Modal, Dropdown, Button, Avatar, Tooltip, Space, Tag, Radio, Input, Divider } from 'antd';
+import { PlusOutlined, CodeOutlined, DownOutlined, SyncOutlined, FormOutlined } from '@ant-design/icons';
 import { Action, TableCard, AuthButton, AuthFragment } from 'components';
 import IPAddress from './IPAddress';
 import { http, hasPermission } from 'libs';
@@ -15,7 +15,20 @@ import store from './store';
 import icons from './icons';
 import moment from 'moment';
 
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 function ComTable() {
+  const [searchWord, setSearchWord] = useState('');
+  const debouncedWord = useDebounce(searchWord, 300);
+  useEffect(() => { store.f_word = debouncedWord; }, [debouncedWord]);
+
   function handleDelete(text) {
     Modal.confirm({
       title: '删除确认',
@@ -30,7 +43,7 @@ function ComTable() {
     })
   }
 
-    function openTerminal() {
+  function openTerminal() {
     window.open('/ssh')
   }
   function handleImport(menu) {
@@ -52,7 +65,7 @@ function ComTable() {
     } else if (days > 7) {
       return <span>剩余 <b style={{ color: 'var(--color-gold-500)' }}>{days}</b> 天</span>
     } else if (days >= 0) {
-        return <span>剩余 <b style={{ color: 'var(--color-red-600)' }}>{days}</b> 天</span>
+      return <span>剩余 <b style={{ color: 'var(--color-red-600)' }}>{days}</b> 天</span>
     } else {
       return <span>过期 <b style={{ color: 'var(--color-red-600)' }}>{Math.abs(days)}</b> 天</span>
     }
@@ -62,8 +75,8 @@ function ComTable() {
     <TableCard
       tKey="hi"
       rowKey="id"
-      title={<Input allowClear value={store.f_word} placeholder="输入名称/IP检索" style={{ maxWidth: 250 }}
-        onChange={e => store.f_word = e.target.value} />}
+      title={<Input allowClear value={searchWord} placeholder="输入名称/IP检索" style={{ maxWidth: 250 }}
+        onChange={e => setSearchWord(e.target.value)} />}
       loading={store.isFetching}
       dataSource={store.dataSource}
       onReload={store.fetchRecords}
@@ -87,6 +100,7 @@ function ComTable() {
           onClick={() => store.showSync()}>验证</AuthButton>,
         <AuthButton auth="host.console.view|host.console.list" type="primary" icon={<CodeOutlined />}
           onClick={openTerminal}>Web 终端</AuthButton>,
+        <Divider type="vertical" style={{ margin: '0 4px' }} />,
         <Radio.Group value={store.f_status} onChange={e => store.f_status = e.target.value}>
           <Radio.Button value="">全部</Radio.Button>
           <Radio.Button value={false}>未验证</Radio.Button>

@@ -47,17 +47,21 @@ class Store {
       })
   }
 
+  _setConsoleState = (record, token, nodes, outputs, readonly, wsIndex) => {
+    S.recordD = record
+    S.token = token
+    S.nodes = nodes
+    S.node = lds.cloneDeep(nodes[0])
+    S.outputs = outputs
+    S.readonly = readonly
+    S.wsIndex = wsIndex
+  }
+
   showConsole = (record) => {
     this.record = record
     return http.post('/api/pipeline/do/', {id: record.id})
       .then(res => {
-        S.recordD = record
-        S.token = res.token
-        S.nodes = res.nodes
-        S.node = lds.cloneDeep(res.nodes[0])
-        S.outputs = res.outputs
-        S.readonly = false
-        S.wsIndex = 0
+        this._setConsoleState(record, res.token, res.nodes, res.outputs, false, 0)
       })
   }
 
@@ -83,13 +87,7 @@ class Store {
           return
         }
         this.historyVisible = false
-        S.recordD = this.record
-        S.token = res.token
-        S.nodes = res.nodes
-        S.node = lds.cloneDeep(res.nodes[0])
-        S.outputs = res.outputs
-        S.readonly = res.status !== 0
-        S.wsIndex = res.index
+        this._setConsoleState(this.record, res.token, res.nodes, res.outputs, res.status !== 0, res.index)
       })
   }
 }

@@ -58,6 +58,7 @@ class PipelineHistory(models.Model, ModelMixin):
     nodes = models.TextField(default="[]", verbose_name="节点快照")
     deploy_status = models.TextField(default="{}", verbose_name="节点执行状态")
     error_message = models.TextField(null=True, verbose_name="错误信息")
+    trigger_type = models.CharField(max_length=10, default="manual", verbose_name="触发类型")
     started_at = models.CharField(max_length=20, null=True, verbose_name="开始时间")
     finished_at = models.CharField(max_length=20, null=True, verbose_name="完成时间")
     created_at = models.CharField(max_length=20, default=human_datetime, verbose_name="创建时间")
@@ -83,6 +84,7 @@ class PipelineHistory(models.Model, ModelMixin):
         tmp["nodes"] = _safe_json(self.nodes, [])
         tmp["deploy_status"] = _safe_json(self.deploy_status, {})
         tmp["status_alias"] = self.status_alias
+        tmp["trigger_alias"] = dict(TRIGGER_TYPES).get(self.trigger_type, self.trigger_type)
         tmp["pipeline_name"] = self.pipeline.name if self.pipeline else None
         tmp["created_by_name"] = self.created_by.nickname if self.created_by else None
         return tmp

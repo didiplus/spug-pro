@@ -7,6 +7,7 @@ import {
 import {
     DatabaseOutlined, CheckCircleOutlined,
     ApartmentOutlined, UnorderedListOutlined,
+    ScheduleOutlined,
 } from '@ant-design/icons';
 
 import store from './store';
@@ -16,6 +17,7 @@ import DatabaseDrawer from './components/DatabaseDrawer';
 import DatabaseDetail from './components/DatabaseDetail';
 import SqlTerminal from './components/SqlTerminal';
 import ClusterTopology from './components/ClusterTopology';
+import ScheduleBackupTable from './components/ScheduleBackupTable';
 
 const { Text } = Typography;
 
@@ -77,6 +79,16 @@ export default observer(function DatabaseDashboard() {
                                 </Space>
                             ),
                             children: <ClusterTopology />,
+                        },
+                        {
+                            key: 'schedule_backup',
+                            label: (
+                                <Space size={4}>
+                                    <ScheduleOutlined />
+                                    <span>定时备份</span>
+                                </Space>
+                            ),
+                            children: <ScheduleBackupTable />,
                         },
                     ]}
                 />

@@ -179,6 +179,85 @@ class InspectTask(models.Model, ModelMixin):
             tmp["schedule_args"] = None
         return tmp
 
+    @classmethod
+    def batch_to_view(cls, tasks):
+        tasks = list(tasks)
+        if not tasks:
+            return []
+
+        all_item_ids = set()
+        for t in tasks:
+            all_item_ids.update(json.loads(t.item_ids))
+        items_map = {}
+        if all_item_ids:
+            for x in InspectItem.objects.filter(id__in=all_item_ids).values('id', 'name', 'category'):
+                items_map[x['id']] = {"id": x['id'], "name": x['name'], "category": x['category']}
+
+        task_ids = [t.id for t in tasks]
+        latest_info = {}
+        result_rows = InspectResult.objects.filter(
+            task_id__in=task_ids
+        ).values('task_id', 'batch_id', 'run_at').order_by('-id')
+        for row in result_rows:
+            tid = row['task_id']
+            if tid not in latest_info:
+                latest_info[tid] = {'batch_id': row['batch_id'], 'run_at': row['run_at']}
+
+        latest_batch_ids = [info['batch_id'] for info in latest_info.values()]
+        batch_statuses = {}
+        if latest_batch_ids:
+            for row in InspectResult.objects.filter(batch_id__in=latest_batch_ids).values('batch_id', 'status'):
+                batch_statuses.setdefault(row['batch_id'], []).append(row['status'])
+
+        from apps.schedule.models import Task as ScheduleTask
+        schedule_commands = [json.dumps({'inspect_task_id': t.id}) for t in tasks]
+        schedule_map = {}
+        if schedule_commands:
+            for s in ScheduleTask.objects.filter(
+                type='inspect', interpreter='inspect', command__in=schedule_commands
+            ).values('command', 'is_active', 'trigger', 'trigger_args'):
+                schedule_map[s['command']] = s
+
+        views = []
+        for t in tasks:
+            tmp = t.to_dict()
+            tmp["item_ids"] = json.loads(t.item_ids)
+            tmp["host_ids"] = json.loads(t.host_ids)
+            tmp["notify_grp"] = json.loads(t.notify_grp)
+            tmp["notify_mode"] = json.loads(t.notify_mode)
+            tmp["items"] = [items_map[i] for i in tmp["item_ids"] if i in items_map]
+
+            info = latest_info.get(t.id)
+            if info:
+                statuses = batch_statuses.get(info['batch_id'], [])
+                if any(s in statuses for s in ['running', 'pending']):
+                    tmp["latest_status"] = 'running'
+                elif any(s == 'error' for s in statuses):
+                    tmp["latest_status"] = 'error'
+                elif any(s == 'warning' for s in statuses):
+                    tmp["latest_status"] = 'warning'
+                else:
+                    tmp["latest_status"] = 'success'
+                tmp["latest_run_at"] = info['run_at']
+                tmp["latest_batch_id"] = info['batch_id']
+            else:
+                tmp["latest_status"] = 'pending'
+                tmp["latest_run_at"] = None
+                tmp["latest_batch_id"] = None
+
+            command = json.dumps({'inspect_task_id': t.id})
+            schedule = schedule_map.get(command)
+            if schedule:
+                tmp["schedule_active"] = schedule['is_active']
+                tmp["schedule_trigger"] = schedule['trigger']
+                tmp["schedule_args"] = schedule['trigger_args']
+            else:
+                tmp["schedule_active"] = False
+                tmp["schedule_trigger"] = None
+                tmp["schedule_args"] = None
+            views.append(tmp)
+        return views
+
     class Meta:
         db_table = "exec_inspect_tasks"
         ordering = ("-id",)
@@ -203,6 +282,20 @@ class InspectResult(models.Model, ModelMixin):
         host = Host.objects.filter(pk=self.host_id).first()
         tmp["host_name"] = host.name if host else str(self.host_id)
         return tmp
+
+    @classmethod
+    def batch_to_view(cls, results):
+        results = list(results)
+        if not results:
+            return []
+        host_ids = set(r.host_id for r in results)
+        hosts_qs = {h.id: h.name for h in Host.objects.filter(id__in=host_ids)}
+        views = []
+        for r in results:
+            tmp = r.to_dict()
+            tmp["host_name"] = hosts_qs.get(r.host_id, str(r.host_id))
+            views.append(tmp)
+        return views
 
     class Meta:
         db_table = "exec_inspect_results"

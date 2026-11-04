@@ -6,6 +6,21 @@ from django.db.models import F
 from libs import json_response, JsonParser, Argument, auth
 from apps.host.models import Group
 from apps.account.models import Role
+from apps.account.utils import invalidate_host_perms_cache
+import json
+import re
+
+
+def _id_in_json(field_value, target_id):
+    if not field_value:
+        return False
+    try:
+        ids = json.loads(field_value)
+        if isinstance(ids, list):
+            return target_id in ids
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return bool(re.search(fr'(^|[^0-9]){target_id}([^0-9]|$)', field_value))
 
 
 def fetch_children(data, with_hosts):
@@ -70,6 +85,7 @@ class GroupView(View):
                 group = Group.objects.create(**form)
                 group.sort_id = group.id
                 group.save()
+            invalidate_host_perms_cache()
         return json_response(error=error)
 
     @auth('admin')
@@ -117,8 +133,9 @@ class GroupView(View):
                 return json_response(error='请移除分组下的主机后再尝试删除')
             if not Group.objects.exclude(pk=form.id).exists():
                 return json_response(error='请至少保留一个分组')
-            role = Role.objects.filter(group_perms__regex=fr'[^0-9]{form.id}[^0-9]').first()
-            if role:
+            role = Role.objects.filter(group_perms__regex=fr'(^|[^0-9]){form.id}([^0-9]|$)').first()
+            if role and _id_in_json(role.group_perms, form.id):
                 return json_response(error=f'账户角色【{role.name}】的主机权限关联该分组，请解除关联后再尝试删除')
             group.delete()
+            invalidate_host_perms_cache()
         return json_response(error=error)

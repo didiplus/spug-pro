@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Radio, message } from 'antd';
+import { Form, Input, Radio, InputNumber, message } from 'antd';
 import { ACEditor } from 'components';
 import { t } from 'libs';
 import HostSelector from 'pages/host/Selector';
@@ -40,6 +40,12 @@ function SSHExec(props) {
       </Form.Item>
       <Form.Item required name="targets" label={t('选择主机')}>
         <HostSelector type="button"/>
+      </Form.Item>
+      <Form.Item name="workspace" label={t('工作目录')} tooltip={t('远程执行时 cd 到此目录，留空则不切换')}>
+        <Input placeholder={t('如 /data/workspace，留空不切换')}/>
+      </Form.Item>
+      <Form.Item name="timeout" label={t('超时时间(秒)')} tooltip={t('0 表示不限制超时')}>
+        <InputNumber min={0} placeholder={t('0 表示不限制')} style={{width: '100%'}}/>
       </Form.Item>
       <Form.Item required name="interpreter" label={t('解释器')}>
         <Radio.Group buttonStyle="solid">

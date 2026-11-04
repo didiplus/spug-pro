@@ -70,3 +70,42 @@ class VaultDecryptView(View):
             except Exception as e:
                 return json_response(error=f'解密失败: {e}')
         return json_response(error=error)
+
+class VaultBatchView(View):
+    @auth('ansible.vault.edit')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('ids', type=list, filter=lambda x: len(x), help='请选择要删除的 Vault 密钥'),
+        ).parse(request.body)
+        if error:
+            return json_response(error=error)
+        count, _ = VaultSecret.objects.filter(id__in=form.ids).delete()
+        return json_response({'deleted': count})
+
+    @auth('ansible.vault.edit')
+    def patch(self, request):
+        form, error = JsonParser(
+            Argument('ids', type=list, filter=lambda x: len(x), help='请选择要更新的 Vault 密钥'),
+            Argument('host_ids', type=list, required=False),
+            Argument('add_host_ids', type=list, required=False),
+            Argument('remove_host_ids', type=list, required=False),
+        ).parse(request.body, True)
+        if error:
+            return json_response(error=error)
+        secrets = VaultSecret.objects.filter(id__in=form.ids)
+        updated = 0
+        for s in secrets:
+            current = json.loads(s.host_ids) if s.host_ids else []
+            if form.host_ids is not None:
+                new_ids = form.host_ids
+            else:
+                new_ids = list(current)
+                if form.add_host_ids:
+                    new_ids = list(set(new_ids + form.add_host_ids))
+                if form.remove_host_ids:
+                    new_ids = [x for x in new_ids if x not in form.remove_host_ids]
+            VaultSecret.objects.filter(pk=s.id).update(
+                host_ids=json.dumps(new_ids), updated_at=human_datetime(),
+            )
+            updated += 1
+        return json_response({'updated': updated})

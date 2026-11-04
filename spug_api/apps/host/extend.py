@@ -15,7 +15,7 @@ class ExtendView(View):
             Argument('host_id', type=int, help='参数错误')
         ).parse(request.GET)
         if error is None:
-            host = Host.objects.filter(pk=form.host_id).first()
+            host = Host.objects.select_related('hostextend').filter(pk=form.host_id).first()
             if not host:
                 return json_response(error='未找到指定主机')
             if not host.is_verified:
@@ -42,7 +42,7 @@ class ExtendView(View):
             Argument('expired_time', required=False)
         ).parse(request.body)
         if error is None:
-            host = Host.objects.filter(pk=form.host_id).first()
+            host = Host.objects.select_related('hostextend').filter(pk=form.host_id).first()
             form.disk = json.dumps(form.disk)
             form.public_ip_address = json.dumps(form.public_ip_address) if form.public_ip_address else '[]'
             form.private_ip_address = json.dumps(form.private_ip_address)

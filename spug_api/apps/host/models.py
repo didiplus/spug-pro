@@ -28,7 +28,7 @@ class Host(models.Model, ModelMixin):
     def get_ssh(self, pkey=None, default_env=None):
         pkey = pkey or self.private_key
         return SSH(
-            self.hostname, self.port, self.username, pkey, default_env=default_env
+            self.hostname, self.port, self.username, pkey, default_env=default_env, host_id=self.id
         )
 
     def to_view(self):
@@ -60,18 +60,18 @@ class HostExtend(models.Model, ModelMixin):
     host = models.OneToOneField(Host, on_delete=models.CASCADE, verbose_name="关联主机")
     instance_id = models.CharField(max_length=64, null=True, verbose_name="实例ID")
     zone_id = models.CharField(max_length=30, null=True, verbose_name="可用区ID")
-    cpu = models.IntegerField(verbose_name="CPU核心数")
-    memory = models.FloatField(verbose_name="内存(GB)")
+    cpu = models.IntegerField(null=True, verbose_name="CPU核心数")
+    memory = models.FloatField(null=True, verbose_name="内存(GB)")
     disk = models.CharField(max_length=255, default="[]", verbose_name="磁盘信息")
-    os_name = models.CharField(max_length=50, verbose_name="操作系统名称")
-    os_type = models.CharField(max_length=20, verbose_name="操作系统类型")
-    private_ip_address = models.CharField(max_length=255, verbose_name="内网IP")
-    public_ip_address = models.CharField(max_length=255, verbose_name="公网IP")
+    os_name = models.CharField(max_length=50, null=True, verbose_name="操作系统名称")
+    os_type = models.CharField(max_length=20, null=True, verbose_name="操作系统类型")
+    private_ip_address = models.CharField(max_length=255, null=True, verbose_name="内网IP")
+    public_ip_address = models.CharField(max_length=255, null=True, verbose_name="公网IP")
     instance_charge_type = models.CharField(
-        max_length=20, choices=INSTANCE_CHARGE_TYPES, verbose_name="实例计费类型"
+        max_length=20, null=True, choices=INSTANCE_CHARGE_TYPES, verbose_name="实例计费类型"
     )
     internet_charge_type = models.CharField(
-        max_length=20, choices=INTERNET_CHARGE_TYPES, verbose_name="网络计费类型"
+        max_length=20, null=True, choices=INTERNET_CHARGE_TYPES, verbose_name="网络计费类型"
     )
     created_time = models.CharField(max_length=20, null=True, verbose_name="创建时间")
     expired_time = models.CharField(max_length=20, null=True, verbose_name="过期时间")
@@ -83,7 +83,7 @@ class HostExtend(models.Model, ModelMixin):
         tmp["private_ip_address"] = json.loads(self.private_ip_address)
         tmp["public_ip_address"] = json.loads(self.public_ip_address)
         tmp["instance_charge_type_alias"] = self.get_instance_charge_type_display()
-        tmp["internet_charge_type_alisa"] = self.get_internet_charge_type_display()
+        tmp["internet_charge_type_alias"] = self.get_internet_charge_type_display()
         return tmp
 
     class Meta:

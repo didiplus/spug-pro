@@ -2,6 +2,7 @@
 # Copyright (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
 from django.views.generic import View
+from django_redis import get_redis_connection
 from libs import json_response, auth
 import subprocess
 import json
@@ -27,11 +28,19 @@ MODULE_CATEGORIES = {
     "source_control": ["git_config", "github_issue", "gitlab_project"],
 }
 
+CACHE_KEY_PREFIX = "spug:ansible:module_doc:"
+CACHE_TTL = 86400
+
 
 class ModuleView(View):
     @auth('ansible.modules.view')
     def get(self, request, name=None):
         if name:
+            rds = get_redis_connection()
+            cache_key = f"{CACHE_KEY_PREFIX}{name}"
+            cached = rds.get(cache_key)
+            if cached:
+                return json_response(json.loads(cached))
             try:
                 result = subprocess.run(
                     ['ansible-doc', '--json', name],
@@ -39,6 +48,7 @@ class ModuleView(View):
                 )
                 if result.returncode == 0:
                     doc = json.loads(result.stdout.decode())
+                    rds.setex(cache_key, CACHE_TTL, json.dumps(doc))
                     return json_response(doc)
                 return json_response(error=f'获取模块文档失败: {result.stderr.decode()[:200]}')
             except FileNotFoundError:

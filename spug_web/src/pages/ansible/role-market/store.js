@@ -21,6 +21,11 @@ class Store {
 
   @observable f_name;
   @observable f_category;
+  @observable f_status;
+  @observable f_source_type;
+  @observable logVisible = false;
+  @observable logRecord = null;
+  @observable logFetching = false;
 
   @computed get categories() {
     const set = new Set();
@@ -36,6 +41,8 @@ class Store {
     let data = this.records;
     if (this.f_name) data = data.filter(x => includes(x.name, this.f_name));
     if (this.f_category) data = data.filter(x => x.categories && includes(x.categories, this.f_category));
+    if (this.f_status) data = data.filter(x => x.install_status === this.f_status);
+    if (this.f_source_type) data = data.filter(x => x.source_type === this.f_source_type);
     return data;
   }
 
@@ -127,6 +134,16 @@ class Store {
   showDeployments = () => {
     this.deploymentsVisible = true;
     this.fetchDeployments();
+  };
+
+  showLog = (record) => {
+    this.logVisible = true;
+    this.logFetching = true;
+    this.logRecord = record;
+    http.get(`/api/ansible/roles/market/${record.id}/`)
+      .then(res => { this.logRecord = res; })
+      .catch(() => {})
+      .finally(() => this.logFetching = false)
   };
 
   switchOutput = (token) => {

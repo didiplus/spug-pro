@@ -63,7 +63,8 @@ class Schedule(View):
                     rds_cli = get_redis_connection()
                     rds_cli.lpush(settings.SCHEDULE_KEY, json.dumps(form))
             else:
-                Task.objects.create(created_by=request.user, **form)
+                task = Task.objects.create(created_by=request.user, **form)
+                return json_response({'id': task.id})
         return json_response(error=error)
 
     @auth('schedule.schedule.edit')

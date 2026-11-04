@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Radio, message, Card } from 'antd';
+import { Form, Input, Radio, InputNumber, message, Card } from 'antd';
 import { ACEditor } from 'components';
 import { t } from 'libs';
 import HostSelector from 'pages/host/Selector';
@@ -53,6 +53,9 @@ function Build(props) {
       </Form.Item>
       <Form.Item required name="workspace" label={t('工作目录')}>
         <Input placeholder={t('请输入工作目录路径')}/>
+      </Form.Item>
+      <Form.Item name="timeout" label={t('超时时间(秒)')} tooltip={t('0 表示不限制超时')}>
+        <InputNumber min={0} placeholder={t('0 表示不限制')} style={{width: '100%'}}/>
       </Form.Item>
       <Form.Item required name="command" label={t('构建命令')}>
         <ACEditor mode="sh" width="100%" height="200px"/>

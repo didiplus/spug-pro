@@ -397,11 +397,12 @@ class Job:
             warning = sum(1 for r in results if r.status == 'warning')
             error = sum(1 for r in results if r.status == 'error')
             from apps.host.models import Host
+            error_host_ids = set(r.host_id for r in results if r.status in ['error', 'warning'])
+            host_names = {h.id: h.name for h in Host.objects.filter(id__in=error_host_ids)}
             error_hosts = []
             for r in results:
                 if r.status in ['error', 'warning']:
-                    host = Host.objects.filter(pk=r.host_id).first()
-                    error_hosts.append(f"{host.name if host else str(r.host_id)}/{r.item_name}({r.status})")
+                    error_hosts.append(f"{host_names.get(r.host_id, str(r.host_id))}/{r.item_name}({r.status})")
             has_issue = warning > 0 or error > 0
             if has_issue:
                 event = '1'

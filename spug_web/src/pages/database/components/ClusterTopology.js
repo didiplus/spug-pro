@@ -124,7 +124,7 @@ function SvgNode({ node, hovered, onHover, isPrimary, onSelect }) {
   return (
     <g
       transform={`translate(${node.x},${node.y})`}
-      style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+
       opacity={isDim ? 0.28 : 1}
       onMouseEnter={() => onHover(node.id)}
       onMouseLeave={() => onHover(null)}
@@ -215,11 +215,10 @@ function SvgEdge({ edge, hovered, index, hasOffline }) {
   const isHighlight = hovered === edge.from || hovered === edge.to;
   const isRed = hasOffline;
   const isDim = hovered !== null && !isHighlight;
-  const dur = 3.6;
-  const stagger = (index % 8) * 0.045;
-  const visStart = 0.12 + stagger;
-  const visEnd = 0.52 + stagger;
-  const fade = 0.02;
+  const dur = 2.8;
+  const stagger = (index % 5) * 0.18;
+  const color = isRed ? '#ff4d4f' : '#1677ff';
+  const color2 = isRed ? '#ff7875' : '#4096ff';
 
   return (
     <g opacity={isDim ? 0.1 : 1} style={{ transition: 'opacity 0.2s' }}>
@@ -231,23 +230,27 @@ function SvgEdge({ edge, hovered, index, hasOffline }) {
       <path d={edge.path} fill="none"
         stroke={isRed ? '#ff4d4f' : isHighlight ? '#1677ff' : 'url(#wire-grad-v)'}
         strokeWidth={isHighlight ? 2 : 1.5}
-        strokeOpacity={isRed ? 0.7 : isHighlight ? 0.85 : 0.5}
-        markerEnd={isHighlight ? undefined : undefined} />
+        strokeOpacity={isRed ? 0.7 : isHighlight ? 0.85 : 0.5} />
 
-      {/* Particle 1 */}
-      <circle r={isHighlight ? 3.5 : 2.8} fill={isRed ? '#ff4d4f' : '#1677ff'}>
-        <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={edge.path} />
-        <animate attributeName="opacity" dur={`${dur}s`} repeatCount="indefinite"
-          keyTimes={`0;${visStart - fade};${visStart};${visEnd};${visEnd + fade};1`}
-          values="0;0;1;1;0;0" />
+      {/* Particle 1 — full path from primary to replica */}
+      <circle r={isHighlight ? 3.5 : 2.8} fill={color}>
+        <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={edge.path} begin={`${stagger}s`} />
+        <animate attributeName="opacity" dur={`${dur}s`} repeatCount="indefinite" begin={`${stagger}s`}
+          keyTimes="0;0.06;0.94;1" values="0;1;1;0" />
       </circle>
 
-      {/* Particle 2 */}
-      <circle r={isHighlight ? 2.5 : 2} fill={isRed ? '#ff7875' : '#4096ff'}>
-        <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={edge.path} begin={`${dur * 0.5}s`} />
-        <animate attributeName="opacity" dur={`${dur}s`} repeatCount="indefinite" begin={`${dur * 0.5}s`}
-          keyTimes={`0;${visStart - fade};${visStart};${visEnd};${visEnd + fade};1`}
-          values="0;0;1;1;0;0" />
+      {/* Particle 2 — offset half cycle */}
+      <circle r={isHighlight ? 2.5 : 2} fill={color2}>
+        <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={edge.path} begin={`${stagger + dur * 0.5}s`} />
+        <animate attributeName="opacity" dur={`${dur}s`} repeatCount="indefinite" begin={`${stagger + dur * 0.5}s`}
+          keyTimes="0;0.06;0.94;1" values="0;1;1;0" />
+      </circle>
+
+      {/* Particle 3 — extra density for continuous flow feel */}
+      <circle r={isHighlight ? 2 : 1.6} fill={color} opacity={0.7}>
+        <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={edge.path} begin={`${stagger + dur * 0.25}s`} />
+        <animate attributeName="opacity" dur={`${dur}s`} repeatCount="indefinite" begin={`${stagger + dur * 0.25}s`}
+          keyTimes="0;0.06;0.94;1" values="0;0.7;0.7;0" />
       </circle>
 
       {/* Edge label */}

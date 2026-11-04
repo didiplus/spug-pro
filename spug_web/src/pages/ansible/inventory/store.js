@@ -14,6 +14,10 @@ class Store {
   @observable isFetching = false;
   @observable formVisible = false;
   @observable editingGroup = null;
+  @observable previewVisible = false;
+  @observable previewContent = '';
+  @observable previewFormat = 'ini';
+  @observable previewFetching = false;
 
   @computed get combinedTree() {
     const hostMap = {};
@@ -88,6 +92,39 @@ class Store {
   showForm = (info = {}) => {
     this.formVisible = true;
     this.editingGroup = info;
+  }
+
+  fetchPreview = () => {
+    this.previewFetching = true;
+    http.get('/api/ansible/inventory/export/', {params: {preview: true, format: this.previewFormat}})
+      .then(res => this.previewContent = res.content || '')
+      .catch(() => {})
+      .finally(() => this.previewFetching = false)
+  }
+
+  showPreview = (format = 'ini') => {
+    this.previewFormat = format;
+    this.previewVisible = true;
+    this.fetchPreview();
+  }
+
+  moveHostToGroup = (hostId, targetGroupId) => {
+    const updates = [];
+    for (const g of this.groups) {
+      const currentIds = g.hosts || [];
+      if (currentIds.includes(hostId) && g.id !== targetGroupId) {
+        const newIds = currentIds.filter(id => id !== hostId);
+        updates.push({id: g.id, host_ids: newIds});
+      } else if (!currentIds.includes(hostId) && g.id === targetGroupId) {
+        updates.push({id: g.id, host_ids: [...currentIds, hostId]});
+      }
+    }
+    if (updates.length === 0) return Promise.resolve();
+    return Promise.all(updates.map(u => http.patch('/api/ansible/inventory/', u)))
+      .then(() => {
+        this.fetchTree();
+        this.fetchGroups();
+      })
   }
 }
 

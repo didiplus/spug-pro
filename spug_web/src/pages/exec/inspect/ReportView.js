@@ -3,15 +3,9 @@ import { observer } from 'mobx-react';
 import { Modal, Card, Tag, Statistic, Row, Col, Table, Progress, Space, Button, Empty, Descriptions } from 'antd';
 import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import { http, X_TOKEN } from 'libs';
+import { message } from 'libs/message';
 import S from './store';
-
-const statusMap = {
-  success: {color: 'success', text: '正常'},
-  warning: {color: 'warning', text: '告警'},
-  error: {color: 'error', text: '失败'},
-  pending: {color: 'default', text: '待执行'},
-  running: {color: 'processing', text: '执行中'},
-};
+import { statusMap, computeStats, groupByHost } from './utils';
 
 function OutputModal({record, onClose}) {
   return (
@@ -45,33 +39,27 @@ export default observer(function () {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const total = results.length;
-  const success = results.filter(r => r.status === 'success').length;
-  const warning = results.filter(r => r.status === 'warning').length;
-  const errorCount = results.filter(r => r.status === 'error').length;
-  const pending = results.filter(r => r.status === 'pending' || r.status === 'running').length;
-  const passRate = total > 0 ? Math.round(success / total * 1000) / 10 : 0;
-  const passColor = passRate === 100 ? 'var(--color-green-600)' : (passRate >= 60 ? 'var(--color-gold-500)' : 'var(--color-red-600)');
-  const isNormal = warning === 0 && errorCount === 0;
+  const {total, success, warning, errorCount, pending, passRate, passColor, isNormal} = computeStats(results);
+  const hosts = groupByHost(results);
 
-  const hostMap = {};
-  results.forEach(r => {
-    if (!hostMap[r.host_id]) hostMap[r.host_id] = {name: r.host_name, items: []};
-    hostMap[r.host_id].items.push(r);
-  });
-  const hosts = Object.values(hostMap).map(info => {
-    const hTotal = info.items.length;
-    const hSuccess = info.items.filter(r => r.status === 'success').length;
-    const hWarning = info.items.filter(r => r.status === 'warning').length;
-    const hError = info.items.filter(r => r.status === 'error').length;
-    const hPassRate = hTotal > 0 ? Math.round(hSuccess / hTotal * 1000) / 10 : 0;
-    return {...info, hSuccess, hWarning, hError, hTotal, hPassRate};
-  });
-
-  function handleDownload() {
-    const params = new URLSearchParams({task_id: record.id, 'x-token': X_TOKEN});
-    if (record.latest_batch_id) params.set('batch_id', record.latest_batch_id);
-    window.open(`/api/exec/inspect/report/?${params.toString()}`, '_blank');
+  async function handleDownload() {
+    const params = {task_id: record.id};
+    if (record.latest_batch_id) params.batch_id = record.latest_batch_id;
+    try {
+      const res = await fetch('/api/exec/inspect/report/?' + new URLSearchParams(params).toString(), {
+        headers: {'x-token': X_TOKEN},
+      });
+      const html = await res.text();
+      const blob = new Blob([html], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inspect_report_${record.name}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      message.error('下载报告失败');
+    }
   }
 
   return (
@@ -126,10 +114,10 @@ export default observer(function () {
               title={
                 <Space>
                   <span style={{fontWeight: 600}}>{host.name}</span>
-                  <span style={{fontSize: 12, color: 'var(--color-text-secondary)'}}>{host.hPassRate}%</span>
-                  <Tag color="success">正常 {host.hSuccess}</Tag>
-                  {host.hWarning > 0 && <Tag color="warning">告警 {host.hWarning}</Tag>}
-                  {host.hError > 0 && <Tag color="error">失败 {host.hError}</Tag>}
+                  <span style={{fontSize: 12, color: 'var(--color-text-secondary)'}}>{host.passRate}%</span>
+                  <Tag color="success">正常 {host.success}</Tag>
+                  {host.warning > 0 && <Tag color="warning">告警 {host.warning}</Tag>}
+                  {host.errorCount > 0 && <Tag color="error">失败 {host.errorCount}</Tag>}
                 </Space>
               }>
               <Table

@@ -155,24 +155,37 @@ def _sync_role_record(role_source: RoleSource):
 
 def _do_install_role_source(rs: RoleSource) -> tuple:
     """执行目录预检 + git clone/pull + 解析元数据，返回 (ok, error)"""
+    log_lines = []
+
+    def _log(msg):
+        log_lines.append(msg)
+        logger.info(f'[RoleInstall:{rs.name}] {msg}')
+
     if rs.source_type != 'local':
         try:
             preflight_check(rs.local_path)
         except RoleMetaError as e:
+            _log(f'[FAIL] 预检失败: {e}')
             RoleSource.objects.filter(pk=rs.id).update(
-                install_status='failed', install_error=str(e), updated_at=human_datetime(),
+                install_status='failed', install_error=str(e),
+                install_log='\n'.join(log_lines), updated_at=human_datetime(),
             )
             return False, str(e)
 
-    RoleSource.objects.filter(pk=rs.id).update(install_status='installing', install_error=None)
+    RoleSource.objects.filter(pk=rs.id).update(install_status='installing', install_error=None, install_log=None)
     try:
         if rs.source_type == 'github':
             if os.path.isdir(rs.local_path) and os.path.isdir(os.path.join(rs.local_path, '.git')):
+                _log(f'[INFO] git pull {rs.source_url} (branch: {rs.branch})')
                 commit = git_pull(rs.local_path, rs.branch)
+                _log(f'[OK] git pull 完成, commit: {commit}')
             else:
+                _log(f'[INFO] git clone {rs.source_url} (branch: {rs.branch}) -> {rs.local_path}')
                 commit = git_clone(rs.source_url, rs.branch, rs.local_path)
+                _log(f'[OK] git clone 完成, commit: {commit}')
         elif rs.source_type == 'galaxy':
             target = f'{rs.namespace}.{rs.name}' if rs.namespace else rs.name
+            _log(f'[INFO] ansible-galaxy install {target}')
             if os.path.isdir(rs.local_path):
                 shutil.rmtree(rs.local_path, ignore_errors=True)
             try:
@@ -185,10 +198,11 @@ def _do_install_role_source(rs: RoleSource) -> tuple:
                     'ansible-galaxy 命令未安装',
                     hint='请安装 ansible: pip install ansible，或确认 ansible-galaxy 在 PATH 中'
                 )
+            galaxy_output = result.stdout.decode(errors='ignore')
+            _log(galaxy_output)
             if result.returncode != 0:
-                output = result.stdout.decode(errors='ignore')
                 raise RoleMetaError(
-                    f'ansible-galaxy install 失败: {output[:300]}',
+                    f'ansible-galaxy install 失败: {galaxy_output[:300]}',
                     hint='请检查 Role 名称和命名空间是否正确，以及网络是否可访问 Galaxy 仓库'
                 )
             if not os.path.isdir(rs.local_path):
@@ -196,25 +210,34 @@ def _do_install_role_source(rs: RoleSource) -> tuple:
                 if actual_path:
                     RoleSource.objects.filter(pk=rs.id).update(local_path=actual_path)
                     rs.local_path = actual_path
+                    _log(f'[OK] 找到实际安装路径: {actual_path}')
                 else:
                     raise RoleMetaError(
                         f'ansible-galaxy 安装完成但未在预期目录找到 Role: {rs.local_path}',
                         hint=f'请检查 Role 存储目录 {_get_role_base_dir()} 下的实际安装结果'
                     )
             commit = None
+            _log('[OK] ansible-galaxy 安装完成')
         else:
+            _log(f'[INFO] 本地 Role: {rs.local_path}')
             commit = None
 
+        _log('[INFO] 校验 Role 目录结构...')
         valid, verr = validate_role_structure(rs.local_path)
         if not valid:
             if rs.source_type == 'local':
                 verr = f'{verr}\nRole 存储根目录: {_get_role_base_dir()}\n请检查 系统设置→系统配置 中 ansible_role_dir 的值，或确认 Role 名称与目录名一致。'
+            _log(f'[FAIL] 结构校验失败: {verr}')
             RoleSource.objects.filter(pk=rs.id).update(
                 install_status='failed', install_error=verr, installed_commit=commit,
+                install_log='\n'.join(log_lines),
             )
             return False, verr
+        _log('[OK] 结构校验通过')
 
+        _log('[INFO] 提取 Role 元数据...')
         meta = extract_role_metadata(rs.local_path)
+        _log('[OK] 元数据提取完成')
         RoleSource.objects.filter(pk=rs.id).update(
             author=meta.get('author'),
             description=meta.get('description'),
@@ -227,18 +250,23 @@ def _do_install_role_source(rs: RoleSource) -> tuple:
             installed_commit=commit,
             install_status='installed',
             install_error=None,
+            install_log='\n'.join(log_lines) + '\n[SUCCESS] Role 安装成功',
             updated_at=human_datetime(),
         )
         _sync_role_record(RoleSource.objects.get(pk=rs.id))
         return True, None
     except RoleMetaError as e:
+        _log(f'[FAIL] {e}')
         RoleSource.objects.filter(pk=rs.id).update(
-            install_status='failed', install_error=str(e), updated_at=human_datetime(),
+            install_status='failed', install_error=str(e),
+            install_log='\n'.join(log_lines), updated_at=human_datetime(),
         )
         return False, str(e)
     except Exception as e:
+        _log(f'[FAIL] 异常: {e}')
         RoleSource.objects.filter(pk=rs.id).update(
-            install_status='failed', install_error=str(e), updated_at=human_datetime(),
+            install_status='failed', install_error=str(e),
+            install_log='\n'.join(log_lines), updated_at=human_datetime(),
         )
         return False, str(e)
 
@@ -479,3 +507,70 @@ class RoleDeploymentView(View):
     def get(self, request):
         deployments = RoleDeployment.objects.select_related('role_source').all()
         return json_response([d.to_view() for d in deployments])
+
+class RoleDeploymentReRunView(View):
+    """Role 部署重新执行：根据已有部署记录重新入队执行"""
+
+    @auth('ansible.role.run')
+    def post(self, request, dep_id):
+        dep = RoleDeployment.objects.select_related('role_source').filter(pk=dep_id).first()
+        if not dep:
+            return json_response(error='部署记录不存在')
+        rs = dep.role_source
+        if not rs or rs.install_status != 'installed':
+            return json_response(error='Role 源未安装或已失效，请先安装')
+        host_ids = json.loads(dep.host_ids) if dep.host_ids else []
+        if not host_ids:
+            return json_response(error='原部署未关联主机')
+        if not has_host_perm(request.user, host_ids):
+            return json_response(error='无权访问主机，请联系管理员')
+
+        role = _sync_role_record(rs)
+        pb_content = yaml.safe_dump([{
+            'hosts': 'all',
+            'roles': [rs.name],
+        }], default_flow_style=False)
+
+        token = uuid.uuid4().hex
+        host_ids.sort()
+        variables = json.loads(dep.variables) if dep.variables else {}
+        with transaction.atomic():
+            playbook = Playbook.objects.create(
+                name=f'[Role重跑] {dep.name}',
+                desc=f'RoleSource #{rs.id} {rs.name} (re-run from #{dep.id})',
+                content=pb_content,
+                group_id=dep.group_id,
+                created_by=request.user,
+            )
+            new_dep = RoleDeployment.objects.create(
+                role_source=rs,
+                name=dep.name,
+                host_ids=json.dumps(host_ids),
+                group_id=dep.group_id,
+                variables=json.dumps(variables),
+                run_token=token,
+                status='running',
+                created_by=request.user,
+            )
+            run = PlaybookRun.objects.create(
+                playbook=playbook,
+                user=request.user,
+                token=token,
+                host_ids=json.dumps(host_ids),
+                extra_vars=json.dumps(variables),
+            )
+
+        from django_redis import get_redis_connection
+        from django.conf import settings
+
+        rds = get_redis_connection()
+        payload = json.dumps({
+            'run_id': run.id,
+            'token': token,
+            'playbook_id': playbook.id,
+            'host_ids': host_ids,
+            'extra_vars': variables,
+            'check_mode': False,
+        })
+        transaction.on_commit(lambda: rds.rpush(settings.PLAYBOOK_WORKER_KEY, payload))
+        return json_response({'token': token, 'deployment_id': new_dep.id})

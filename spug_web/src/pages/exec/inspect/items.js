@@ -132,7 +132,10 @@ export default observer(function InspectItemManage() {
   }
 
   const filteredItems = items.filter(item => {
-    if (keyword && !item.name.includes(keyword) && !(item.pattern || '').includes(keyword)) return false;
+    if (keyword) {
+      const lowerKeyword = keyword.toLowerCase();
+      if (!item.name.toLowerCase().includes(lowerKeyword) && !(item.pattern || '').toLowerCase().includes(lowerKeyword)) return false;
+    }
     if (fCategory && item.category !== fCategory) return false;
     return true;
   });

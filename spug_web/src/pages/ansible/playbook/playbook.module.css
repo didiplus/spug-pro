@@ -120,6 +120,88 @@
   border: 1px solid var(--color-border-secondary);
 }
 
+/* ── 模态框表单 ── */
+.formModal :global(.ant-modal-body) {
+  padding: 16px 24px;
+}
+
+.pbForm {
+  margin-bottom: var(--space-3);
+}
+
+.formSection {
+  background: var(--color-fill-quaternary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.formSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 18px;
+}
+
+.formSectionIcon {
+  color: var(--color-primary);
+  font-size: 14px;
+}
+
+.advCollapse {
+  margin-bottom: var(--space-2);
+}
+
+.advCollapse :global(.ant-collapse-header) {
+  padding: 6px 8px !important;
+  background: var(--color-fill-quaternary);
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border-secondary);
+}
+
+.advCollapse :global(.ant-collapse-content-box) {
+  padding: 8px 0 0 !important;
+}
+
+.advRow {
+  padding: 0 4px;
+}
+
+/* ── 编辑器分区 ── */
+.editorSection {
+  margin-bottom: var(--space-4);
+}
+
+.editorSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-fill-quaternary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.editorSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.validateStatus {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+}
+
 /* ── Diff 对比（固定深色主题） ── */
 .diffPre {
   background: var(--color-gray-900);
@@ -175,6 +257,18 @@
     background: var(--color-gray-900);
     border-color: var(--color-gray-800);
   }
+  :global(:root:not([data-theme="light"])) .formSection {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
+  :global(:root:not([data-theme="light"])) .editorSectionHeader {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
+  :global(:root:not([data-theme="light"])) .advCollapse :global(.ant-collapse-header) {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
 }
 
 :global([data-theme="dark"]) .statusActive {
@@ -198,4 +292,15 @@
 :global([data-theme="dark"]) .editorWrap {
   background: var(--color-gray-900);
   border-color: var(--color-gray-800);
+}:global([data-theme="dark"]) .formSection {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
+}
+:global([data-theme="dark"]) .editorSectionHeader {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
+}
+:global([data-theme="dark"]) .advCollapse :global(.ant-collapse-header) {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
 }

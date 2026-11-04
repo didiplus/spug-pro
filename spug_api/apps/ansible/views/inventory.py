@@ -3,10 +3,12 @@
 # Released under the AGPL-3.0 License.
 from django.views.generic import View
 from django.db import transaction
+from django.http import HttpResponse
 from libs import json_response, JsonParser, Argument, human_datetime, auth
 from apps.ansible.models import InventoryGroup, HostVariable
 from apps.host.models import Host
 import json
+import yaml
 
 
 class InventoryView(View):
@@ -175,3 +177,77 @@ class HostVarView(View):
         if error is None:
             HostVariable.objects.filter(pk=form.id, host_id=host_id).delete()
         return json_response(error=error)
+
+class InventoryExportView(View):
+    @auth('ansible.inventory.view')
+    def get(self, request):
+        fmt = request.GET.get('format', 'ini')
+        group_id = request.GET.get('group_id')
+        preview = request.GET.get('preview')
+
+        groups = InventoryGroup.objects.prefetch_related('hosts').all()
+        if group_id:
+            groups = groups.filter(id=group_id)
+
+        host_ids = set()
+        for g in groups:
+            for h in g.hosts.all():
+                host_ids.add(h.id)
+
+        host_vars = {}
+        for hv in HostVariable.objects.filter(host_id__in=host_ids):
+            host_vars.setdefault(hv.host_id, {})[hv.key] = hv.value
+
+        if fmt == 'yaml':
+            content = self._build_yaml(groups, host_vars)
+        else:
+            content = self._build_ini(groups, host_vars)
+
+        if preview:
+            return json_response({'content': content, 'format': fmt})
+
+        response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+        filename = f'inventory.{fmt}'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def _build_ini(self, groups, host_vars):
+        lines = []
+        for g in groups:
+            lines.append(f'[{g.name}]')
+            for h in g.hosts.all():
+                parts = [h.name]
+                parts.append(f'ansible_host={h.hostname}')
+                if h.port and h.port != 22:
+                    parts.append(f'ansible_port={h.port}')
+                if h.username:
+                    parts.append(f'ansible_user={h.username}')
+                for k, v in host_vars.get(h.id, {}).items():
+                    parts.append(f'{k}={v}')
+                lines.append(' '.join(parts))
+            lines.append('')
+            variables = json.loads(g.variables) if g.variables else {}
+            if variables:
+                lines.append(f'[{g.name}:vars]')
+                for k, v in variables.items():
+                    lines.append(f'{k}={v}')
+                lines.append('')
+        return '\n'.join(lines)
+
+    def _build_yaml(self, groups, host_vars):
+        inventory = {'all': {'children': {}}}
+        for g in groups:
+            group_data = {'hosts': {}}
+            for h in g.hosts.all():
+                hv = {'ansible_host': h.hostname}
+                if h.port and h.port != 22:
+                    hv['ansible_port'] = h.port
+                if h.username:
+                    hv['ansible_user'] = h.username
+                hv.update(host_vars.get(h.id, {}))
+                group_data['hosts'][h.name] = hv
+            variables = json.loads(g.variables) if g.variables else {}
+            if variables:
+                group_data['vars'] = variables
+            inventory['all']['children'][g.name] = group_data
+        return yaml.safe_dump(inventory, default_flow_style=False, allow_unicode=True)

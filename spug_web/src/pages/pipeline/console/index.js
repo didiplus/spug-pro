@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
-import { Drawer, Tag } from 'antd';
+import { Drawer, Tag, Button, App } from 'antd';
+import { StopOutlined } from '@ant-design/icons';
+import { http, t } from 'libs';
 import S from './store';
 import Sider from './Sider';
 import Body from './Body';
@@ -10,9 +12,13 @@ const STATUS_MAP = {
   doing: { color: 'processing', text: '执行中' },
   success: { color: 'success', text: '成功' },
   error: { color: 'error', text: '失败' },
+  canceled: { color: 'warning', text: '已取消' },
 };
 
 function Console() {
+  const { modal } = App.useApp();
+  const [cancelLoading, setCancelLoading] = useState(false);
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') handleClose()
@@ -29,10 +35,26 @@ function Console() {
   const overall = errorCount > 0 ? 'error' : doingCount > 0 ? 'doing' : successCount === total && total > 0 ? 'success' : 'doing'
   const overallCfg = STATUS_MAP[overall] || STATUS_MAP.doing
   const progress = total > 0 ? Math.round((successCount + errorCount) / total * 100) : 0
+  const canCancel = !S.readonly && overall === 'doing'
 
   function handleClose() {
     S.token = ''
     S.visible = false
+  }
+
+  function handleCancel() {
+    modal.confirm({
+      title: t('取消执行'),
+      content: t('确定要取消当前流水线执行吗？'),
+      okType: 'danger',
+      onOk: () => {
+        setCancelLoading(true)
+        http.post('/api/pipeline/cancel/', { token: S.token })
+          .then(() => {})
+          .catch(() => {})
+          .finally(() => setCancelLoading(false))
+      }
+    })
   }
 
   return (
@@ -46,9 +68,18 @@ function Console() {
       styles={{body: {padding: 0}}}
       title={
         <div className={css.header}>
-          <span className={css.titleName}>执行控制台</span>
+          <span className={css.titleName}>{t('执行控制台')}</span>
           {S.recordD?.name && <span className={css.pipeName}>{S.recordD.name}</span>}
           <Tag color={overallCfg.color} className={css.statusTag}>{overallCfg.text}</Tag>
+          {canCancel && (
+            <Button
+              size="small"
+              danger
+              icon={<StopOutlined/>}
+              loading={cancelLoading}
+              onClick={handleCancel}
+              style={{marginLeft: 8}}>{t('取消')}</Button>
+          )}
         </div>
       }>
       <div className={css.body}>

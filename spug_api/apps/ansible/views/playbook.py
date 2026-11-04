@@ -3,6 +3,7 @@
 # Released under the AGPL-3.0 License.
 from django.views.generic import View
 from django.db import transaction
+from django.http import HttpResponse
 from django_redis import get_redis_connection
 from django.conf import settings
 from libs import json_response, JsonParser, Argument, human_datetime, auth
@@ -307,3 +308,82 @@ class PlaybookDiffView(View):
             old_label = f'版本 {latest.version} ({latest.created_at})'
         diff = list(difflib.unified_diff(old_content, current_content, fromfile=old_label, tofile='当前版本', lineterm=''))
         return json_response({'diff': '\n'.join(diff)})
+
+class PlaybookCancelView(View):
+    @auth('ansible.playbook.run')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('token', help='请指定执行令牌'),
+        ).parse(request.body)
+        if error:
+            return json_response(error=error)
+        query = PlaybookRun.objects.filter(token=form.token)
+        if not request.user.is_supper:
+            query = query.filter(user=request.user)
+        run = query.first()
+        if not run:
+            return json_response(error='执行记录不存在')
+        if run.status != 'running':
+            return json_response(error=f'任务当前状态为 {run.status}，无法取消')
+        rds = get_redis_connection()
+        rds.set(f'spug:pb:cancel:{form.token}', '1', ex=3600)
+        PlaybookRun.objects.filter(pk=run.id).update(status='canceled')
+        rds.publish(form.token, json.dumps({
+            'status': 'canceled',
+            'message': '\r\n\x1b[33m### 任务已被用户取消\x1b[0m\r\n',
+        }))
+        return json_response(data={'message': '取消信号已发送'})
+
+class PlaybookExportView(View):
+    @auth('ansible.playbook.view|ansible.playbook.run')
+    def get(self, request):
+        form, error = JsonParser(
+            Argument('id', type=int, help='请指定 Playbook'),
+        ).parse(request.GET)
+        if error:
+            return json_response(error=error)
+        pb = Playbook.objects.filter(pk=form.id).first()
+        if not pb:
+            return json_response(error='Playbook 不存在')
+        export_data = {
+            'name': pb.name,
+            'desc': pb.desc,
+            'content': pb.content,
+            'extra_vars': json.loads(pb.extra_vars) if pb.extra_vars else {},
+            'tags': pb.tags,
+            'forks': pb.forks,
+            'timeout': pb.timeout,
+        }
+        content = yaml.safe_dump(export_data, allow_unicode=True, default_flow_style=False)
+        response = HttpResponse(content, content_type='text/yaml; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{pb.name}.yml"'
+        return response
+
+
+class PlaybookImportView(View):
+    @auth('ansible.playbook.add')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('name', help='请输入 Playbook 名称'),
+            Argument('content', help='请输入 Playbook 内容'),
+            Argument('desc', required=False),
+            Argument('extra_vars', type=dict, handler=json.dumps, default={}),
+            Argument('group_id', type=int, required=False),
+            Argument('tags', required=False),
+            Argument('forks', type=int, default=0),
+            Argument('timeout', type=int, default=0),
+        ).parse(request.body)
+        if error:
+            return json_response(error=error)
+        is_valid, sec_error = validate_playbook_content(form.content)
+        if not is_valid:
+            return json_response(error=sec_error)
+        allowed_roles = {r.name for r in Role.objects.filter(is_active=True)}
+        role_ok, role_error, _ = sanitize_playbook_roles(form.content, allowed_roles)
+        if not role_ok:
+            return json_response(error=role_error)
+        extra_vars_dict = json.loads(form.extra_vars) if form.extra_vars else {}
+        filtered = filter_extra_vars(extra_vars_dict)
+        form.extra_vars = json.dumps(filtered)
+        pb = Playbook.objects.create(created_by=request.user, **form)
+        return json_response(pb.to_view())

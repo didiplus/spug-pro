@@ -2,17 +2,43 @@
 # Copyright: (c) <spug.dev@gmail.com>
 # Released under the AGPL-3.0 License.
 from apps.host.models import Group
+from django_redis import get_redis_connection
 import re,json,copy
+import logging
 from typing import Dict, Any
 from django.http import HttpRequest
 
+logger = logging.getLogger(__name__)
+_PERM_CACHE_TTL = 300
+
 
 def get_host_perms(user):
-    ids = sub_ids = set(user.group_perms)
-    while sub_ids:
-        sub_ids = [x.id for x in Group.objects.filter(parent_id__in=sub_ids)]
-        ids.update(sub_ids)
-    return set(x.host_id for x in Group.hosts.through.objects.filter(group_id__in=ids))
+    cache_key = f'perms:host:{user.id}'
+    rds = get_redis_connection()
+    try:
+        cached = rds.get(cache_key)
+        if cached:
+            return set(json.loads(cached))
+    except Exception:
+        pass
+    all_groups = list(Group.objects.values_list('id', 'parent_id'))
+    group_map = {}
+    for gid, pid in all_groups:
+        group_map.setdefault(pid, []).append(gid)
+    ids = set(user.group_perms)
+    queue = list(ids)
+    while queue:
+        current = queue.pop()
+        for child in group_map.get(current, []):
+            if child not in ids:
+                ids.add(child)
+                queue.append(child)
+    result = set(x.host_id for x in Group.hosts.through.objects.filter(group_id__in=ids))
+    try:
+        rds.setex(cache_key, _PERM_CACHE_TTL, json.dumps(list(result)))
+    except Exception:
+        pass
+    return result
 
 
 def has_host_perm(user, target):
@@ -22,6 +48,15 @@ def has_host_perm(user, target):
     if isinstance(target, (list, set, tuple)):
         return set(target).issubset(host_ids)
     return int(target) in host_ids
+
+
+def invalidate_host_perms_cache():
+    try:
+        rds = get_redis_connection()
+        for key in rds.scan_iter(match='perms:host:*'):
+            rds.delete(key)
+    except Exception as e:
+        logger.warning(f"Failed to invalidate host perms cache: {e}")
 
 
 def verify_password(password):

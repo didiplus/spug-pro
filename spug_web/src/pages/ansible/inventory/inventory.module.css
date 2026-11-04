@@ -139,13 +139,38 @@
   height: 300px;
 }
 
+/* ── 预览内容 ── */
+.previewContent {
+  max-height: 55vh;
+  overflow: auto;
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  border: 1px solid var(--color-border-secondary);
+  color: var(--color-text);
+}
+
 /* ── 深色模式 ── */
 @media (prefers-color-scheme: dark) {
   :global(:root:not([data-theme="light"])) .tagBlue {
     background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
+  :global(:root:not([data-theme="light"])) .previewContent {
+    background: var(--color-gray-800);
+    border-color: var(--color-gray-700);
+  }
 }
 
 :global([data-theme="dark"]) .tagBlue {
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+:global([data-theme="dark"]) .previewContent {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
 }

@@ -13,6 +13,11 @@ import S from './store';
 import lds from 'lodash';
 import css from './editor.module.less';
 
+let _nodeIdCounter = 0;
+function genNodeId() {
+  return Date.now() * 1000 + (++_nodeIdCounter);
+}
+
 function Editor(props) {
   const params = useParams()
   const [nodes, setNodes] = useState([])
@@ -51,16 +56,13 @@ function Editor(props) {
   }
 
   function _findIndexAndUpNode() {
-    let index
-    let [upNode, streamIdx] = [null, null]
+    let index = lds.findIndex(S.record.nodes, {id: S.actionNode.id})
+    let upNode = null
+    let streamIdx = null
     const id = S.actionNode.id
-    for (let idx in S.record.nodes) {
-      const node = S.record.nodes[idx]
-      if (node.id === id) {
-        index = Number(idx)
-      }
+    for (const node of S.record.nodes) {
       if (node.downstream) {
-        idx = node.downstream.indexOf(id)
+        const idx = node.downstream.indexOf(id)
         if (idx >= 0) {
           upNode = node
           streamIdx = idx
@@ -72,7 +74,7 @@ function Editor(props) {
 
   function handleAddUpstream() {
     const oldID = S.actionNode.id
-    const newID = new Date().getTime()
+    const newID = genNodeId()
     const newNode = {id: newID, downstream: [oldID]}
     const [index, upNode, streamIdx] = _findIndexAndUpNode()
     if (upNode) upNode.downstream.splice(streamIdx, 1, newID)
@@ -83,7 +85,7 @@ function Editor(props) {
 
   function handleAddDownstream() {
     const oldID = S.actionNode?.id
-    const newID = new Date().getTime()
+    const newID = genNodeId()
     const newNode = {id: newID}
     if (S.record.nodes.length) {
       const idx = lds.findIndex(S.record.nodes, {id: oldID})

@@ -97,8 +97,17 @@ function ScheduleCell({ active, trigger, args }) {
 
 @observer
 class ComTable extends React.Component {
+  _pollTimer = null;
+
   componentDidMount() {
     store.fetchRecords();
+  }
+
+  componentWillUnmount() {
+    if (this._pollTimer) {
+      clearTimeout(this._pollTimer);
+      this._pollTimer = null;
+    }
   }
 
   handleDelete = (text) => {
@@ -141,14 +150,19 @@ class ComTable extends React.Component {
 
   _pollStatus = () => {
     let count = 0;
-    const timer = setInterval(() => {
+    let delay = 2000;
+    const maxDelay = 10000;
+    const tick = () => {
       count += 1;
       store.fetchRecords();
       const hasRunning = store.records.some(r => r.latest_status === 'running' || r.latest_status === 'pending');
-      if (!hasRunning || count >= 30) {
-        clearInterval(timer);
+      if (!hasRunning || count >= 20) {
+        return;
       }
-    }, 3000);
+      this._pollTimer = setTimeout(tick, delay);
+      delay = Math.min(delay * 1.5, maxDelay);
+    };
+    this._pollTimer = setTimeout(tick, delay);
   };
 
   render() {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Input, Select, Drawer, Tag, Space, Tooltip, Button, Typography, Spin, Empty, Card, Row, Col, Descriptions, Table, Alert } from 'antd';
+import { Modal, Input, Select, Drawer, Tag, Space, Tooltip, Button, Typography, Spin, Empty, Card, Row, Col, Descriptions, Table, Alert, Collapse } from 'antd';
 import { PlusOutlined, DeleteOutlined, SyncOutlined, ThunderboltOutlined, HistoryOutlined, GithubOutlined, AppstoreOutlined, CodeOutlined, ClusterOutlined, BranchesOutlined, FileTextOutlined, WarningOutlined, TagOutlined } from '@ant-design/icons';
 import { hasPermission } from 'libs';
 import { AuthDiv, Breadcrumb, AuthButton, SearchForm } from 'components';
@@ -65,6 +65,22 @@ class RoleMarketIndex extends React.Component {
     );
   };
 
+  renderLogContent = (log) => {
+    if (!log) return null;
+    const lines = log.split('\n');
+    return lines.map((line, i) => {
+      let cls = styles.logLine;
+      if (line.includes('[OK]') || line.includes('[SUCCESS]')) {
+        cls = `${styles.logLine} ${styles.logSuccess}`;
+      } else if (line.includes('[FAIL]')) {
+        cls = `${styles.logLine} ${styles.logError}`;
+      } else if (line.includes('[INFO]')) {
+        cls = `${styles.logLine} ${styles.logInfo}`;
+      }
+      return <div key={i} className={cls}>{line || '\u00A0'}</div>;
+    });
+  };
+
   renderCard = (record) => {
     const canDeploy = record.install_status === 'installed' && hasPermission('ansible.role.run');
     const canEdit = hasPermission('ansible.role.edit');
@@ -78,6 +94,11 @@ class RoleMarketIndex extends React.Component {
             canDeploy && (
               <Tooltip title="一键部署" key="deploy">
                 <ThunderboltOutlined onClick={(e) => {e.stopPropagation(); store.showDeploy(record)}}/>
+              </Tooltip>
+            ),
+            record.install_status === 'failed' && (
+              <Tooltip title="查看安装日志" key="log">
+                <FileTextOutlined onClick={(e) => {e.stopPropagation(); store.showLog(record)}}/>
               </Tooltip>
             ),
             record.install_status === 'installing' && canEdit && (
@@ -230,6 +251,20 @@ class RoleMarketIndex extends React.Component {
             className={styles.errorAlert}
           />
         )}
+
+        {d.install_log && (
+          <div className={styles.detailSection}>
+            <div className={styles.sectionHeader}><CodeOutlined/> 安装日志</div>
+            <Collapse
+              ghost
+              defaultActiveKey={d.install_error ? ['log'] : []}
+              items={[{
+                key: 'log',
+                label: <Text type="secondary" style={{fontSize: 12}}>点击展开/收起完整安装日志</Text>,
+                children: <div className={styles.installLog}>{this.renderLogContent(d.install_log)}</div>,
+              }]}/>
+          </div>
+        )}
       </div>
     );
   };
@@ -250,6 +285,31 @@ class RoleMarketIndex extends React.Component {
               placeholder="全部分类"
               options={store.categories.map(c => ({value: c, label: c}))}/>
           </SearchForm.Item>
+          <SearchForm.Item span={6} title="安装状态">
+            <Select
+              allowClear
+              value={store.f_status}
+              onChange={v => store.f_status = v}
+              placeholder="全部状态"
+              options={[
+                {value: 'installed', label: '已安装'},
+                {value: 'installing', label: '安装中'},
+                {value: 'pending', label: '待安装'},
+                {value: 'failed', label: '安装失败'},
+              ]}/>
+          </SearchForm.Item>
+          <SearchForm.Item span={6} title="源类型">
+            <Select
+              allowClear
+              value={store.f_source_type}
+              onChange={v => store.f_source_type = v}
+              placeholder="全部类型"
+              options={[
+                {value: 'github', label: 'GitHub'},
+                {value: 'galaxy', label: 'Galaxy'},
+                {value: 'local', label: '本地'},
+              ]}/>
+          </SearchForm.Item>
         </SearchForm>
 
         <div className={styles.toolbar}>
@@ -264,9 +324,16 @@ class RoleMarketIndex extends React.Component {
           {store.dataSource.length === 0 ? (
             <Empty description="暂无 Role，点击「添加 Role 源」从 GitHub 导入" className={styles.emptyWrap}/>
           ) : (
-            <Row gutter={[16, 16]} className={styles.cardGrid}>
-              {store.dataSource.map(this.renderCard)}
-            </Row>
+            <>
+              <div className={styles.resultCount}>
+                <Text type="secondary" style={{fontSize: 12}}>
+                  共 {store.records.length} 个 Role{store.dataSource.length !== store.records.length && `，筛选后 ${store.dataSource.length} 个`}
+                </Text>
+              </div>
+              <Row gutter={[16, 16]} className={styles.cardGrid}>
+                {store.dataSource.map(this.renderCard)}
+              </Row>
+            </>
           )}
         </Spin>
 
@@ -354,6 +421,32 @@ class RoleMarketIndex extends React.Component {
           destroyOnClose>
           {store.showOutput && <Output/>}
         </Drawer>
+
+        <Modal
+          title={store.logRecord ? `安装日志 - ${store.logRecord.name}` : '安装日志'}
+          open={store.logVisible}
+          onCancel={() => { store.logVisible = false; store.logRecord = null; }}
+          footer={null}
+          width={720}
+          styles={{body: {maxHeight: '70vh', overflow: 'auto'}}}>
+          <Spin spinning={store.logFetching}>
+            {store.logRecord?.install_error && (
+              <Alert
+                type="error"
+                showIcon
+                icon={<WarningOutlined/>}
+                message="安装失败"
+                description={<pre className={styles.errorLog}>{store.logRecord.install_error}</pre>}
+                className={styles.errorAlert}
+                style={{marginBottom: 12}}/>
+            )}
+            {store.logRecord?.install_log ? (
+              <div className={styles.installLog}>{this.renderLogContent(store.logRecord.install_log)}</div>
+            ) : (
+              <Empty description="暂无安装日志" image={Empty.PRESENTED_IMAGE_SIMPLE}/>
+            )}
+          </Spin>
+        </Modal>
       </AuthDiv>
     )
   }

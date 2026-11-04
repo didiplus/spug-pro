@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { Modal, Form, Input, Select } from 'antd';
-import { t } from 'libs';
+import { http, t } from 'libs';
 import store from './store';
 
 function PipeForm(props) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false)
+  const [groups, setGroups] = useState([])
+
+  useEffect(() => {
+    http.get('/api/pipeline/groups/').then(setGroups)
+  }, [])
 
   function handleSubmit() {
     setLoading(true);
@@ -30,7 +35,9 @@ function PipeForm(props) {
         </Form.Item>
         <Form.Item required name="group_id" label={t('所属分组')}>
           <Select placeholder={t('请选择所属分组')}>
-            <Select.Option value={1}>{t('默认分组')}</Select.Option>
+            {groups.map(g => (
+              <Select.Option key={g.id} value={g.id}>{g.name}</Select.Option>
+            ))}
           </Select>
         </Form.Item>
         <Form.Item name="desc" label={t('备注信息')}>

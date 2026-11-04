@@ -33,23 +33,24 @@ class ComConsumer(BaseConsumer):
     def disconnect(self, code):
         self.rds.close()
 
-    def get_response(self, index):
+    def get_response(self, index, timeout=30):
         counter = 0
-        while counter < 30:
-            response = self.rds.lindex(self.key, index)
-            if response:
-                return response.decode()
+        max_polls = timeout * 5
+        while counter < max_polls:
+            items = self.rds.lrange(self.key, index, index)
+            if items:
+                return items[0].decode()
             counter += 1
             time.sleep(0.2)
 
     def receive(self, text_data="", **kwargs):
         if text_data.isdigit():
             index = int(text_data)
-            response = self.get_response(index)
+            response = self.get_response(index, timeout=30)
             while response:
                 index += 1
                 self.send(text_data=response)
-                response = self.get_response(index)
+                response = self.get_response(index, timeout=1)
         self.send(text_data="pong")
 
 

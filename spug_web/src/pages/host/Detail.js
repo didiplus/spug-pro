@@ -111,7 +111,7 @@ export default observer(function () {
 
   return (
     <Drawer
-      width={550}
+      width={Math.min(550, window.innerWidth - 48)}
       title={host.name}
       placement="right"
       onClose={handleClose}
@@ -253,7 +253,7 @@ export default observer(function () {
               <Select.Option value="PayByTraffic">按流量计费</Select.Option>
               <Select.Option value="Other">其他</Select.Option>
             </Select>
-          ) : host.internet_charge_type_alisa}
+          ) : host.internet_charge_type_alias}
         </Descriptions.Item>
         <Descriptions.Item label="创建时间">
           {edit ? (

@@ -15,13 +15,23 @@ class Store {
 
   @observable f_name;
   @observable f_status;
+  @observable f_tag;
 
   get dataSource() {
     let data = this.records;
     if (this.f_name) data = data.filter(x => includes(x.name, this.f_name));
     if (this.f_status === 'active') data = data.filter(x => x.is_active);
     if (this.f_status === 'inactive') data = data.filter(x => !x.is_active);
+    if (this.f_tag) data = data.filter(x => x.tags && x.tags.split(',').map(t => t.trim()).includes(this.f_tag));
     return data;
+  }
+
+  get allTags() {
+    const tagSet = new Set();
+    this.records.forEach(r => {
+      if (r.tags) r.tags.split(',').forEach(t => { const v = t.trim(); if (v) tagSet.add(v); });
+    });
+    return Array.from(tagSet).sort();
   }
 
   fetchRecords = () => {

@@ -116,7 +116,7 @@ class SSH:
     EOF_MARKER = 'Spug EOF 2108111926'
 
     def __init__(self, hostname, port=22, username='root', pkey=None, password=None,
-                 default_env=None, connect_timeout=10, term=None):
+                 default_env=None, connect_timeout=10, term=None, host_id=None):
         """
         :param hostname: 主机名或 IP
         :param port: SSH 端口，默认 22
@@ -126,6 +126,7 @@ class SSH:
         :param default_env: 默认环境变量字典
         :param connect_timeout: 连接超时秒数
         :param term: 终端参数（rows/cols 等），用于交互式 Shell
+        :param host_id: 主机 ID，提供时启用连接池复用
         """
         self.stdout = None
         self.client = None
@@ -134,6 +135,8 @@ class SSH:
         self.exec_file = None
         self.term = term or {}
         self.default_env = default_env
+        self.host_id = host_id
+        self._from_pool = False
         self.regex = re.compile(rf'{self.EOF_MARKER} (-?\d+)[\r\n]?')
         self.arguments = {
             'hostname': hostname,
@@ -165,9 +168,26 @@ class SSH:
         """获取已连接的 SSHClient，懒初始化且复用。"""
         if self.client is not None:
             return self.client
+        if self.host_id:
+            from .ssh_pool import ssh_pool
+            entry = ssh_pool.get(
+                self.host_id,
+                hostname=self.arguments['hostname'],
+                port=self.arguments['port'],
+                username=self.arguments['username'],
+                pkey=self.arguments['pkey'],
+                password=self.arguments['password'],
+                timeout=self.arguments['timeout'],
+            )
+            self.client = entry.client
+            self._from_pool = True
+            return self.client
         self.client = SSHClient()
         self.client.set_missing_host_key_policy(AutoAddPolicy)
         self.client.connect(**self.arguments)
+        transport = self.client.get_transport()
+        if transport:
+            transport.set_keepalive(30)
         return self.client
 
     def ping(self):
@@ -196,13 +216,14 @@ class SSH:
         if exit_code != 0:
             raise Exception(f'add public key error: {out}')
 
-    def exec_command_raw(self, command, environment=None):
+    def exec_command_raw(self, command, environment=None, timeout=30):
         """
         通过 SSH exec 通道直接执行命令（非交互式）。
 
         使用 makefile 读取输出，确保完整接收数据后再获取退出码，
         避免 recv(-1) 在部分 paramiko 版本中行为不确定的问题。
 
+        :param timeout: 命令执行超时秒数，超时返回 (124, 'timeout')
         :return: (exit_code, output) 元组
         """
         channel = self.client.get_transport().open_session()
@@ -210,10 +231,26 @@ class SSH:
             channel.update_environment(environment)
         channel.set_combine_stderr(True)
         channel.exec_command(command)
-        stdout = channel.makefile("rb", -1)
-        output = stdout.read()
+        import select
+        stdout_data = b''
+        start_time = time.time()
+        while True:
+            if channel.exit_status_ready() and not channel.recv_ready():
+                break
+            if time.time() - start_time > timeout:
+                channel.close()
+                return 124, 'timeout'
+            r, w, x = select.select([channel], [], [], 1.0)
+            if r:
+                try:
+                    chunk = channel.recv(65536)
+                    if not chunk:
+                        break
+                    stdout_data += chunk
+                except Exception:
+                    break
         code = channel.recv_exit_status()
-        return code, self._decode(output)
+        return code, self._decode(stdout_data)
 
     def exec_command(self, command, environment=None):
         """
@@ -396,6 +433,13 @@ class SSH:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """上下文管理器出口，关闭连接并清理引用。"""
-        self.client.close()
+        """上下文管理器出口，关闭连接或归还连接池。"""
+        if self._from_pool and self.host_id:
+            from .ssh_pool import ssh_pool
+            ssh_pool.release(self.host_id)
+        elif self.client:
+            self.client.close()
         self.client = None
+        self.channel = None
+        self.sftp = None
+        self.exec_file = None

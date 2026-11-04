@@ -3,10 +3,10 @@
 from django.urls import re_path
 
 from apps.ansible.views.inventory import (
-    InventoryView, InventoryTreeView, HostVarView,
+    InventoryView, InventoryTreeView, HostVarView, InventoryExportView,
 )
 from apps.ansible.views.vault import (
-    VaultView, VaultDecryptView,
+    VaultView, VaultDecryptView, VaultBatchView,
 )
 from apps.ansible.views.facts import (
     FactsView, FactsCollectView,
@@ -17,23 +17,26 @@ from apps.ansible.views.module import (
 from apps.ansible.views.role import (
     RoleView, RoleInstallView,
     RoleMarketView, RoleMarketDetailView, RoleMarketInstallView,
-    RoleMarketDeployView, RoleDeploymentView,
+    RoleMarketDeployView, RoleDeploymentView, RoleDeploymentReRunView,
 )
 from apps.ansible.views.playbook import (
     PlaybookView, PlaybookValidateView, PlaybookRunView,
     PlaybookHistoryView, PlaybookStatsView,
     PlaybookVersionView, PlaybookVersionDetailView,
-    PlaybookRollbackView, PlaybookDiffView,
+    PlaybookRollbackView, PlaybookDiffView, PlaybookCancelView,
+    PlaybookExportView, PlaybookImportView,
 )
 
 urlpatterns = [
     # Inventory
     re_path(r"^inventory/$", InventoryView.as_view()),
     re_path(r"^inventory/tree/$", InventoryTreeView.as_view()),
+    re_path(r"^inventory/export/$", InventoryExportView.as_view()),
     re_path(r"^host_vars/(?P<host_id>\d+)/$", HostVarView.as_view()),
     # Vault
     re_path(r"^vault/$", VaultView.as_view()),
     re_path(r"^vault/decrypt/$", VaultDecryptView.as_view()),
+    re_path(r"^vault/batch/$", VaultBatchView.as_view()),
     # Facts
     re_path(r"^facts/$", FactsView.as_view()),
     re_path(r"^facts/(?P<host_id>\d+)/$", FactsView.as_view()),
@@ -49,6 +52,7 @@ urlpatterns = [
     re_path(r"^roles/market/(?P<rid>\d+)/install/$", RoleMarketInstallView.as_view()),
     re_path(r"^roles/market/(?P<rid>\d+)/deploy/$", RoleMarketDeployView.as_view()),
     re_path(r"^roles/deployments/$", RoleDeploymentView.as_view()),
+    re_path(r"^roles/deployments/(?P<dep_id>\d+)/rerun/$", RoleDeploymentReRunView.as_view()),
     # Playbooks
     re_path(r"^playbooks/$", PlaybookView.as_view()),
     re_path(r"^playbooks/validate/$", PlaybookValidateView.as_view()),
@@ -59,4 +63,7 @@ urlpatterns = [
     re_path(r"^playbooks/versions/(?P<version_id>\d+)/$", PlaybookVersionDetailView.as_view()),
     re_path(r"^playbooks/rollback/$", PlaybookRollbackView.as_view()),
     re_path(r"^playbooks/diff/$", PlaybookDiffView.as_view()),
+    re_path(r"^playbooks/cancel/$", PlaybookCancelView.as_view()),
+    re_path(r"^playbooks/export/$", PlaybookExportView.as_view()),
+    re_path(r"^playbooks/import/$", PlaybookImportView.as_view()),
 ]

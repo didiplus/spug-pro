@@ -4,14 +4,7 @@ import { Modal, Table, Tag, Statistic, Row, Col, Card, Empty, Button, Space } fr
 import { FileTextOutlined } from '@ant-design/icons';
 import { http } from 'libs';
 import S from './store';
-
-const statusMap = {
-  success: {color: 'success', text: '正常'},
-  warning: {color: 'warning', text: '告警'},
-  error: {color: 'error', text: '失败'},
-  pending: {color: 'default', text: '待执行'},
-  running: {color: 'processing', text: '执行中'},
-};
+import { statusMap } from './utils';
 
 function OutputView({resultId, hostName, itemName, onClose}) {
   const [output, setOutput] = useState('');

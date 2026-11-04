@@ -16,7 +16,8 @@ import {
   CloseOutlined,
   ScissorOutlined,
   LoadingOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { AuthFragment } from 'components';
 import { hasPermission, http } from 'libs';
@@ -32,6 +33,7 @@ export default observer(function () {
   const [action, setAction] = useState('');
   const [expands, setExpands] = useState([]);
   const [bakTreeData, setBakTreeData] = useState();
+  const [searchWord, setSearchWord] = useState('');
 
   useEffect(() => {
     if (loading === false) store.fetchGroups()
@@ -69,7 +71,7 @@ export default observer(function () {
         .then(() => setAction(''))
         .finally(() => setLoading(false))
     } else {
-      if (store.group.key === 0) store.rawTreeData = bakTreeData
+      if (store.group.key === 0 && bakTreeData) store.rawTreeData = bakTreeData
       setAction('')
     }
   }
@@ -123,6 +125,12 @@ export default observer(function () {
     }
   }
 
+  function _filter_tree(node, word) {
+    const match = node.title?.toLowerCase().includes(word.toLowerCase());
+    const children = node.children?.filter(child => _filter_tree(child, word)) || [];
+    return match || children.length > 0;
+  }
+
   function handleDrag(v) {
     setLoading(true);
     const pos = v.node.pos.split('-');
@@ -138,7 +146,7 @@ export default observer(function () {
     }
   }
 
-  function handleExpand(keys, {_, node}) {
+  function handleExpand(keys, {node}) {
     if (node.children.length > 0) {
       setExpands(keys)
     }
@@ -172,12 +180,24 @@ export default observer(function () {
   }
 
   const treeData = store.treeData;
+  const filteredTreeData = searchWord
+    ? treeData.filter(item => _filter_tree(item, searchWord))
+    : treeData;
   return (
     <Card
       title="分组列表"
       className={styles.group}
       extra={(
         <AuthFragment auth="admin">
+          <Input
+            allowClear
+            size="small"
+            placeholder="搜索分组"
+            prefix={<SearchOutlined />}
+            style={{ width: 100, marginRight: 8 }}
+            value={searchWord}
+            onChange={e => setSearchWord(e.target.value)}
+          />
           <Switch
             checked={draggable}
             onChange={setDraggable}
@@ -198,7 +218,7 @@ export default observer(function () {
             autoExpandParent
             expandAction="doubleClick"
             draggable={draggable}
-            treeData={treeData}
+            treeData={filteredTreeData}
             titleRender={treeRender}
             expandedKeys={expands}
             selectedKeys={[store.group.key]}
@@ -209,11 +229,11 @@ export default observer(function () {
           />
         </Dropdown>
       </Spin>
-      {treeData.length === 1 && treeData[0].children.length === 0 && (
+      {filteredTreeData.length === 1 && filteredTreeData[0].children.length === 0 && (
         <div style={{color: '#999', marginTop: 20, textAlign: 'center'}}>右键点击分组进行分组管理哦~</div>
       )}
-      {store.records && treeData.length === 0 && (
-        <div style={{color: '#999'}}>你还没有可访问的主机分组，请联系管理员分配主机权限。</div>
+      {store.records && filteredTreeData.length === 0 && (
+        <div style={{color: '#999'}}>{searchWord ? '未找到匹配的分组' : '你还没有可访问的主机分组，请联系管理员分配主机权限。'}</div>
       )}
     </Card>
   )

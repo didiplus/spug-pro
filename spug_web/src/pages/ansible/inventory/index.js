@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Form, Input, InputNumber, Select, Tree, TreeSelect, Button, Flex, Typography, Tag, Table, Empty, Spin, Switch, Tooltip, Space, Divider } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, FolderOutlined, DesktopOutlined, SaveOutlined, KeyOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, InputNumber, Select, Tree, TreeSelect, Button, Flex, Typography, Tag, Table, Empty, Spin, Switch, Tooltip, Space, Divider, Segmented } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined, FolderOutlined, DesktopOutlined, SaveOutlined, KeyOutlined, EyeOutlined } from '@ant-design/icons';
 import { message } from 'libs/message';
 import { http, hasPermission } from 'libs';
 import { AuthDiv, Breadcrumb, AuthButton, ACEditor } from 'components';
@@ -47,6 +47,23 @@ class InventoryIndex extends React.Component {
     }
   };
 
+  handleDrop = (info) => {
+    const dragNode = info.dragNode;
+    const targetNode = info.node;
+    if (dragNode.nodeType !== 'host') return;
+    if (targetNode.nodeType !== 'group') {
+      message.warning('只能将主机拖拽到分组节点上');
+      return;
+    }
+    const hostId = dragNode.hostId;
+    const targetGroupId = targetNode.key;
+    const currentGroup = store.groups.find(g => (g.hosts || []).includes(hostId));
+    if (currentGroup && currentGroup.id === targetGroupId) return;
+    store.moveHostToGroup(hostId, targetGroupId)
+      .then(() => message.success('主机已移动'))
+      .catch(() => message.error('移动失败'));
+  };
+
   renderGroupPanel = () => {
     const group = store.groupDetail;
     if (!group) return <Empty description="请选择分组" className={styles.emptyWrap}/>;
@@ -67,15 +84,20 @@ class InventoryIndex extends React.Component {
           <div className={styles.treePanel}>
             <div className={styles.treeHeader}>
               <Text strong>分组列表</Text>
-              {hasPermission('ansible.inventory.edit') && (
-                <AuthButton auth="ansible.inventory.edit" size="small" type="primary" icon={<PlusOutlined/>} onClick={() => store.showForm()}>新建</AuthButton>
-              )}
+              <Space size={4}>
+                <Button size="small" icon={<EyeOutlined/>} onClick={() => store.showPreview('ini')}>预览</Button>
+                {hasPermission('ansible.inventory.edit') && (
+                  <AuthButton auth="ansible.inventory.edit" size="small" type="primary" icon={<PlusOutlined/>} onClick={() => store.showForm()}>新建</AuthButton>
+                )}
+              </Space>
             </div>
             <div className={styles.treeBody}>
               <Spin spinning={store.isFetching}>
                 <Tree
                   treeData={store.combinedTree}
                   blockNode
+                  draggable={hasPermission('ansible.inventory.edit') ? {icon: false} : false}
+                  onDrop={this.handleDrop}
                   onSelect={(keys, info) => {
                     const node = info.node;
                     if (!node) return;
@@ -117,6 +139,7 @@ class InventoryIndex extends React.Component {
           </div>
         </div>
         {store.formVisible && <GroupForm/>}
+        {store.previewVisible && <PreviewModal/>}
       </AuthDiv>
     )
   }
@@ -380,6 +403,44 @@ function GroupForm() {
           <ACEditor mode="json" value={vars} onChange={setVars} height="150px" width="100%"/>
         </Form.Item>
       </Form>
+    </Modal>
+  )
+}
+
+function PreviewModal() {
+  const [format, setFormat] = useState(store.previewFormat);
+
+  useEffect(() => {
+    setFormat(store.previewFormat);
+  }, []);
+
+  function handleFormatChange(fmt) {
+    setFormat(fmt);
+    store.previewFormat = fmt;
+    store.fetchPreview();
+  }
+
+  return (
+    <Modal
+      open
+      width={720}
+      title="Inventory 预览"
+      onCancel={() => store.previewVisible = false}
+      footer={null}
+      styles={{body: {maxHeight: '70vh', overflow: 'auto'}}}>
+      <Flex justify="space-between" align="center" style={{marginBottom: 12}}>
+        <Segmented
+          value={format}
+          onChange={handleFormatChange}
+          options={[
+            {value: 'ini', label: 'INI'},
+            {value: 'yaml', label: 'YAML'},
+          ]}/>
+        <Button size="small" icon={<EditOutlined/>} onClick={store.fetchPreview} loading={store.previewFetching}>刷新</Button>
+      </Flex>
+      <Spin spinning={store.previewFetching}>
+        <pre className={styles.previewContent}>{store.previewContent || '暂无内容'}</pre>
+      </Spin>
     </Modal>
   )
 }

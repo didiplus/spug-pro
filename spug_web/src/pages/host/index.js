@@ -29,10 +29,10 @@ export default observer(function () {
       <Breadcrumb items={['首页', '主机管理']}  />
 
       <Row gutter={12}>
-        <Col span={6}>
+        <Col xs={24} sm={24} md={8} lg={6} xl={5}>
           <Group/>
         </Col>
-        <Col span={18}>
+        <Col xs={24} sm={24} md={16} lg={18} xl={19}>
           <ComTable/>
         </Col>
       </Row>

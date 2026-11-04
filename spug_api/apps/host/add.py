@@ -48,6 +48,7 @@ def cloud_import(request):
             instances = utils.fetch_tencent_instances(form.ak, form.ac, form.region_id)
 
         host_add_ids = []
+        skipped = []
         for item in instances:
             instance_id = item['instance_id']
             host_name = item.pop('instance_name')
@@ -62,6 +63,11 @@ def cloud_import(request):
                     hostname = public_ips[0] if public_ips else ''
                 else:
                     hostname = private_ips[0] if private_ips else ''
+                if not hostname:
+                    skipped.append(f'{host_name}(无IP)')
+                    continue
+                if Host.objects.filter(name=host_name).exists():
+                    host_name = f'{host_name}_{instance_id[-4:]}'
                 host = Host.objects.create(
                     name=host_name,
                     hostname=hostname,
@@ -72,5 +78,5 @@ def cloud_import(request):
                 host_add_ids.append(host.id)
         if host_add_ids:
             group.hosts.add(*host_add_ids)
-        return json_response(len(instances))
+        return json_response({'imported': len(host_add_ids), 'skipped': skipped})
     return json_response(error=error)

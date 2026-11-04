@@ -7,6 +7,8 @@ from libs import json_response, JsonParser, Argument, human_datetime, auth
 from apps.exec.models import InspectItem, InspectTask, InspectResult
 from apps.host.models import Host
 from apps.account.utils import has_host_perm
+from apps.setting.utils import AppSetting
+from apps.schedule.models import Task as ScheduleTask
 import uuid
 import json
 import re
@@ -14,6 +16,20 @@ import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+INSPECT_DEFAULT_TIMEOUT = 10
+
+
+def _get_inspect_timeout():
+    return AppSetting.get_default('inspect_timeout', INSPECT_DEFAULT_TIMEOUT)
+
+
+def _cleanup_timeout_results():
+    timeout_minutes = _get_inspect_timeout()
+    threshold = (datetime.datetime.now() - datetime.timedelta(minutes=timeout_minutes)).strftime('%Y-%m-%d %H:%M:%S')
+    InspectResult.objects.filter(status='running', run_at__lt=threshold).update(
+        status='error', output=f'执行超时（超过{timeout_minutes}分钟未完成）'
+    )
 
 
 def judge_inspect(output, exit_code, item):
@@ -41,7 +57,8 @@ def judge_inspect(output, exit_code, item):
 
         if item.match_type == 'regex_fail':
             passed = not passed
-    except re.error:
+    except re.error as e:
+        logger.warning(f'judge_inspect regex error: pattern={item.pattern!r} error={e}')
         return 'error', None, None
 
     return 'success' if passed else item.expect_status, matched_text, actual_value
@@ -137,12 +154,9 @@ class InspectItemTestView(View):
 class InspectTaskView(View):
     @auth('exec.inspect.view')
     def get(self, request):
-        threshold = (datetime.datetime.now() - datetime.timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S')
-        InspectResult.objects.filter(status='running', run_at__lt=threshold).update(
-            status='error', output='执行超时（超过10分钟未完成）'
-        )
+        _cleanup_timeout_results()
         tasks = InspectTask.objects.all()
-        return json_response([x.to_view() for x in tasks])
+        return json_response(InspectTask.batch_to_view(tasks))
 
     @auth('exec.inspect.add|exec.inspect.edit')
     def post(self, request):
@@ -202,9 +216,13 @@ class InspectRunView(View):
             if not items:
                 return json_response(error='无可用巡检项')
 
-            for host in Host.objects.filter(id__in=host_ids):
+            combined_command = build_combined_script(items)
+            item_id_list = [item.id for item in items]
+            results_to_create = []
+            hosts_qs = list(Host.objects.filter(id__in=host_ids))
+            for host in hosts_qs:
                 for item in items:
-                    InspectResult.objects.create(
+                    results_to_create.append(InspectResult(
                         task_id=task.id,
                         batch_id=batch_id,
                         host_id=host.id,
@@ -212,9 +230,11 @@ class InspectRunView(View):
                         item_name=item.name,
                         status='running',
                         run_at=run_at,
-                    )
+                    ))
 
-                combined_command = build_combined_script(items)
+            InspectResult.objects.bulk_create(results_to_create)
+
+            for host in hosts_qs:
                 data = dict(
                     key=host.id,
                     name=host.name,
@@ -228,7 +248,7 @@ class InspectRunView(View):
                     term=None,
                     inspect_task_id=task.id,
                     inspect_batch_id=batch_id,
-                    inspect_item_ids=[item.id for item in items],
+                    inspect_item_ids=item_id_list,
                 )
                 rds.rpush(settings.EXEC_WORKER_KEY, json.dumps(data))
             return json_response({'token': token, 'batch_id': batch_id})
@@ -239,14 +259,13 @@ def build_combined_script(items):
     lines = []
     for item in items:
         marker_start = f'###SPUG_START:{item.id}###'
-
         marker_end = f'###SPUG_END:{item.id}###'
         if item.interpreter == 'python':
             cmd = f'python3 << PYEOF\n# -*- coding: UTF-8 -*-\n{item.command}\nPYEOF'
         else:
             cmd = item.command
         lines.append(f'echo "{marker_start}"')
-        lines.append(cmd)
+        lines.append(f'( {cmd} )')
         lines.append(f'__spug_rc=$?; echo; echo "###SPUG_EXIT:$__spug_rc:{item.id}###"')
         lines.append(f'echo "{marker_end}"')
     return '\n'.join(lines)
@@ -263,8 +282,15 @@ def parse_combined_output(output, item_ids):
         start_idx = output.find(start_marker)
         end_idx = output.find(end_marker)
 
-        if start_idx == -1 or end_idx == -1:
-            results[item_id] = {'output': '', 'exit_code': -1}
+        if start_idx == -1 and end_idx == -1:
+            results[item_id] = {'output': '', 'exit_code': -1, 'error': 'marker缺失，可能输出被截断'}
+            continue
+        if start_idx == -1:
+            results[item_id] = {'output': '', 'exit_code': -1, 'error': '起始marker缺失'}
+            continue
+        if end_idx == -1:
+            section = output[start_idx + len(start_marker):].strip()
+            results[item_id] = {'output': section, 'exit_code': -1, 'error': '结束marker缺失，输出可能不完整'}
             continue
 
         section = output[start_idx + len(start_marker):end_idx].strip()
@@ -280,8 +306,9 @@ def parse_combined_output(output, item_ids):
                     content_lines.append(content)
                 try:
                     exit_part = line[idx:]
-                    parts = exit_part.strip().split(':')
-                    exit_code = int(parts[1])
+                    m = re.match(r'###SPUG_EXIT:(-?\d+):(\d+)###', exit_part.strip())
+                    if m:
+                        exit_code = int(m.group(1))
                 except (ValueError, IndexError):
                     pass
             else:
@@ -310,7 +337,7 @@ class InspectResultView(View):
                 records = records.filter(task_id=form.task_id)
             if form.batch_id:
                 records = records.filter(batch_id=form.batch_id)
-            return json_response([x.to_view() for x in records])
+            return json_response(InspectResult.batch_to_view(records))
         return json_response(error=error)
 
 
@@ -353,10 +380,12 @@ class InspectReportView(View):
         pass_rate = round(success / total * 100, 1) if total > 0 else 0
         pass_color = '#52c41a' if pass_rate == 100 else ('#faad14' if pass_rate >= 60 else '#ff4d4f')
 
+        host_ids = set(r.host_id for r in results)
+        hosts_qs = {h.id: h for h in Host.objects.filter(id__in=host_ids)}
         host_map = {}
         for r in results:
-            host = Host.objects.filter(pk=r.host_id).first()
             if r.host_id not in host_map:
+                host = hosts_qs.get(r.host_id)
                 host_map[r.host_id] = {
                     'name': host.name if host else str(r.host_id),
                     'hostname': host.hostname if host else '',
@@ -443,7 +472,6 @@ class InspectScheduleView(View):
         ).parse(request.GET)
         if error is not None:
             return json_response(error=error)
-        from apps.schedule.models import Task as ScheduleTask
         command = json.dumps({'inspect_task_id': form.task_id})
         task = ScheduleTask.objects.filter(type='inspect', interpreter='inspect', command=command).first()
         return json_response(task.to_dict() if task else None)
@@ -459,7 +487,6 @@ class InspectScheduleView(View):
         if error is not None:
             return json_response(error=error)
 
-        from apps.schedule.models import Task as ScheduleTask
         from apscheduler.triggers.cron import CronTrigger
 
         inspect_task = InspectTask.objects.filter(pk=form.task_id).first()
@@ -513,7 +540,7 @@ class InspectScheduleView(View):
         ).parse(request.GET)
         if error is not None:
             return json_response(error=error)
-        from apps.schedule.models import Task as ScheduleTask
+
         command = json.dumps({'inspect_task_id': form.task_id})
         task = ScheduleTask.objects.filter(type='inspect', interpreter='inspect', command=command).first()
         if task:

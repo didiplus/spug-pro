@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, EditOutlined, CloudOutlined,
-  ApiOutlined, CheckCircleOutlined,
+  ApiOutlined,
 } from '@ant-design/icons';
 import { hasPermission } from 'libs';
 import store from '../store';

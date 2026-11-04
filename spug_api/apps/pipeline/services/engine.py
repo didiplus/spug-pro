@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import close_old_connections
 from apps.pipeline.models import PipelineHistory, Pipeline
 from apps.host.models import Host
-from libs.utils import human_datetime, human_seconds_time, render_str, AttrDict
+from libs.utils import human_datetime, render_str, AttrDict
 from libs.execution.factory import ExecutorFactory
 from libs.ssh import SSH
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -15,14 +15,28 @@ import uuid
 import os
 import re
 import logging
+import threading
+import requests
 
 logger = logging.getLogger(__name__)
 
 MAX_WORKERS = 20
+LOG_TTL = 14 * 24 * 3600
 
 
 class SpugError(Exception):
     pass
+
+
+class PipelineCancelError(Exception):
+    pass
+
+
+CANCEL_KEY_PREFIX = "spug:pipe:cancel:"
+
+
+def _check_cancelled(rds, token):
+    return rds.exists(f"{CANCEL_KEY_PREFIX}{token}")
 
 
 class PipelineHelper:
@@ -32,7 +46,7 @@ class PipelineHelper:
         self.rds = rds
         self.rds_key = rds_key
         self.pub_channel = pub_channel
-        self.node_status = {}
+
 
     def _send(self, key, data, *, status=""):
         message = {"key": key, "data": data}
@@ -67,29 +81,43 @@ class PipelineHelper:
         if with_break:
             raise SpugError
 
-    def local_raw(self, command, env=None):
+    def local_raw(self, command, env=None, timeout=None):
         merged = dict(os.environ)
         if env:
             merged.update({k: str(v) for k, v in env.items()})
         task = subprocess.Popen(command, env=merged, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        message = b""
+        deadline = time.time() + timeout if timeout and timeout > 0 else None
+        buffer = b""
         while True:
-            output = task.stdout.read(1)
-            if not output:
+            chunk = task.stdout.read(4096)
+            if not chunk:
                 break
-            if output in (b"\r", b"\n"):
-                message += b"\r\n" if output == b"\n" else b"\r"
-                self._send("local", message.decode(errors="ignore"))
-                message = b""
-            else:
-                message += output
-        if task.wait() != 0:
-            self.send_error("local", f"exit code: {task.returncode}")
+            buffer += chunk
+            while b"\n" in buffer:
+                line, buffer = buffer.split(b"\n", 1)
+                self._send("local", line.decode(errors="ignore") + "\r\n")
+            if deadline and time.time() > deadline:
+                task.kill()
+                self.send_error("local", f"执行超时（{timeout}s），已终止")
+        if buffer:
+            self._send("local", buffer.decode(errors="ignore"))
+        if deadline:
+            rc = task.wait(timeout=max(0, deadline - time.time()))
+            if rc is None:
+                task.kill()
+                self.send_error("local", f"执行超时（{timeout}s），已终止")
+        else:
+            rc = task.wait()
+        if rc != 0:
+            self.send_error("local", f"exit code: {rc}")
 
-    def remote(self, key, ssh, command, env=None):
+    def remote(self, key, ssh, command, env=None, timeout=None):
         code = -1
+        start = time.time()
         for code, out in ssh.exec_command_with_stream(command, environment=env):
             self._send(key, out)
+            if timeout and timeout > 0 and time.time() - start > timeout:
+                self.send_error(key, f"执行超时（{timeout}s），已终止")
         if code != 0:
             self.send_error(key, f"exit code: {code}")
 
@@ -132,7 +160,7 @@ def _topo_layers(nodes):
     while remaining:
         layer = [nid for nid in remaining if all(u in done for u in upstream[nid])]
         if not layer:
-            layer = list(remaining)
+            raise SpugError(f"检测到循环依赖，涉及节点: {sorted(remaining)}")
         layers.append(layer)
         done.update(layer)
         remaining -= set(layer)
@@ -147,11 +175,13 @@ def dispatch(history):
 
     helper = PipelineHelper(rds, rds_key, pub_channel)
     rds.delete(rds_key)
+    rds.expire(rds_key, LOG_TTL)
 
     history.status = 1
     history.started_at = human_datetime()
     history.save(update_fields=["status", "started_at"])
 
+    node_status = {}
     try:
         env = AttrDict(
             SPUG_PIPE_ID=str(history.pipeline_id),
@@ -161,18 +191,26 @@ def dispatch(history):
         )
 
         layers, node_map, upstream = _topo_layers(nodes)
-        node_status = {}
+
+        status_lock = threading.Lock()
+        cancel_token = history.token
+
 
         for layer in layers:
+            if _check_cancelled(rds, cancel_token):
+                raise PipelineCancelError("用户取消执行")
             if len(layer) == 1:
-                _exec_node(helper, node_map[layer[0]], node_map, upstream, node_status, env)
+                _exec_node(helper, node_map[layer[0]], node_map, upstream, node_status, status_lock, env, rds, cancel_token)
             else:
                 with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                    futures = {executor.submit(_exec_node, helper, node_map[nid], node_map, upstream, node_status, env): nid for nid in layer}
+                    futures = {executor.submit(_exec_node, helper, node_map[nid], node_map, upstream, node_status, status_lock, env, rds, cancel_token): nid for nid in layer}
                     for f in as_completed(futures):
                         f.result()
 
         history.status = 2
+    except PipelineCancelError as e:
+        history.status = 4
+        history.error_message = str(e)
     except SpugError:
         history.status = 3
     except Exception as e:
@@ -181,7 +219,8 @@ def dispatch(history):
         history.error_message = str(e)
     finally:
         close_old_connections()
-        history.deploy_status = json.dumps({str(k): v for k, v in node_status.items()} if 'node_status' in dir() else {})
+        rds.expire(rds_key, LOG_TTL)
+        history.deploy_status = json.dumps({str(k): v for k, v in node_status.items()})
         history.finished_at = human_datetime()
         history.save()
         Pipeline.objects.filter(pk=history.pipeline_id).update(
@@ -189,22 +228,33 @@ def dispatch(history):
         )
 
 
-def _exec_node(helper, node, node_map, upstream, node_status, env):
+def _exec_node(helper, node, node_map, upstream, node_status, status_lock, env, rds=None, cancel_token=None):
     node_id = node["id"]
     key = str(node_id)
-    node_status[node_id] = 1
+
+    if rds and cancel_token and _check_cancelled(rds, cancel_token):
+        with status_lock:
+            node_status[node_id] = 4
+        helper.send_warn(key, "\r\n### 执行已取消\r\n", status="error")
+        raise PipelineCancelError("用户取消执行")
+
+    with status_lock:
+        node_status[node_id] = 1
 
     condition = node.get("condition", "success")
     ups = upstream.get(node_id, [])
     if ups:
-        up_results = [node_status.get(u, 0) for u in ups]
+        with status_lock:
+            up_results = [node_status.get(u, 0) for u in ups]
         all_success = all(r == 2 for r in up_results)
         any_fail = any(r == 3 for r in up_results)
         if condition == "success" and not all_success:
-            node_status[node_id] = 4
+            with status_lock:
+                node_status[node_id] = 4
             return
         if condition == "error" and not any_fail:
-            node_status[node_id] = 4
+            with status_lock:
+                node_status[node_id] = 4
             return
 
     helper.send_clear(key)
@@ -236,13 +286,16 @@ def _exec_node(helper, node, node_map, upstream, node_status, env):
             _exec_push_spug(helper, node, node_env, key)
         else:
             helper.send_warn(key, f"未知模块: {module}，跳过\r\n")
-        node_status[node_id] = 2
+        with status_lock:
+            node_status[node_id] = 2
         helper.send_success(key, f"\r\n** 执行完成 **\r\n", status="success")
     except SpugError:
-        node_status[node_id] = 3
+        with status_lock:
+            node_status[node_id] = 3
         raise
     except Exception as e:
-        node_status[node_id] = 3
+        with status_lock:
+            node_status[node_id] = 3
         helper.send_error(key, f"Exception: {e}", with_break=False)
         raise
 
@@ -272,7 +325,9 @@ def _exec_parameter(helper, node, env, key):
 def _exec_ssh(helper, node, env, key):
     targets = node.get("targets", [])
     command = render_str(node.get("command", ""), env)
-    interpreter = node.get("interpreter", "sh")
+
+    timeout = node.get("timeout", 0) or 0
+    workspace = node.get("workspace", "")
     helper.send_info(key, f"目标主机: {targets}\r\n")
     for h_id in targets:
         host = Host.objects.filter(pk=h_id).first()
@@ -287,13 +342,15 @@ def _exec_ssh(helper, node, env, key):
         )
         with executor:
             helper.send_info(key, f"\r\n--- {host.hostname} ---\r\n")
-            helper.remote(key, executor, f"cd /tmp && {command}", host_env)
+            full_cmd = f"cd {workspace} && {command}" if workspace else command
+            helper.remote(key, executor, full_cmd, host_env, timeout=timeout)
 
 
 def _exec_build(helper, node, env, key):
     workspace = node.get("workspace", "/tmp")
     command = render_str(node.get("command", ""), env)
     target = node.get("target")
+    timeout = node.get("timeout", 0) or 0
     helper.send_info(key, f"工作目录: {workspace}\r\n")
     if target:
         helper.send_info(key, f"构建主机: {target}\r\n")
@@ -305,9 +362,9 @@ def _exec_build(helper, node, env, key):
             default_env=env, connect_timeout=10
         )
         with executor:
-            helper.remote(key, executor, f"cd {workspace} && {command}", env)
+            helper.remote(key, executor, f"cd {workspace} && {command}", env, timeout=timeout)
     else:
-        helper.local_raw(f"cd {workspace} && {command}", env)
+        helper.local_raw(f"cd {workspace} && {command}", env, timeout=timeout)
 
 
 def _exec_transfer(helper, node, env, key):
@@ -347,7 +404,7 @@ def _exec_transfer(helper, node, env, key):
 
 
 def _exec_push_webhook(helper, node, env, key):
-    import requests
+
     url = node.get("url", "")
     title = render_str(node.get("title", ""), env)
     body = render_str(node.get("body", ""), env)
@@ -389,6 +446,7 @@ def start_pipeline_run(pipeline, user, trigger_type="manual"):
         token=token,
         status=0,
         nodes=pipeline.nodes,
+        trigger_type=trigger_type,
         created_by=user,
     )
     return history

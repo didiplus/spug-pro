@@ -58,6 +58,11 @@
 
 .group {
   height: 100%;
+
+  :global(.ant-card-body) {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+  }
 }
 
 .treeNode {

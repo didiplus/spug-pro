@@ -19,6 +19,20 @@ from openpyxl import load_workbook
 from threading import Thread
 import socket
 import uuid
+import json
+import re
+
+
+def _id_in_json(field_value, target_id):
+    if not field_value:
+        return False
+    try:
+        ids = json.loads(field_value)
+        if isinstance(ids, list):
+            return target_id in ids
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return bool(re.search(fr'(^|[^0-9]){target_id}([^0-9]|$)', field_value))
 
 
 class HostView(View):
@@ -53,6 +67,7 @@ class HostView(View):
             if other and (not form.id or other.id != form.id):
                 return json_response(error=f'已存在的主机名称【{form.name}】')
             if form.id:
+                form.pop('id')
                 Host.objects.filter(pk=form.id).update(is_verified=True, **form)
                 host = Host.objects.get(pk=form.id)
             else:
@@ -69,9 +84,10 @@ class HostView(View):
             Argument('id', type=int, help='参数错误')
         ).parse(request.body)
         if error is None:
-            host = Host.objects.get(pk=form.id)
+            host = Host.objects.select_related('hostextend').get(pk=form.id)
             with host.get_ssh() as ssh:
                 _sync_host_extend(host, ssh=ssh)
+            return json_response(host.to_view())
         return json_response(error=error)
 
     @auth('admin')
@@ -106,21 +122,29 @@ class HostView(View):
                 host_ids = [x.id for x in group.hosts.all()]
             else:
                 return json_response(error='参数错误')
-            for host_id in host_ids:
-                regex = fr'[^0-9]{host_id}[^0-9]'
-                deploy = Deploy.objects.filter(host_ids__regex=regex) \
-                    .annotate(app_name=F('app__name'), env_name=F('env__name')).first()
-                if deploy:
-                    return json_response(error=f'应用【{deploy.app_name}】在【{deploy.env_name}】的发布配置关联了该主机，请解除关联后再尝试删除该主机')
-                task = Task.objects.filter(targets__regex=regex).first()
-                if task:
-                    return json_response(error=f'任务计划中的任务【{task.name}】关联了该主机，请解除关联后再尝试删除该主机')
-                detection = Detection.objects.filter(type__in=('3', '4'), targets__regex=regex).first()
-                if detection:
-                    return json_response(error=f'监控中心的任务【{detection.name}】关联了该主机，请解除关联后再尝试删除该主机')
-                tpl = ExecTemplate.objects.filter(host_ids__regex=regex).first()
-                if tpl:
-                    return json_response(error=f'执行模板【{tpl.name}】关联了该主机，请解除关联后再尝试删除该主机')
+            patterns = '|'.join(fr'(^|[^0-9]){hid}([^0-9]|$)' for hid in host_ids)
+            conflicts = []
+            for deploy in Deploy.objects.filter(host_ids__regex=patterns).annotate(app_name=F('app__name'), env_name=F('env__name'))[:20]:
+                for hid in host_ids:
+                    if _id_in_json(deploy.host_ids, hid):
+                        conflicts.append(f'应用【{deploy.app_name}】在【{deploy.env_name}】的发布配置关联了主机#{hid}')
+            for task in Task.objects.filter(targets__regex=patterns)[:20]:
+                for hid in host_ids:
+                    if _id_in_json(task.targets, hid):
+                        conflicts.append(f'任务计划【{task.name}】关联了主机#{hid}')
+            for detection in Detection.objects.filter(type__in=('3', '4'), targets__regex=patterns)[:20]:
+                for hid in host_ids:
+                    if _id_in_json(detection.targets, hid):
+                        conflicts.append(f'监控任务【{detection.name}】关联了主机#{hid}')
+            for tpl in ExecTemplate.objects.filter(host_ids__regex=patterns)[:20]:
+                for hid in host_ids:
+                    if _id_in_json(tpl.host_ids, hid):
+                        conflicts.append(f'执行模板【{tpl.name}】关联了主机#{hid}')
+            if conflicts:
+                msg = '以下关联阻止删除，请解除后再试：\n' + '\n'.join(conflicts[:10])
+                if len(conflicts) > 10:
+                    msg += f'\n...等共 {len(conflicts)} 条关联'
+                return json_response(error=msg)
             Host.objects.filter(id__in=host_ids).delete()
         return json_response(error=error)
 
@@ -130,6 +154,7 @@ def post_import(request):
     group_id = request.POST.get('group_id')
     file = request.FILES['file']
     hosts = []
+    host_passwords = {}
     ws = load_workbook(file, read_only=True)['Sheet1']
     summary = {'fail': 0, 'success': 0, 'invalid': [], 'skip': [], 'repeat': []}
     for i, row in enumerate(ws.rows, start=1):
@@ -157,22 +182,23 @@ def post_import(request):
         host = Host.objects.create(created_by=request.user, **data)
         host.groups.add(group_id)
         summary['success'] += 1
-        host.password = row[4].value
+        host_passwords[host.id] = row[4].value
         hosts.append(host)
     token = uuid.uuid4().hex
     if hosts:
-        Thread(target=batch_sync_host, args=(token, hosts)).start()
+        Thread(target=batch_sync_host, args=(token, hosts), kwargs={'host_passwords': host_passwords}).start()
     return json_response({'summary': summary, 'token': token, 'hosts': {x.id: {'name': x.name} for x in hosts}})
 
 
 @auth('host.host.add')
 def post_parse(request):
-    file = request.FILES['file']
-    if file:
-        data = file.read()
-        return json_response(data.decode())
-    else:
-        return HttpResponseBadRequest()
+    file = request.FILES.get('file')
+    if not file:
+        return HttpResponseBadRequest('未上传文件')
+    if file.size > 1024 * 1024:
+        return json_response(error='文件大小不能超过 1MB')
+    data = file.read()
+    return json_response(data.decode())
 
 
 @auth('host.host.add')

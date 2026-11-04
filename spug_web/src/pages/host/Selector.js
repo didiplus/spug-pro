@@ -5,15 +5,17 @@
  */
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react';
-import { Modal, Row, Col, Tree, Table, Button, Space, Input, Alert } from 'antd';
+import { Modal, Row, Col, Tree, Table, Button, Space, Input, Alert, message } from 'antd';
 import { FolderOpenOutlined, FolderOutlined, PlusOutlined } from '@ant-design/icons';
 import IPAddress from './IPAddress';
 import hStore from './store';
 import store from './store2';
 import styles from './selector.module.less';
 
+const MAX_SELECT = 500;
+
 function HostSelector(props) {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(props.mode === 'group')
   const [isReady, setIsReady] = useState(false)
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -57,6 +59,10 @@ function HostSelector(props) {
     let tmp = new Set(selectedRowKeys)
     if (!tmp.delete(record.id)) {
       if (props.onlyOne) tmp.clear()
+      if (tmp.size >= MAX_SELECT) {
+        message.warning(`最多选择 ${MAX_SELECT} 台主机`)
+        return
+      }
       tmp.add(record.id)
     }
     setSelectedRowKeys([...tmp])
@@ -77,7 +83,7 @@ function HostSelector(props) {
     }
   }
 
-  function handleExpand(keys, {_, node}) {
+  function handleExpand(keys, {node}) {
     if (node.children.length > 0) {
       setExpands(keys)
     }
@@ -87,6 +93,10 @@ function HostSelector(props) {
     let tmp = new Set(selectedRowKeys)
     for (let item of store.dataSource) {
       if (selected) {
+        if (tmp.size >= MAX_SELECT) {
+          message.warning(`最多选择 ${MAX_SELECT} 台主机`)
+          break
+        }
         tmp.add(item.id)
       } else {
         tmp.delete(item.id)
@@ -144,7 +154,7 @@ function HostSelector(props) {
       )}
 
       <Modal
-        open={props.mode === 'group' || visible}
+        open={visible}
         width={1000}
         className={styles.modal}
         title={props.title || '主机列表'}

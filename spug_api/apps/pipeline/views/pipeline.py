@@ -5,7 +5,7 @@ from django.conf import settings
 from django.http import HttpResponseBadRequest
 from libs import json_response, JsonParser, Argument, human_datetime, human_time, auth
 from apps.pipeline.models import Pipeline, PipelineHistory
-from apps.pipeline.services.engine import start_pipeline_run
+from apps.pipeline.services.engine import start_pipeline_run, CANCEL_KEY_PREFIX
 from apps.host.models import Host
 import json
 import os
@@ -176,3 +176,21 @@ class PipelineUploadView(View):
                 os.remove(target)
             return json_response()
         return json_response(error=error)
+
+class PipelineCancelView(View):
+    @auth('pipeline.pipeline.do')
+    def post(self, request):
+        form, error = JsonParser(
+            Argument('token', help='请指定执行标识'),
+        ).parse(request.body)
+        if error:
+            return json_response(error=error)
+        history = PipelineHistory.objects.filter(token=form.token).first()
+        if not history:
+            return json_response(error='执行记录不存在')
+        if history.status not in (0, 1):
+            return json_response(error=f'任务当前状态为 {history.status_alias}，无法取消')
+        rds = get_redis_connection()
+        rds.set(f"{CANCEL_KEY_PREFIX}{form.token}", '1', ex=3600)
+        return json_response(data={'message': '取消信号已发送'})
+

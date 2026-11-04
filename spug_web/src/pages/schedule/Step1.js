@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react';
 import { Form, Input, Select, Button, Radio, App, Space, Divider } from 'antd';
-import { ExclamationCircleOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { LinkButton, ACEditor } from 'components';
 import TemplateSelector from '../exec/task/TemplateSelector';
 import { cleanCommand, http } from 'libs';
@@ -14,19 +14,12 @@ export default observer(function () {
   const [command, setCommand] = useState(store.record.command || '');
   const [rstValue, setRstValue] = useState({});
   const [contacts, setContacts] = useState([]);
-  const [dbBackupConfig, setDbBackupConfig] = useState({});
-  const [dbList, setDbList] = useState([]);
-  const [dbListLoading, setDbListLoading] = useState(false);
-  const [storageConfigs, setStorageConfigs] = useState([]);
 
   const { modal } = App.useApp();
 
   const mountedRef = useRef(true);
   const abortControllerRef = useRef(null);
   const timerRef = useRef(null);
-
-  const interpreter = Form.useWatch('interpreter', form) || store.record.interpreter;
-  const isDbBackup = interpreter === 'db_backup';
 
 
   useEffect(() => {
@@ -47,23 +40,6 @@ export default observer(function () {
         if (err.name === 'AbortError') return;
         console.error('加载联系人失败:', err);
       });
-
-    if (store.dbInstances.length === 0) {
-      store.fetchDbInstances();
-    }
-
-    http.get('/api/setting/storage-configs/').then(res => {
-      if (mountedRef.current) setStorageConfigs(res || []);
-    });
-
-    if (store.record.interpreter === 'db_backup') {
-      try {
-        const config = JSON.parse(store.record.command || '{}');
-        setDbBackupConfig(config);
-      } catch {
-        setDbBackupConfig({});
-      }
-    }
 
 
     return () => {
@@ -106,10 +82,6 @@ export default observer(function () {
 
   function canNext() {
     const formData = form.getFieldsValue();
-    if (isDbBackup) {
-      return !(formData.type && formData.name && dbBackupConfig.instance_id);
-    }
-
     return !(formData.type && formData.name && command);
   }
 
@@ -117,15 +89,7 @@ export default observer(function () {
     const notifyMode = store.record.rst_notify.mode;
     store.record.rst_notify.value = rstValue[notifyMode];
     const formData = form.getFieldsValue();
-    if (isDbBackup) {
-      Object.assign(store.record, formData, {
-        interpreter: 'db_backup',
-        command: JSON.stringify(dbBackupConfig),
-      });
-
-    } else {
-      Object.assign(store.record, formData, { command: cleanCommand(command) });
-    }
+    Object.assign(store.record, formData, { command: cleanCommand(command) });
     store.page += 1;
   }
 
@@ -178,101 +142,26 @@ export default observer(function () {
       <Divider style={{ margin: '8px 0' }} />
 
       <div className={styles.sectionTitle}>任务内容</div>
-      <Form.Item required label="任务内容" extra={!isDbBackup && <LinkButton onClick={() => setShowTmp(true)}>从模板添加</LinkButton>}>
+      <Form.Item required label="任务内容" extra={<LinkButton onClick={() => setShowTmp(true)}>从模板添加</LinkButton>}>
         <Form.Item noStyle name="interpreter">
           <Radio.Group buttonStyle="solid" style={{ marginBottom: 12 }}>
             <Radio.Button value="sh" style={{ width: 80, textAlign: 'center' }}>Shell</Radio.Button>
             <Radio.Button value="python" style={{ width: 80, textAlign: 'center' }}>Python</Radio.Button>
-            <Radio.Button value="db_backup" style={{ textAlign: 'center' }}><DatabaseOutlined style={{ marginRight: 4 }} />数据库备份</Radio.Button>
           </Radio.Group>
         </Form.Item>
-        {isDbBackup ? (
-          <div className={styles.dbBackupForm}>
-            <Form layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
-              <Form.Item label="数据库实例">
-                <Select
-                  placeholder="请选择数据库实例"
-                  showSearch
-                  optionFilterProp="label"
-                  value={dbBackupConfig.instance_id}
-                  onChange={(v) => {
-                    setDbBackupConfig({ instance_id: v, database: '', mode: dbBackupConfig.mode || 'full' });
-                    setDbList([]);
-                    if (v) {
-                      setDbListLoading(true);
-                      http.get(`/api/db/instances/${v}/`)
-                        .then((res) => {
-                          const rows = res?.live?.databases?.rows || [];
-                          setDbList(rows.map((r) => r.name));
-                        })
-                        .catch(() => setDbList([]))
-                        .finally(() => setDbListLoading(false));
-                    }
-                  }}
-                >
-                  {store.dbInstances.map((item) => (
-                    <Select.Option key={item.id} value={item.id} label={`${item.name} (${item.host}:${item.port})`}>
-                      {item.name} ({item.host}:{item.port})
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item label="备份范围">
-                <Select
-                  placeholder="全部数据库"
-                  allowClear
-                  loading={dbListLoading}
-                  value={dbBackupConfig.database}
-                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, database: v || '' })}
-                  options={[{ label: '全部数据库', value: '' }, ...dbList.map(name => ({ label: name, value: name }))]}
-                />
-              </Form.Item>
-              <Form.Item label="备份类型">
-                <Select
-                  value={dbBackupConfig.mode || 'full'}
-                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, mode: v })}
-                >
-                  <Select.Option value="full">全量备份</Select.Option>
-                  <Select.Option value="incremental">增量备份</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item label="远程存储" tooltip="选择后将备份文件上传到远程存储">
-                <Select
-                  placeholder="仅本地存储"
-                  allowClear
-                  value={dbBackupConfig.storage_config_id}
-                  onChange={(v) => setDbBackupConfig({ ...dbBackupConfig, storage_config_id: v })}
-                  options={storageConfigs
-                    .filter(c => c.enabled)
-                    .map(c => ({ label: `${c.name} (${c.bucket})`, value: c.id }))}
-                />
-              </Form.Item>
-              <Form.Item label="备注">
-                <Input.TextArea
-                  rows={2}
-                  placeholder="可选，最多200字"
-                  maxLength={200}
-                  value={dbBackupConfig.remark}
-                  onChange={(e) => setDbBackupConfig({ ...dbBackupConfig, remark: e.target.value })}
-                />
-              </Form.Item>
-            </Form>
-          </div>
-        ) : (
-          <Form.Item noStyle shouldUpdate>
-            {({ getFieldValue }) => (
-              <div className={styles.editorWrap}>
-                <ACEditor
-                  mode={getFieldValue('interpreter')}
-                  value={command}
-                  width="100%"
-                  height="150px"
-                  onChange={setCommand}
-                />
-              </div>
-            )}
-          </Form.Item>
-        )}
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue }) => (
+            <div className={styles.editorWrap}>
+              <ACEditor
+                mode={getFieldValue('interpreter')}
+                value={command}
+                width="100%"
+                height="150px"
+                onChange={setCommand}
+              />
+            </div>
+          )}
+        </Form.Item>
       </Form.Item>
 
       <Divider style={{ margin: '8px 0' }} />
